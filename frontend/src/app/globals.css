@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  --font-geist-sans: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --background: #f5f1e8;
   --foreground: #0b2527;
   --color-background: #f5f1e8;
