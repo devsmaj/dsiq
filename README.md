@@ -1,75 +1,79 @@
-# dsiq
+# DSIQ
 
 Your AI coach for skills, opportunities, and action.
 
 Powered by DSIQ  
 Part of the SMAJ Ecosystem
 
-## About
+## Overview
 
-DSIQ is an AI Opportunity Coach and Accountability Agent designed for:
+DSIQ is an AI opportunity coach and accountability platform for:
 
 - Students
 - Developers
 - Freelancers
 - Entrepreneurs
 
-Many people want success but struggle to know:
+It helps users answer practical questions like:
 
-- What skill to learn
-- Which opportunity fits them
-- How to stay consistent
-- What action to take next
+- What skill should I learn next?
+- Which opportunity fits me best?
+- What action should I take now?
+- How do I stay consistent over time?
 
-DSIQ helps users discover personalized paths and stay accountable.
+## Repository Structure
 
-## Features
-
-- AI Opportunity Analysis
-- Personalized Learning Roadmaps
-- Weekly Missions
-- Progress Tracking
-- Accountability Coaching
-- Business Ideas
-- Freelance Opportunities
-- Remote Job Guidance
-- Scholarship Recommendations
-- Competition & Hackathon Discovery
-
-## How It Works
-
-1. User signs up
-2. User answers a few onboarding questions
-3. AI analyzes goals, skills, time, and interests
-4. DSIQ generates opportunity paths
-5. Weekly missions are created
-6. AI coach tracks progress and adapts guidance
+```text
+dsiq/
+├─ frontend/          # Next.js web app
+│  ├─ public/
+│  └─ src/
+│     ├─ app/
+│     ├─ components/
+│     ├─ features/
+│     └─ lib/
+├─ backend/           # API and business logic
+│  └─ src/
+│     ├─ config/
+│     ├─ modules/
+│     └─ routes/
+├─ docs/
+├─ README.md
+├─ TODO.md
+└─ package.json       # workspace scripts
+```
 
 ## Tech Stack
 
-Frontend:
+### Frontend
+
 - Next.js
+- React
+- TypeScript
 - Tailwind CSS
 
-Backend:
+### Backend
+
 - Node.js
+- Express
+- TypeScript
 
-AI:
-- Gemini API
+### Planned Integrations
 
-Database:
-- Firebase Firestore
-
-Authentication:
 - Firebase Auth
+- Firebase Firestore
+- AI provider for coaching and opportunity analysis
 
-Hosting:
-- Firebase Hosting
+## Workspace Scripts
 
-## Mission
+From the repo root:
 
-Help people discover opportunities, take action, and stay consistent through AI coaching.
+- `npm run dev` starts the frontend
+- `npm run dev:frontend` starts the frontend explicitly
+- `npm run dev:backend` starts the backend API
+- `npm run build:frontend` builds the frontend
+- `npm run build:backend` builds the backend
 
-## Status
+## Current Status
 
-🚀 Early Startup MVP Development
+Early startup MVP development with a clean frontend/backend structure in place.
