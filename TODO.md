@@ -20,7 +20,7 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 - [ ] `/how-it-works` How It Works
 - [ ] `/pricing` Pricing
 - [ ] `/contact` Contact
-- [ ] `/login` Login
+- [x] `/login` Login
 
 ### Public Pages For Later
 
@@ -48,20 +48,20 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Public Header
 
-- [ ] Add DSIQ logo
-- [ ] Add nav links: Home, About, Features, How It Works, Pricing, Contact
-- [ ] Add `Login` button
-- [ ] Add `Get Started` button
-- [ ] Add mobile layout with logo and menu icon
+- [x] Add DSIQ logo
+- [x] Add nav links: Home, About, Features, How It Works, Pricing, Contact
+- [x] Add `Login` button
+- [x] Add `Get Started` button
+- [x] Add mobile layout with logo and menu icon
 
 ### Public Footer
 
-- [ ] Add DSIQ brand block
-- [ ] Add tagline: "Your AI coach for skills, opportunities, and action."
-- [ ] Add links: Home, About, Features, Pricing, Contact
-- [ ] Add legal links: Privacy, Terms
-- [ ] Add "Powered by DSIQ"
-- [ ] Add "Part of the SMAJ Ecosystem"
+- [x] Add DSIQ brand block
+- [x] Add tagline: "Your AI coach for skills, opportunities, and action."
+- [x] Add links: Home, About, Features, Pricing, Contact
+- [x] Add legal links: Privacy, Terms
+- [x] Add "Powered by DSIQ"
+- [x] Add "Part of the SMAJ Ecosystem"
 
 ### Private Header
 
@@ -79,16 +79,16 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Home `/`
 
-- [ ] Header
-- [ ] Hero
-- [ ] Problem
-- [ ] Solution
-- [ ] How DSIQ Works
-- [ ] Features
-- [ ] Target Users
-- [ ] Pricing Preview
-- [ ] Call to Action
-- [ ] Footer
+- [x] Header
+- [x] Hero
+- [x] Problem
+- [x] Solution
+- [x] How DSIQ Works
+- [x] Features
+- [x] Target Users
+- [x] Pricing Preview
+- [x] Call to Action
+- [x] Footer
 
 ### About `/about`
 
@@ -137,10 +137,10 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Login `/login`
 
-- [ ] Logo
-- [ ] Login form
-- [ ] Forgot password
-- [ ] Create account link
+- [x] Logo
+- [x] Login form
+- [x] Forgot password
+- [x] Create account link
 
 ### Dashboard `/dashboard`
 
@@ -215,9 +215,9 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Phase 1
 
-- [ ] 1. Home page
-- [ ] 2. Public header
-- [ ] 3. Public footer
+- [x] 1. Home page
+- [x] 2. Public header
+- [x] 3. Public footer
 
 ### Phase 2
 
@@ -239,8 +239,8 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ## Suggested Delivery Checklist
 
-- [ ] Define route structure
-- [ ] Create shared public layout
+- [x] Define route structure
+- [x] Create shared public layout
 - [ ] Create shared private layout
 - [ ] Add auth guard for private pages
 - [ ] Add mobile nav behavior
@@ -253,4 +253,4 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ## Immediate Next Step
 
-- [ ] Start with the Home page only
+- [x] Start with the Home page only
