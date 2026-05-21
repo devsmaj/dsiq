@@ -1,24 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/features", label: "Features" },
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/contact", label: "Contact" },
+import { useAuth } from "@/components/auth-provider";
+
+const privateNavItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/coach", label: "Coach" },
+  { href: "/missions", label: "Missions" },
+  { href: "/opportunities", label: "Opportunities" },
+  { href: "/progress", label: "Progress" },
+  { href: "/profile", label: "Profile" },
 ];
 
-export function PublicHeader() {
+export function PrivateHeader() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  async function handleLogout() {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      router.replace("/login");
+    } finally {
+      setIsLoggingOut(false);
+      setIsOpen(false);
+    }
+  }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/60 bg-[color:var(--color-surface)]/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
+          <a href="/dashboard" className="flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-brand)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,122,102,0.28)]">
               D
             </span>
@@ -27,8 +44,8 @@ export function PublicHeader() {
             </span>
           </a>
 
-          <nav className="hidden items-center gap-8 lg:flex">
-            {navItems.map((item) => (
+          <nav className="hidden items-center gap-7 lg:flex">
+            {privateNavItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
@@ -40,24 +57,20 @@ export function PublicHeader() {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <a
-              href="/login"
-              className="rounded-full border border-[color:var(--color-line)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="rounded-full border border-[color:var(--color-line)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Login
-            </a>
-            <a
-              href="/signup"
-              className="rounded-full bg-[color:var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(0,122,102,0.28)] transition hover:bg-[color:var(--color-brand-strong)]"
-            >
-              Get Started
-            </a>
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
           </div>
 
           <button
             type="button"
             className="inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-3 text-[color:var(--color-text)] lg:hidden"
-            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-label={isOpen ? "Close private menu" : "Open private menu"}
             aria-expanded={isOpen}
             onClick={() => setIsOpen((value) => !value)}
           >
@@ -70,7 +83,7 @@ export function PublicHeader() {
         {isOpen ? (
           <div className="mt-4 rounded-[1.75rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_40px_rgba(11,37,39,0.08)] lg:hidden">
             <nav className="flex flex-col gap-2">
-              {navItems.map((item) => (
+              {privateNavItems.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
@@ -82,21 +95,15 @@ export function PublicHeader() {
               ))}
             </nav>
 
-            <div className="mt-4 flex flex-col gap-3 border-t border-[color:var(--color-line)] pt-4">
-              <a
-                href="/login"
-                className="rounded-full border border-[color:var(--color-line)] px-5 py-3 text-center text-sm font-medium text-[color:var(--color-text)]"
-                onClick={() => setIsOpen(false)}
+            <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="block w-full rounded-full border border-[color:var(--color-line)] px-5 py-3 text-center text-sm font-medium text-[color:var(--color-text)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Login
-              </a>
-              <a
-                href="/signup"
-                className="rounded-full bg-[color:var(--color-brand)] px-5 py-3 text-center text-sm font-semibold text-white"
-                onClick={() => setIsOpen(false)}
-              >
-                Get Started
-              </a>
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </button>
             </div>
           </div>
         ) : null}

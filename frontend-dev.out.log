@@ -1,0 +1,17 @@
+
+> dev:frontend
+> npm run dev --workspace frontend
+
+
+> @dsiq/frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.17.246:3000
+✓ Ready in 6.7s
+Creating turbopack project { dir: 'C:\\Users\\Dell\\Desktop\\dsiq\\frontend', testMode: true }
+
+○ Compiling / ...
+ GET / 200 in 2.1min (next.js: 101s, application-code: 25.9s)
+✓ Finished writing to filesystem cache in 59s
