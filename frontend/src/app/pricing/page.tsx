@@ -1,5 +1,21 @@
+import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Compare the DSIQ free and pro plans, what is included, and common pricing questions before you get started.",
+  alternates: {
+    canonical: "/pricing",
+  },
+  openGraph: {
+    title: "DSIQ Pricing",
+    description:
+      "Compare the DSIQ free and pro plans, what is included, and common pricing questions before you get started.",
+    url: "https://dsiq.app/pricing",
+  },
+};
 
 const includedItems = [
   "Guided onboarding and AI path generation",

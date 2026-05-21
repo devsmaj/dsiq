@@ -30,14 +30,14 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Private Pages
 
-- [ ] `/dashboard`
+- [x] `/dashboard`
 - [x] `/onboarding`
 - [x] `/coach`
 - [x] `/missions`
 - [x] `/opportunities`
 - [x] `/progress`
-- [ ] `/profile`
-- [ ] `/settings`
+- [x] `/profile`
+- [x] `/settings`
 
 ### Private Pages For Later
 
@@ -195,21 +195,21 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Profile `/profile`
 
-- [ ] Name
-- [ ] Skills
-- [ ] Goals
-- [ ] Interests
-- [ ] Budget
-- [ ] Time available
-- [ ] Edit profile
+- [x] Name
+- [x] Skills
+- [x] Goals
+- [x] Interests
+- [x] Budget
+- [x] Time available
+- [x] Edit profile
 
 ### Settings `/settings`
 
-- [ ] Account
-- [ ] Language
-- [ ] Notification preferences
-- [ ] Delete account
-- [ ] Logout
+- [x] Account
+- [x] Language
+- [x] Notification preferences
+- [x] Delete account
+- [x] Logout
 
 ## Best Build Order
 
@@ -221,7 +221,7 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Phase 2
 
-- [ ] 4. Login/signup
+- [x] 4. Login/signup
 - [x] 5. Onboarding
 - [x] 6. Dashboard
 
@@ -245,10 +245,10 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 - [x] Add auth guard for private pages
 - [x] Add mobile nav behavior
 - [ ] Add placeholder content for each page before polish
-- [ ] Connect onboarding data to dashboard state
-- [ ] Connect coach, missions, progress, and opportunities to shared user data
-- [ ] Add loading, empty, and error states
-- [ ] Add basic SEO for public pages
+- [x] Connect onboarding data to dashboard state
+- [x] Connect coach, missions, progress, and opportunities to shared user data
+- [x] Add loading, empty, and error states
+- [x] Add basic SEO for public pages
 - [ ] Add analytics later if needed
 
 ## Immediate Next Step

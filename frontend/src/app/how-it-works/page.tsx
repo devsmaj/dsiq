@@ -1,5 +1,21 @@
+import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
+
+export const metadata: Metadata = {
+  title: "How It Works",
+  description:
+    "See how DSIQ takes users from account setup to onboarding, AI path generation, weekly missions, and coaching.",
+  alternates: {
+    canonical: "/how-it-works",
+  },
+  openGraph: {
+    title: "How DSIQ Works",
+    description:
+      "See how DSIQ takes users from account setup to onboarding, AI path generation, weekly missions, and coaching.",
+    url: "https://dsiq.app/how-it-works",
+  },
+};
 
 const steps = [
   {

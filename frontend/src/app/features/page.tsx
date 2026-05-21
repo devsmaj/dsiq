@@ -1,5 +1,21 @@
+import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
+
+export const metadata: Metadata = {
+  title: "Features",
+  description:
+    "Explore DSIQ features including AI opportunity analysis, weekly missions, coaching, progress tracking, and learning roadmaps.",
+  alternates: {
+    canonical: "/features",
+  },
+  openGraph: {
+    title: "DSIQ Features",
+    description:
+      "Explore DSIQ features including AI opportunity analysis, weekly missions, coaching, progress tracking, and learning roadmaps.",
+    url: "https://dsiq.app/features",
+  },
+};
 
 const featureSections = [
   {

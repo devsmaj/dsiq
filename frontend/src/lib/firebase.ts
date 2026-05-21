@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,11 +20,4 @@ const app = hasFirebaseConfig
   : null;
 
 export const auth = app ? getAuth(app) : null;
-
-export function getFirebaseConfigError() {
-  if (hasFirebaseConfig) {
-    return null;
-  }
-
-  return "Firebase Auth is not configured yet. Add the values from frontend/.env.example to a local .env file.";
-}
+export const db = app ? getFirestore(app) : null;

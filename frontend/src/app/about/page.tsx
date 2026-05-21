@@ -1,5 +1,21 @@
+import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Learn why DSIQ exists, who it helps, and how it connects to the SMAJ Ecosystem mission.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About DSIQ",
+    description:
+      "Learn why DSIQ exists, who it helps, and how it connects to the SMAJ Ecosystem mission.",
+    url: "https://dsiq.app/about",
+  },
+};
 
 export default function AboutPage() {
   return (

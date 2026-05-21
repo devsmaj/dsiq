@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 
 export function AuthPageGuard({ children }: { children: ReactNode }) {
-  const { user, isLoading, configError } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -29,10 +29,6 @@ export function AuthPageGuard({ children }: { children: ReactNode }) {
         </div>
       </main>
     );
-  }
-
-  if (configError) {
-    return <>{children}</>;
   }
 
   return <>{children}</>;

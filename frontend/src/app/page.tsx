@@ -1,5 +1,21 @@
+import type { Metadata } from "next";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description:
+    "DSIQ helps you stop guessing your next move with AI guidance for skills, opportunities, and action.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "DSIQ | Your AI coach for skills, opportunities, and action",
+    description:
+      "DSIQ helps you stop guessing your next move with AI guidance for skills, opportunities, and action.",
+    url: "https://dsiq.app/",
+  },
+};
 
 const featureCards = [
   "AI opportunity analysis tailored to your goals",

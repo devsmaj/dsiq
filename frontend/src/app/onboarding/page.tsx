@@ -1,7 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
+import { saveFirebaseOnboardingAnswers } from "@/lib/firebase-user-records";
+import { saveLocalOnboardingAnswers } from "@/lib/user-profile-store";
 
 const questionCards = [
   {
+    key: "goal",
     title: "Goal question",
     prompt: "What are you trying to achieve in the next 3 to 12 months?",
     helper: "Choose a primary direction so DSIQ can build a focused path.",
@@ -13,6 +22,7 @@ const questionCards = [
     ],
   },
   {
+    key: "skills",
     title: "Skills question",
     prompt: "Which skills do you already have or want to improve?",
     helper: "This helps the coach match you with realistic next steps.",
@@ -24,18 +34,21 @@ const questionCards = [
     ],
   },
   {
+    key: "time",
     title: "Time question",
     prompt: "How much time can you commit each week?",
     helper: "Your mission plan should fit your real schedule.",
     options: ["1 to 3 hours", "4 to 7 hours", "8 to 12 hours", "12+ hours"],
   },
   {
+    key: "budget",
     title: "Budget question",
     prompt: "What budget can you invest in your growth right now?",
     helper: "DSIQ uses this to suggest accessible tools and opportunities.",
     options: ["No budget", "Low budget", "Moderate budget", "Ready to invest"],
   },
   {
+    key: "interest",
     title: "Interest question",
     prompt: "Which opportunities sound most exciting to you?",
     helper: "This shapes the kinds of recommendations you will see first.",
@@ -46,9 +59,62 @@ const questionCards = [
       "Startup opportunities",
     ],
   },
-];
+] as const;
+
+type AnswersState = Record<(typeof questionCards)[number]["key"], string>;
+
+const initialAnswers: AnswersState = {
+  goal: "",
+  skills: "",
+  time: "",
+  budget: "",
+  interest: "",
+};
 
 export default function OnboardingPage() {
+  const [answers, setAnswers] = useState<AnswersState>(initialAnswers);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const { authMode, authMessage, user } = useAuth();
+
+  async function handleGeneratePath() {
+    if (!user) {
+      setError("You need to be signed in before continuing.");
+      return;
+    }
+
+    const missingAnswer = questionCards.find(({ key }) => !answers[key]);
+    if (missingAnswer) {
+      setError(`Please answer: ${missingAnswer.title.toLowerCase()}.`);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+
+      if (authMode === "firebase") {
+        await saveFirebaseOnboardingAnswers({
+          uid: user.uid,
+          answers,
+        });
+      } else {
+        saveLocalOnboardingAnswers(user.uid, answers);
+      }
+
+      router.replace("/dashboard");
+    } catch (nextError) {
+      const message =
+        nextError instanceof Error
+          ? nextError.message
+          : "Unable to save onboarding answers.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <PrivateRoute>
       <main className="hero-grid min-h-screen px-6 py-12 lg:px-8">
@@ -102,11 +168,22 @@ export default function OnboardingPage() {
                     {card.options.map((option) => (
                       <label
                         key={option}
-                        className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-4 transition hover:border-[color:var(--color-brand)]"
+                        className={`flex cursor-pointer items-center gap-3 rounded-2xl border bg-white px-4 py-4 transition ${
+                          answers[card.key] === option
+                            ? "border-[color:var(--color-brand)]"
+                            : "border-[color:var(--color-line)] hover:border-[color:var(--color-brand)]"
+                        }`}
                       >
                         <input
                           type="radio"
-                          name={card.title}
+                          name={card.key}
+                          checked={answers[card.key] === option}
+                          onChange={() =>
+                            setAnswers((current) => ({
+                              ...current,
+                              [card.key]: option,
+                            }))
+                          }
                           className="h-4 w-4 border-[color:var(--color-line)] text-[color:var(--color-brand)]"
                         />
                         <span className="text-sm font-medium text-[color:var(--color-text)]">
@@ -129,13 +206,25 @@ export default function OnboardingPage() {
                     Once you continue, DSIQ can create your first roadmap and
                     mission plan.
                   </p>
+                  {authMessage ? (
+                    <p className="mt-3 rounded-2xl bg-[color:var(--color-brand-soft)]/45 px-4 py-3 text-sm text-[color:var(--color-text)]">
+                      {authMessage}
+                    </p>
+                  ) : null}
+                  {error ? (
+                    <p className="mt-3 rounded-2xl bg-[#fff5e7] px-4 py-3 text-sm text-[color:var(--color-text)]">
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
 
                 <button
                   type="button"
-                  className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)]"
+                  onClick={handleGeneratePath}
+                  disabled={isSubmitting}
+                  className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Generate AI Path
+                  {isSubmitting ? "Saving..." : "Generate AI Path"}
                 </button>
               </div>
             </section>

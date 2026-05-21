@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
 
@@ -7,7 +11,73 @@ const contactLinks = [
   { label: "X", value: "@dsiq_app", href: "https://x.com/dsiq_app" },
 ];
 
+type FormState = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
+const initialFormState: FormState = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
 export default function ContactPage() {
+  const [form, setForm] = useState<FormState>(initialFormState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!form.name.trim() || !form.email.trim() || !form.subject.trim() || !form.message.trim()) {
+      setError("Please fill in your name, email, subject, and message.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const payload = (await response.json()) as { message?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.message || "We could not send your message right now.");
+      }
+
+      setSuccess(payload.message || "Your message has been sent.");
+      setForm(initialFormState);
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "We could not send your message right now.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function updateField<Key extends keyof FormState>(key: Key, value: FormState[Key]) {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
   return (
     <div className="min-h-screen bg-[color:var(--color-background)]">
       <PublicHeader />
@@ -31,34 +101,56 @@ export default function ContactPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
               Contact form
             </p>
-            <form
-              className="mt-6 space-y-4"
-              onSubmit={(event) => event.preventDefault()}
-            >
+
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
               <input
                 type="text"
                 placeholder="Your name"
-                className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                value={form.name}
+                onChange={(event) => updateField("name", event.target.value)}
+                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
               />
               <input
                 type="email"
                 placeholder="Your email"
-                className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                value={form.email}
+                onChange={(event) => updateField("email", event.target.value)}
+                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+              />
+              <input
+                type="text"
+                placeholder="Subject"
+                value={form.subject}
+                onChange={(event) => updateField("subject", event.target.value)}
+                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
               />
               <textarea
-                placeholder="How can we help?"
+                placeholder="Tell us what you need"
+                value={form.message}
+                onChange={(event) => updateField("message", event.target.value)}
                 rows={6}
-                className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                className="w-full rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm leading-7 text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
               />
+
+              {error ? (
+                <p className="rounded-[1.25rem] border border-[#e8b5b5] bg-[#fff5f5] px-4 py-3 text-sm text-[#7a2d2d]">
+                  {error}
+                </p>
+              ) : null}
+
+              {success ? (
+                <p className="rounded-[1.25rem] border border-[color:var(--color-brand-soft)] bg-[color:var(--color-brand-soft)]/30 px-4 py-3 text-sm text-[color:var(--color-text)]">
+                  {success}
+                </p>
+              ) : null}
+
               <button
                 type="submit"
-                className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)]"
+                disabled={isSubmitting}
+                className="rounded-full bg-[color:var(--color-brand)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Send Message
+                {isSubmitting ? "Sending..." : "Send message"}
               </button>
-              <p className="text-sm leading-7 text-[color:var(--color-muted)]">
-                Form delivery is not connected yet. Use the email link for now.
-              </p>
             </form>
           </article>
 
@@ -67,23 +159,28 @@ export default function ContactPage() {
               Email and social links
             </p>
             <div className="mt-6 space-y-4">
-              {contactLinks.map((item) => (
+              {contactLinks.map((link) => (
                 <a
-                  key={item.label}
-                  href={item.href}
-                  target={item.label === "Email" ? undefined : "_blank"}
-                  rel={item.label === "Email" ? undefined : "noopener noreferrer"}
-                  className="rounded-2xl bg-[color:var(--color-surface)] px-4 py-4"
+                  key={link.label}
+                  href={link.href}
+                  target={link.href.startsWith("http") ? "_blank" : undefined}
+                  rel={link.href.startsWith("http") ? "noreferrer" : undefined}
+                  className="block rounded-[1.5rem] bg-[color:var(--color-surface)] px-5 py-4 transition hover:bg-[color:var(--color-brand-soft)]/35"
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                    {item.label}
+                    {link.label}
                   </p>
                   <p className="mt-2 text-sm leading-7 text-[color:var(--color-text)]">
-                    {item.value}
+                    {link.value}
                   </p>
                 </a>
               ))}
             </div>
+
+            <p className="mt-6 text-sm leading-8 text-[color:var(--color-muted)]">
+              Contact form messages are currently saved through the app for local testing,
+              and direct email remains the fastest path for urgent questions.
+            </p>
           </article>
         </section>
       </main>

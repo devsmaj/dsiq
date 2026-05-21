@@ -35,10 +35,7 @@ export function PrivateHeader() {
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <a href="/dashboard" className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-brand)] text-sm font-bold text-white shadow-[0_12px_30px_rgba(0,122,102,0.28)]">
-              D
-            </span>
+          <a href="/dashboard" className="flex items-center">
             <span className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-text)]">
               DSIQ
             </span>

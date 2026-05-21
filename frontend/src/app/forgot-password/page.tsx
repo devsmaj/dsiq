@@ -1,34 +1,27 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { sendPasswordResetEmail } from "firebase/auth";
 
 import { AuthPageGuard } from "@/components/auth-page-guard";
 import { useAuth } from "@/components/auth-provider";
-import { auth } from "@/lib/firebase";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { configError } = useAuth();
+  const { authMessage, resetPassword } = useAuth();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!auth) {
-      setError(configError || "Firebase Auth is not configured yet.");
-      return;
-    }
 
     try {
       setIsSubmitting(true);
       setError("");
       setSuccess("");
 
-      await sendPasswordResetEmail(auth, email);
-      setSuccess("Password reset instructions have been sent to your email.");
+      const message = await resetPassword(email);
+      setSuccess(message);
     } catch (nextError) {
       const message =
         nextError instanceof Error
@@ -71,6 +64,12 @@ export default function ForgotPasswordPage() {
               className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
             />
 
+            {authMessage ? (
+              <p className="rounded-2xl bg-[color:var(--color-brand-soft)]/45 px-4 py-3 text-sm text-[color:var(--color-text)]">
+                {authMessage}
+              </p>
+            ) : null}
+
             {error ? (
               <p className="rounded-2xl bg-[#fff5e7] px-4 py-3 text-sm text-[color:var(--color-text)]">
                 {error}
@@ -83,15 +82,9 @@ export default function ForgotPasswordPage() {
               </p>
             ) : null}
 
-            {configError ? (
-              <p className="rounded-2xl bg-[#fff5e7] px-4 py-3 text-sm text-[color:var(--color-text)]">
-                {configError}
-              </p>
-            ) : null}
-
             <button
               type="submit"
-              disabled={isSubmitting || Boolean(configError)}
+              disabled={isSubmitting}
               className="w-full rounded-full bg-[color:var(--color-brand)] px-6 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Sending..." : "Send Reset Link"}

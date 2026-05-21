@@ -14,9 +14,37 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DSIQ | Your AI coach for skills, opportunities, and action",
+  metadataBase: new URL("https://dsiq.app"),
+  title: {
+    default: "DSIQ | Your AI coach for skills, opportunities, and action",
+    template: "%s | DSIQ",
+  },
   description:
     "DSIQ helps students, developers, freelancers, and entrepreneurs discover the right path, take action, and stay consistent.",
+  applicationName: "DSIQ",
+  keywords: [
+    "AI coach",
+    "career guidance",
+    "weekly missions",
+    "opportunity discovery",
+    "student growth",
+    "freelancer support",
+    "skill roadmap",
+  ],
+  openGraph: {
+    title: "DSIQ | Your AI coach for skills, opportunities, and action",
+    description:
+      "DSIQ helps students, developers, freelancers, and entrepreneurs discover the right path, take action, and stay consistent.",
+    url: "https://dsiq.app",
+    siteName: "DSIQ",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DSIQ | Your AI coach for skills, opportunities, and action",
+    description:
+      "DSIQ helps students, developers, freelancers, and entrepreneurs discover the right path, take action, and stay consistent.",
+  },
 };
 
 export default function RootLayout({
