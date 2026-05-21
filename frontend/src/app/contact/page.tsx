@@ -44,21 +44,14 @@ export default function ContactPage() {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
+      const mailtoSubject = encodeURIComponent(form.subject.trim());
+      const mailtoBody = encodeURIComponent(
+        `Name: ${form.name.trim()}\nEmail: ${form.email.trim()}\n\n${form.message.trim()}`
+      );
 
-      const payload = (await response.json()) as { message?: string };
+      window.location.href = `mailto:hello@dsiq.app?subject=${mailtoSubject}&body=${mailtoBody}`;
 
-      if (!response.ok) {
-        throw new Error(payload.message || "We could not send your message right now.");
-      }
-
-      setSuccess(payload.message || "Your message has been sent.");
+      setSuccess("Your email app should now open with your message pre-filled.");
       setForm(initialFormState);
     } catch (submissionError) {
       setError(
@@ -178,8 +171,8 @@ export default function ContactPage() {
             </div>
 
             <p className="mt-6 text-sm leading-8 text-[color:var(--color-muted)]">
-              Contact form messages are currently saved through the app for local testing,
-              and direct email remains the fastest path for urgent questions.
+              This static site opens your email app with a pre-filled message. If nothing opens,
+              email us directly at hello@dsiq.app.
             </p>
           </article>
         </section>
