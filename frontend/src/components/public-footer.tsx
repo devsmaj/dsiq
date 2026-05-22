@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const footerLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
@@ -28,13 +30,13 @@ export function PublicFooter() {
           </p>
           <div className="flex flex-col gap-3">
             {footerLinks.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
                 className="text-sm text-[color:var(--color-text)] transition hover:text-[color:var(--color-brand)]"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -45,13 +47,13 @@ export function PublicFooter() {
           </p>
           <div className="flex flex-col gap-3">
             {legalLinks.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
                 className="text-sm text-[color:var(--color-text)] transition hover:text-[color:var(--color-brand)]"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
