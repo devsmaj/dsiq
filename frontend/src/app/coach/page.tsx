@@ -56,6 +56,14 @@ export default function CoachPage() {
                   <p className="mt-3 text-sm leading-8">{message.text}</p>
                 </article>
               ))}
+              <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface)] px-4 py-3 text-[color:var(--color-muted)]">
+                <span className="typing-dot" />
+                <span className="typing-dot [animation-delay:120ms]" />
+                <span className="typing-dot [animation-delay:240ms]" />
+                <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
+                  Coach thinking
+                </span>
+              </div>
             </div>
 
             <div className="mt-8 rounded-[1.75rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-4">

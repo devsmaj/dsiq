@@ -12,3 +12,8 @@ Creating turbopack project { dir: 'C:\\Users\\Dell\\Desktop\\dsiq\\frontend', te
 ✓ Finished writing to filesystem cache in 27.9s
 ✓ Finished writing to filesystem cache in 46s
 ✓ Finished writing to filesystem cache in 19.3s
+✓ Finished writing to filesystem cache in 97s
+✓ Finished writing to filesystem cache in 85s
+✓ Compiled in 445.6s
+✓ Finished writing to filesystem cache in 17.6s
+✓ Finished filesystem cache database compaction in 89s

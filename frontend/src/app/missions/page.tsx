@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { PrivateFooter } from "@/components/private-footer";
 import { PrivateHeader } from "@/components/private-header";
 import { PrivateRoute } from "@/components/private-route";
@@ -17,6 +18,12 @@ export default function MissionsPage() {
   const weeklyTasks = buildWeeklyTasks(answers);
   const completedTasks = buildCompletedTasks(answers);
   const missedTasks = buildMissedTasks(answers);
+  const [completedMissionMap, setCompletedMissionMap] = useState<Record<string, boolean>>({});
+  const completedCount = useMemo(
+    () => weeklyTasks.filter((task) => completedMissionMap[task]).length,
+    [completedMissionMap, weeklyTasks],
+  );
+  const progressPercentage = Math.round((completedCount / weeklyTasks.length) * 100);
 
   return (
     <PrivateRoute>
@@ -39,23 +46,58 @@ export default function MissionsPage() {
 
           <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                Task checklist
-              </p>
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
+                    Task checklist
+                  </p>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
+                    {progressPercentage}% complete
+                  </h2>
+                </div>
+                <div className="h-3 w-full overflow-hidden rounded-full bg-[color:var(--color-surface)] sm:w-48">
+                  <div
+                    className="h-full rounded-full bg-[color:var(--color-brand)] transition-all"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
               <div className="mt-6 space-y-4">
                 {weeklyTasks.map((task) => (
-                  <label
+                  <div
                     key={task}
-                    className="flex items-start gap-4 rounded-2xl bg-[color:var(--color-surface)] px-4 py-4"
+                    className="flex flex-col gap-4 rounded-2xl bg-[color:var(--color-surface)] px-4 py-4 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-[color:var(--color-line)] text-[color:var(--color-brand)]"
-                    />
-                    <span className="text-sm leading-7 text-[color:var(--color-text)]">
-                      {task}
-                    </span>
-                  </label>
+                    <label className="flex items-start gap-4">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(completedMissionMap[task])}
+                        onChange={() =>
+                          setCompletedMissionMap((current) => ({
+                            ...current,
+                            [task]: !current[task],
+                          }))
+                        }
+                        className="mt-1 h-4 w-4 rounded border-[color:var(--color-line)] accent-[color:var(--color-brand)]"
+                      />
+                      <span className="text-sm leading-7 text-[color:var(--color-text)]">
+                        {task}
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCompletedMissionMap((current) => ({
+                          ...current,
+                          [task]: true,
+                        }))
+                      }
+                      disabled={Boolean(completedMissionMap[task])}
+                      className="btn-secondary min-h-10 shrink-0 px-4 py-2 text-xs"
+                    >
+                      {completedMissionMap[task] ? "Completed" : "Complete task"}
+                    </button>
+                  </div>
                 ))}
               </div>
             </article>

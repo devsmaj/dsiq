@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Menu, X } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
 import { DsiqLogo } from "@/components/dsiq-logo";
@@ -44,7 +45,7 @@ export function PrivateHeader() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-sm font-medium text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+                className="nav-link"
               >
                 {item.label}
               </Link>
@@ -56,7 +57,7 @@ export function PrivateHeader() {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="rounded-full border border-[color:var(--color-line)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-secondary px-5 py-2.5"
             >
               {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
@@ -64,25 +65,28 @@ export function PrivateHeader() {
 
           <button
             type="button"
-            className="inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-3 text-[color:var(--color-text)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] lg:hidden"
             aria-label={isOpen ? "Close private menu" : "Open private menu"}
             aria-expanded={isOpen}
+            aria-controls="private-mobile-menu"
             onClick={() => setIsOpen((value) => !value)}
           >
-            <span className="text-[10px] font-semibold tracking-[0.2em]">
-              {isOpen ? "CLOSE" : "MENU"}
-            </span>
+            {isOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
         </div>
 
         {isOpen ? (
-          <div className="mt-4 rounded-[1.75rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_40px_rgba(11,37,39,0.08)] lg:hidden">
+          <div id="private-mobile-menu" className="mobile-menu-panel mt-4 p-4 lg:hidden">
             <nav className="flex flex-col gap-2">
               {privateNavItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface)]"
+                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.label}
@@ -95,7 +99,7 @@ export function PrivateHeader() {
                 type="button"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="block w-full rounded-full border border-[color:var(--color-line)] px-5 py-3 text-center text-sm font-medium text-[color:var(--color-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-secondary"
               >
                 {isLoggingOut ? "Logging out..." : "Logout"}
               </button>

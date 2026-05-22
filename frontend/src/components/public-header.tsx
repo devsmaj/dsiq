@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { DsiqLogo } from "@/components/dsiq-logo";
 
 const navItems = [
@@ -27,7 +28,7 @@ export function PublicHeader() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-sm font-medium text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+                className="nav-link"
               >
                 {item.label}
               </Link>
@@ -37,13 +38,13 @@ export function PublicHeader() {
           <div className="hidden items-center gap-3 lg:flex">
             <Link
               href="/login"
-              className="rounded-full border border-[color:var(--color-line)] px-5 py-2.5 text-sm font-medium text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
+              className="btn-secondary px-5 py-2.5"
             >
               Login
             </Link>
             <Link
               href="/signup"
-              className="rounded-full bg-[color:var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(0,122,102,0.28)] transition hover:bg-[color:var(--color-brand-strong)]"
+              className="btn-primary px-5 py-2.5"
             >
               Get Started
             </Link>
@@ -51,25 +52,28 @@ export function PublicHeader() {
 
           <button
             type="button"
-            className="inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-3 text-[color:var(--color-text)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] lg:hidden"
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
+            aria-controls="public-mobile-menu"
             onClick={() => setIsOpen((value) => !value)}
           >
-            <span className="text-[10px] font-semibold tracking-[0.2em]">
-              {isOpen ? "CLOSE" : "MENU"}
-            </span>
+            {isOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
         </div>
 
         {isOpen ? (
-          <div className="mt-4 rounded-[1.75rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_40px_rgba(11,37,39,0.08)] lg:hidden">
+          <div id="public-mobile-menu" className="mobile-menu-panel mt-4 p-4 lg:hidden">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface)]"
+                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.label}
@@ -80,14 +84,14 @@ export function PublicHeader() {
             <div className="mt-4 flex flex-col gap-3 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/login"
-                className="rounded-full border border-[color:var(--color-line)] px-5 py-3 text-center text-sm font-medium text-[color:var(--color-text)]"
+                className="btn-secondary"
                 onClick={() => setIsOpen(false)}
               >
                 Login
               </Link>
               <Link
                 href="/signup"
-                className="rounded-full bg-[color:var(--color-brand)] px-5 py-3 text-center text-sm font-semibold text-white"
+                className="btn-primary"
                 onClick={() => setIsOpen(false)}
               >
                 Get Started
