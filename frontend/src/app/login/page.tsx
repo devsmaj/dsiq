@@ -1,194 +1,113 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
-import { AuthPageGuard } from "@/components/auth-page-guard";
-import { useAuth } from "@/components/auth-provider";
+import { AuthShell } from "@/components/auth-shell";
+import { auth } from "@/lib/firebase";
+
+function getAuthErrorMessage(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+
+  if (code.includes("invalid-email")) {
+    return "Enter a valid email address.";
+  }
+
+  if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
+    return "Email or password is incorrect.";
+  }
+
+  return "We could not log you in. Please try again.";
+}
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
-  const { authMessage, login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
+
+    if (!auth) {
+      setError("Firebase is not configured yet.");
+      return;
+    }
 
     try {
-      setIsSubmitting(true);
-      setError("");
-
-      await login({ email, password, rememberMe });
-      const searchParams = new URLSearchParams(window.location.search);
-      router.replace(searchParams.get("next") || "/dashboard");
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error ? nextError.message : "Unable to sign in.";
-      setError(message);
+      setIsLoading(true);
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace("/dashboard");
+    } catch (submissionError) {
+      setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   }
 
   return (
-    <AuthPageGuard>
-      <main className="hero-grid flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_90px_rgba(11,37,39,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
-          <section className="bg-[linear-gradient(160deg,#0b2527_0%,#11484a_48%,#007a66_100%)] px-8 py-12 text-white lg:px-12 lg:py-16">
-            <Link href="/" className="inline-flex items-center">
-              <span className="text-lg font-semibold tracking-[0.18em]">
-                DSIQ
-              </span>
-            </Link>
+    <AuthShell
+      title="Welcome back"
+      description="Log in to continue your coaching, missions, and progress tracking."
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <label className="block">
+          <span className="text-sm font-medium text-[color:var(--color-text)]">Email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+            className="mt-2 w-full rounded-[var(--radius-md)] border border-[color:var(--color-line)] bg-[color:var(--color-background)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+            placeholder="you@example.com"
+          />
+        </label>
 
-            <div className="mt-16 max-w-md space-y-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
-                Welcome back
-              </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-balance">
-                Sign in to continue your growth path.
-              </h1>
-              <p className="text-base leading-8 text-white/78">
-                Return to your coach, missions, progress tracking, and next best
-                opportunities.
-              </p>
-            </div>
+        <label className="block">
+          <span className="text-sm font-medium text-[color:var(--color-text)]">Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="current-password"
+            className="mt-2 w-full rounded-[var(--radius-md)] border border-[color:var(--color-line)] bg-[color:var(--color-background)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+            placeholder="Your password"
+          />
+        </label>
 
-            <div className="mt-12 grid gap-4">
-              <div className="rounded-3xl border border-white/12 bg-white/8 p-5">
-                <p className="text-sm font-medium text-white">Coach check-ins</p>
-                <p className="mt-2 text-sm leading-7 text-white/70">
-                  Pick up where you left off with your latest action advice.
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/12 bg-white/8 p-5">
-                <p className="text-sm font-medium text-white">Weekly missions</p>
-                <p className="mt-2 text-sm leading-7 text-white/70">
-                  Track progress, recover missed tasks, and stay consistent.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="px-8 py-12 lg:px-12 lg:py-16">
-            <div className="mx-auto w-full max-w-md">
-              <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                  Login
-                </p>
-                <h2 className="text-3xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                  Access your DSIQ account
-                </h2>
-                <p className="text-sm leading-7 text-[color:var(--color-muted)]">
-                  Use your email and password to continue.
-                </p>
-              </div>
-
-              <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-[color:var(--color-text)]"
-                  >
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-4">
-                    <label
-                      htmlFor="password"
-                      className="text-sm font-medium text-[color:var(--color-text)]"
-                    >
-                      Password
-                    </label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm font-medium text-[color:var(--color-brand)]"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    id="remember"
-                    name="remember"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                    className="h-4 w-4 rounded border-[color:var(--color-line)] text-[color:var(--color-brand)]"
-                  />
-                  <label
-                    htmlFor="remember"
-                    className="text-sm text-[color:var(--color-muted)]"
-                  >
-                    Keep me signed in on this device
-                  </label>
-                </div>
-
-                {authMessage ? (
-                  <p className="rounded-2xl bg-[color:var(--color-brand-soft)]/45 px-4 py-3 text-sm text-[color:var(--color-text)]">
-                    {authMessage}
-                  </p>
-                ) : null}
-
-                {error ? (
-                  <p className="rounded-2xl bg-[#fff5e7] px-4 py-3 text-sm text-[color:var(--color-text)]">
-                    {error}
-                  </p>
-                ) : null}
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full rounded-full bg-[color:var(--color-brand)] px-6 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
-                </button>
-              </form>
-
-              <div className="mt-8 rounded-3xl bg-[color:var(--color-surface)] p-5">
-                <p className="text-sm text-[color:var(--color-muted)]">
-                  New to DSIQ?{" "}
-                  <Link
-                    href="/signup"
-                    className="font-semibold text-[color:var(--color-brand)]"
-                  >
-                    Create an account
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </section>
+        <div className="flex justify-end">
+          <Link href="/forgot-password" className="text-sm font-medium text-[color:var(--color-brand)]">
+            Forgot password?
+          </Link>
         </div>
-      </main>
-    </AuthPageGuard>
+
+        {error ? (
+          <p className="rounded-[var(--radius-md)] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full rounded-[var(--radius-md)] bg-[color:var(--color-brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isLoading ? "Logging in..." : "Login"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-[color:var(--color-muted)]">
+        Don&apos;t have account?{" "}
+        <Link href="/signup" className="font-semibold text-[color:var(--color-brand)]">
+          Create account
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

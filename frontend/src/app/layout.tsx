@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
-
 export const metadata: Metadata = {
   metadataBase: new URL("https://dsiq.app"),
   title: {
@@ -12,6 +11,11 @@ export const metadata: Metadata = {
   description:
     "DSIQ helps students, developers, freelancers, and entrepreneurs discover the right path, take action, and stay consistent.",
   applicationName: "DSIQ",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   keywords: [
     "AI coach",
     "career guidance",
@@ -47,6 +51,14 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased"
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>
       </body>

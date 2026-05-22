@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { DsiqLogo } from "@/components/dsiq-logo";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -19,11 +20,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-30 border-b border-white/60 bg-[color:var(--color-surface)]/85 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-text)]">
-              DSIQ
-            </span>
-          </Link>
+          <DsiqLogo href="/" />
 
           <nav className="hidden items-center gap-8 lg:flex">
             {navItems.map((item) => (

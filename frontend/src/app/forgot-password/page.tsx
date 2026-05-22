@@ -1,98 +1,98 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { sendPasswordResetEmail } from "firebase/auth";
 
-import { AuthPageGuard } from "@/components/auth-page-guard";
-import { useAuth } from "@/components/auth-provider";
+import { AuthShell } from "@/components/auth-shell";
+import { auth } from "@/lib/firebase";
+
+function getAuthErrorMessage(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+
+  if (code.includes("invalid-email")) {
+    return "Enter a valid email address.";
+  }
+
+  if (code.includes("user-not-found")) {
+    return "No account exists with this email.";
+  }
+
+  return "We could not send the reset email. Please try again.";
+}
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { authMessage, resetPassword } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage("");
+    setError("");
+
+    if (!auth) {
+      setError("Firebase is not configured yet.");
+      return;
+    }
 
     try {
-      setIsSubmitting(true);
-      setError("");
-      setSuccess("");
-
-      const message = await resetPassword(email);
-      setSuccess(message);
-    } catch (nextError) {
-      const message =
-        nextError instanceof Error
-          ? nextError.message
-          : "Unable to send reset email.";
-      setError(message);
+      setIsLoading(true);
+      await sendPasswordResetEmail(auth, email);
+      setMessage("Reset link sent. Check your email for the next step.");
+    } catch (submissionError) {
+      setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   }
 
   return (
-    <AuthPageGuard>
-      <main className="hero-grid flex min-h-screen items-center justify-center px-6 py-16">
-        <div className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-8 shadow-[0_30px_90px_rgba(11,37,39,0.12)] lg:p-12">
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-[color:var(--color-brand)]"
-          >
-            Back to login
-          </Link>
-          <p className="mt-6 text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-            Forgot password
+    <AuthShell
+      title="Reset your password"
+      description="Enter your email and DSIQ will send a secure reset link."
+    >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <label className="block">
+          <span className="text-sm font-medium text-[color:var(--color-text)]">Email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+            className="mt-2 w-full rounded-[var(--radius-md)] border border-[color:var(--color-line)] bg-[color:var(--color-background)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+            placeholder="you@example.com"
+          />
+        </label>
+
+        {message ? (
+          <p className="rounded-[var(--radius-md)] border border-[color:var(--color-brand)]/30 bg-[color:var(--color-brand-soft)] px-4 py-3 text-sm text-[color:var(--color-text)]">
+            {message}
           </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[color:var(--color-text)]">
-            Reset your password
-          </h1>
-          <p className="mt-4 text-base leading-8 text-[color:var(--color-muted)]">
-            Enter the email connected to your DSIQ account and we&apos;ll send
-            you reset instructions.
+        ) : null}
+
+        {error ? (
+          <p className="rounded-[var(--radius-md)] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
           </p>
+        ) : null}
 
-          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
-            />
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full rounded-[var(--radius-md)] bg-[color:var(--color-brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isLoading ? "Sending reset link..." : "Send reset link"}
+        </button>
+      </form>
 
-            {authMessage ? (
-              <p className="rounded-2xl bg-[color:var(--color-brand-soft)]/45 px-4 py-3 text-sm text-[color:var(--color-text)]">
-                {authMessage}
-              </p>
-            ) : null}
-
-            {error ? (
-              <p className="rounded-2xl bg-[#fff5e7] px-4 py-3 text-sm text-[color:var(--color-text)]">
-                {error}
-              </p>
-            ) : null}
-
-            {success ? (
-              <p className="rounded-2xl bg-[color:var(--color-brand-soft)]/45 px-4 py-3 text-sm text-[color:var(--color-text)]">
-                {success}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-full bg-[color:var(--color-brand)] px-6 py-4 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "Sending..." : "Send Reset Link"}
-            </button>
-          </form>
-        </div>
-      </main>
-    </AuthPageGuard>
+      <p className="mt-6 text-center text-sm text-[color:var(--color-muted)]">
+        <Link href="/login" className="font-semibold text-[color:var(--color-brand)]">
+          Back to login
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

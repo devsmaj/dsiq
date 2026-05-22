@@ -1,59 +1,14 @@
-
-> dev:frontend
-> npm run dev --workspace frontend
-
-
-> @dsiq/frontend@0.1.0 dev
-> next dev
-
 ▲ Next.js 16.2.6 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.17.246:3000
-✓ Ready in 6.7s
+✓ Ready in 17.0s
 Creating turbopack project { dir: 'C:\\Users\\Dell\\Desktop\\dsiq\\frontend', testMode: true }
 
 ○ Compiling / ...
- GET / 200 in 2.1min (next.js: 101s, application-code: 25.9s)
-✓ Finished writing to filesystem cache in 59s
- GET / 200 in 19.4s (next.js: 15.1s, application-code: 4.3s)
-○ Compiling /signup ...
- GET / 200 in 10.7s (next.js: 8.2s, application-code: 2.5s)
-✓ Finished writing to filesystem cache in 16.5s
- GET /signup 200 in 2.4min (next.js: 2.3min, application-code: 861ms)
-✓ Finished writing to filesystem cache in 27.5s
-✓ Finished filesystem cache database compaction in 12.3s
-✓ Compiled in 12.5s
-✓ Compiled in 31.8s
-✓ Finished writing to filesystem cache in 29.3s
-✓ Compiled in 8.1s
-✓ Compiled in 472ms
-✓ Finished writing to filesystem cache in 10.2s
-✓ Compiled in 1945ms
-✓ Finished filesystem cache database compaction in 19.5s
-✓ Compiled in 1415ms
-✓ Compiled in 38.1s
-✓ Finished writing to filesystem cache in 27.1s
-✓ Compiled in 26.1s
-○ Compiling /signup ...
- GET /signup 200 in 109s (next.js: 65s, application-code: 44s)
- GET /signup 200 in 19.1s (next.js: 13.0s, application-code: 6.1s)
- GET /signup 200 in 21.4s (next.js: 17.8s, application-code: 3.6s)
- GET /signup 200 in 19.6s (next.js: 16.5s, application-code: 3.1s)
- GET /signup 200 in 19.6s (next.js: 16.2s, application-code: 3.5s)
- GET /signup 200 in 18.1s (next.js: 15.1s, application-code: 3.0s)
- GET /signup 200 in 19.6s (next.js: 15.0s, application-code: 4.6s)
- GET /signup 200 in 586ms (next.js: 169ms, application-code: 417ms)
- GET /signup 200 in 2.9s (next.js: 1482ms, application-code: 1457ms)
-✓ Finished writing to filesystem cache in 43s
- GET /signup 200 in 822ms (next.js: 730ms, application-code: 91ms)
-○ Compiling /login ...
-✓ Finished writing to filesystem cache in 28.8s
- GET /signup 200 in 20.5s (next.js: 9.7s, application-code: 10.8s)
- GET /signup 200 in 304ms (next.js: 195ms, application-code: 109ms)
-✓ Finished writing to filesystem cache in 31.5s
-✓ Finished filesystem cache database compaction in 2.8min
-✓ Finished writing to filesystem cache in 96s
-✓ Finished writing to filesystem cache in 2.6min
-✓ Finished writing to filesystem cache in 76s
-✓ Finished filesystem cache database compaction in 17.2s
-✓ Finished filesystem cache database compaction in 105s
+✓ Finished writing to filesystem cache in 36.5s
+✓ Finished writing to filesystem cache in 40s
+✓ Finished filesystem cache database compaction in 99s
+✓ Finished writing to filesystem cache in 17.1s
+✓ Finished writing to filesystem cache in 27.9s
+✓ Finished writing to filesystem cache in 46s
+✓ Finished writing to filesystem cache in 19.3s

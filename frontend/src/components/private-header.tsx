@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
+import { DsiqLogo } from "@/components/dsiq-logo";
 
 const privateNavItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -36,11 +37,7 @@ export function PrivateHeader() {
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center">
-            <span className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-text)]">
-              DSIQ
-            </span>
-          </Link>
+          <DsiqLogo href="/dashboard" />
 
           <nav className="hidden items-center gap-7 lg:flex">
             {privateNavItems.map((item) => (

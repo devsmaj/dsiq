@@ -254,3 +254,149 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 ## Immediate Next Step
 
 - [x] Start with the Home page only
+
+---
+
+# DSIQ UI/UX Design Roadmap
+
+## Phase 1 - Brand Identity
+
+- [x] Finalize DSIQ logo
+- [x] Create favicon
+- [x] Choose brand colors
+- [x] Add Inter font
+- [x] Create typography system
+- [x] Create spacing system
+- [x] Create border radius system
+
+## Colors
+
+### Backgrounds
+
+- [x] Main background: `#0D0D0D`
+- [x] Secondary background: `#171717`
+- [x] Border color: `#2A2A2A`
+
+### Text
+
+- [x] Primary text: `#FFFFFF`
+- [x] Secondary text: `#A1A1AA`
+
+### Brand Colors
+
+- [x] Primary green: `#10A37F`
+- [x] Hover green: `#0D8C6D`
+
+## Components
+
+### Buttons
+
+- [ ] Primary button
+- [ ] Secondary button
+- [ ] Hover animation
+- [ ] Disabled button state
+
+### Inputs
+
+- [ ] Email input
+- [ ] Password input
+- [ ] Search input
+- [ ] Focus states
+
+### Cards
+
+- [ ] Feature card
+- [ ] Opportunity card
+- [ ] Dashboard stat card
+
+### Navigation
+
+- [ ] Desktop navbar
+- [ ] Mobile navbar
+- [ ] Mobile hamburger menu
+
+## Public Pages
+
+### Homepage
+
+- [ ] Hero section
+- [ ] Problem section
+- [ ] Solution section
+- [ ] Features section
+- [ ] Target users section
+- [ ] Pricing preview
+- [ ] CTA section
+- [ ] Footer
+
+### Login / Signup
+
+- [x] Signup form
+- [x] Login form
+- [x] Forgot password
+- [x] Form validation
+- [x] Loading states
+
+### Pricing
+
+- [ ] Free plan card
+- [ ] Pro plan card
+- [ ] FAQ section
+
+## Private Pages
+
+### Dashboard
+
+- [ ] Welcome section
+- [ ] Coach message card
+- [ ] Weekly missions card
+- [ ] Opportunity card
+- [ ] Progress overview
+
+### AI Coach
+
+- [ ] Chat layout
+- [ ] Message bubbles
+- [ ] Typing animation
+- [ ] AI response card
+
+### Missions
+
+- [ ] Mission checklist
+- [ ] Complete task button
+- [ ] Progress percentage
+
+### Progress
+
+- [ ] Streak system
+- [ ] Goal tracking
+- [ ] AI accountability warning
+
+## Mobile Responsiveness
+
+- [ ] iPhone responsive
+- [ ] Android responsive
+- [ ] Tablet responsive
+- [ ] Navbar mobile menu
+- [ ] Touch-friendly buttons
+- [ ] Responsive cards
+- [ ] Responsive typography
+
+## UX Improvements
+
+- [ ] Smooth transitions
+- [ ] Loading skeletons
+- [ ] Empty states
+- [ ] Error states
+- [ ] Toast notifications
+- [ ] Scroll animations
+- [ ] Dark mode polish
+
+## Final Polish
+
+- [ ] Consistent spacing
+- [ ] Consistent button style
+- [ ] Consistent typography
+- [ ] Accessibility check
+- [ ] Performance optimization
+- [ ] SEO optimization
+- [ ] PWA support

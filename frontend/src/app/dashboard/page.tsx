@@ -1,215 +1,197 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Menu, Mic, Plus, Send, X } from "lucide-react";
 
-import { PrivateFooter } from "@/components/private-footer";
-import { PrivateHeader } from "@/components/private-header";
+import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
-import { ProfileStatePanel } from "@/components/profile-state-panel";
-import { type OnboardingAnswers } from "@/lib/user-profile-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
-const defaultMissionItems = [
-  "Finish portfolio landing page draft",
-  "Apply to 2 remote internship roles",
-  "Complete one UI case study review",
+const menuItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/coach", label: "AI Coach" },
+  { href: "/missions", label: "Missions" },
+  { href: "/opportunities", label: "Opportunities" },
+  { href: "/progress", label: "Progress" },
+  { href: "/profile", label: "Profile" },
+  { href: "/settings", label: "Settings" },
 ];
 
-function buildMissionItems(answers?: OnboardingAnswers) {
-  if (!answers) {
-    return defaultMissionItems;
-  }
-
-  return [
-    `Take one concrete step toward: ${answers.goal}.`,
-    `Spend ${answers.time.toLowerCase()} this week improving: ${answers.skills.toLowerCase()}.`,
-    `Explore one ${answers.interest.toLowerCase()} path that fits a ${answers.budget.toLowerCase()} budget.`,
-  ];
-}
-
-function buildOpportunity(answers?: OnboardingAnswers) {
-  if (!answers) {
-    return {
-      title: "Junior product designer fellowship",
-      body: "Best fit for your current goals, skill profile, and available time. DSIQ recommends preparing a focused case study and applying this week.",
-      score: "91%",
-    };
-  }
-
-  return {
-    title: `${answers.interest} matched to ${answers.goal.toLowerCase()}`,
-    body: `DSIQ is prioritizing ${answers.interest.toLowerCase()} opportunities that align with ${answers.skills.toLowerCase()}, your ${answers.time.toLowerCase()} schedule, and a ${answers.budget.toLowerCase()} budget.`,
-    score: "89%",
-  };
-}
-
-function buildCoachAdvice(answers?: OnboardingAnswers) {
-  if (!answers) {
-    return {
-      title: "Focus on visible progress, not perfect preparation.",
-      body: "Finish one public-facing proof of work today, then send it out. Momentum grows when your effort becomes visible.",
-    };
-  }
-
-  return {
-    title: `Use your ${answers.time.toLowerCase()} wisely and make ${answers.goal.toLowerCase()} visible.`,
-    body: `Your strongest near-term leverage is to turn ${answers.skills.toLowerCase()} into one concrete output and connect it to ${answers.interest.toLowerCase()} opportunities.`,
-  };
-}
-
-function buildProgressStats(answers?: OnboardingAnswers) {
-  return [
-    { label: "Consistency streak", value: answers ? answers.time : "12 days" },
-    { label: "Primary skill", value: answers ? answers.skills : "18" },
-    { label: "Current focus", value: answers ? answers.interest : "84%" },
-  ];
-}
+const quickActions = [
+  "Find my best opportunity",
+  "Create weekly missions",
+  "Check my progress",
+  "Build my learning path",
+];
 
 export default function DashboardPage() {
-  const { answers, authMessage, hasAnswers, isProfileLoading, profileError, user } =
-    useUserProfile();
+  const router = useRouter();
+  const { logout } = useAuth();
+  const { user } = useUserProfile();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const missionItems = useMemo(() => buildMissionItems(answers), [answers]);
-  const opportunity = useMemo(() => buildOpportunity(answers), [answers]);
-  const coachAdvice = useMemo(() => buildCoachAdvice(answers), [answers]);
-  const progressStats = useMemo(() => buildProgressStats(answers), [answers]);
+  const initials =
+    user?.displayName
+      ?.split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "S";
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "there";
+  async function handleLogout() {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      router.replace("/login");
+    } finally {
+      setIsLoggingOut(false);
+      setIsMenuOpen(false);
+    }
+  }
 
   return (
     <PrivateRoute>
-      <div className="min-h-screen bg-[color:var(--color-background)]">
-        <PrivateHeader />
+      <div className="min-h-screen bg-[#F4F7FB] text-[#111827]">
+        <header className="fixed inset-x-0 top-0 z-40 border-b border-[#E5E7EB] bg-[#F4F7FB]/90 backdrop-blur">
+          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setIsMenuOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#111827] transition hover:bg-white"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
 
-        <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8">
-          <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-[2rem] bg-[linear-gradient(145deg,#0b2527_0%,#11484a_55%,#007a66_100%)] p-8 text-white shadow-[0_28px_70px_rgba(11,37,39,0.22)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
-                Welcome message
-              </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-                Welcome back, {displayName}. Your next best action is ready.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-white/78">
-                {answers
-                  ? `DSIQ is now tailoring your dashboard around ${answers.goal.toLowerCase()}, ${answers.skills.toLowerCase()}, and ${answers.interest.toLowerCase()}.`
-                  : "DSIQ has prepared your coach advice, mission focus, opportunity match, and progress snapshot for today."}
-              </p>
-            </div>
+            <Link href="/dashboard" className="text-lg font-semibold tracking-[0.16em] text-[#111827]">
+              DSIQ
+            </Link>
 
-            <div className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                Today&apos;s coach advice
-              </p>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                {coachAdvice.title}
-              </h2>
-              <p className="mt-4 text-sm leading-8 text-[color:var(--color-muted)]">
-                {coachAdvice.body}
-              </p>
-            </div>
-          </section>
+            <Link
+              href="/profile"
+              aria-label="Open profile"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#10A37F] text-sm font-semibold text-white shadow-sm"
+            >
+              {initials}
+            </Link>
+          </div>
+        </header>
 
-          <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
-            <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                Weekly mission summary
-              </p>
-              <div className="mt-6 space-y-4">
-                {missionItems.map((item, index) => (
-                  <div
-                    key={item}
-                    className="flex items-start gap-4 rounded-2xl bg-[color:var(--color-surface)] px-4 py-4"
-                  >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[color:var(--color-brand-soft)] text-sm font-semibold text-[color:var(--color-brand)]">
-                      0{index + 1}
-                    </span>
-                    <p className="text-sm leading-7 text-[color:var(--color-text)]">
-                      {item}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </article>
+        <div
+          className={`fixed inset-0 z-50 bg-black/25 transition-opacity ${
+            isMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+          onClick={() => setIsMenuOpen(false)}
+        />
 
-            <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-                Recommended opportunity
-              </p>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                {opportunity.title}
-              </h2>
-              <p className="mt-4 text-sm leading-8 text-[color:var(--color-muted)]">
-                {opportunity.body}
-              </p>
-              <div className="mt-6 inline-flex rounded-full bg-[color:var(--color-cream)] px-4 py-2 text-sm font-semibold text-[color:var(--color-brand)]">
-                Match score: {opportunity.score}
-              </div>
-            </article>
-          </section>
+        <aside
+          className={`fixed left-0 top-0 z-50 h-full w-[82vw] max-w-80 border-r border-[#E5E7EB] bg-white px-5 py-5 shadow-2xl transition-transform duration-300 ${
+            isMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+          aria-hidden={!isMenuOpen}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-base font-semibold tracking-[0.16em]">DSIQ</span>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setIsMenuOpen(false)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#111827] transition hover:bg-[#F4F7FB]"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
 
-          <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-              Progress overview
-            </p>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              {progressStats.map((stat) => (
-                <article
-                  key={stat.label}
-                  className="rounded-[1.5rem] bg-[color:var(--color-surface)] p-6"
+          <nav className="mt-8 flex flex-col gap-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="rounded-lg px-3 py-3 text-sm font-medium text-[#111827] transition hover:bg-[#F4F7FB]"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mt-2 rounded-lg px-3 py-3 text-left text-sm font-medium text-[#111827] transition hover:bg-[#F4F7FB] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
+          </nav>
+        </aside>
+
+        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-36 pt-24 sm:px-6 lg:px-8">
+          <section className="flex flex-1 flex-col justify-center py-8 sm:py-12 lg:py-16">
+            <h1 className="mx-auto max-w-5xl text-center text-4xl font-medium leading-tight text-[#111827] sm:text-5xl lg:text-6xl">
+              I can help you find opportunities, build your path, and stay accountable.
+              What should we do?
+            </h1>
+
+            <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:mx-auto lg:mt-14 lg:w-full lg:max-w-5xl lg:grid-cols-4">
+              {quickActions.map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  className="rounded-lg border border-[#E5E7EB] bg-white p-5 text-left text-sm font-medium leading-6 text-[#111827] shadow-sm transition hover:border-[#10A37F] hover:shadow-md"
                 >
-                  <p className="text-sm text-[color:var(--color-muted)]">
-                    {stat.label}
-                  </p>
-                  <p className="mt-3 text-3xl font-semibold text-[color:var(--color-text)]">
-                    {stat.value}
-                  </p>
-                </article>
+                  {action}
+                </button>
               ))}
             </div>
           </section>
-
-          {isProfileLoading ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Loading"
-                body="We are loading your saved profile, onboarding answers, and personalized dashboard recommendations."
-              />
-            </div>
-          ) : null}
-
-          {profileError ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Profile Error"
-                body={profileError}
-                tone="error"
-              />
-            </div>
-          ) : null}
-
-          {!isProfileLoading && !profileError && !hasAnswers ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Finish Onboarding"
-                body="Your dashboard is ready, but it still needs your goal, skills, time, budget, and interest answers before it can personalize the rest of your experience."
-                actionHref="/onboarding"
-                actionLabel="Complete Onboarding"
-              />
-            </div>
-          ) : null}
-
-          {authMessage ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Auth Mode"
-                body={authMessage}
-              />
-            </div>
-          ) : null}
         </main>
 
-        <PrivateFooter />
+        <div className="fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-[#F4F7FB] via-[#F4F7FB] to-transparent px-4 pb-4 pt-8 sm:px-6">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-[#E5E7EB] bg-white p-3 shadow-[0_18px_45px_rgba(17,24,39,0.12)]">
+            <div className="flex items-end gap-2">
+              <button
+                type="button"
+                aria-label="Add attachment"
+                className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#6B7280] transition hover:bg-[#F4F7FB] hover:text-[#111827]"
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+              </button>
+
+              <textarea
+                rows={1}
+                placeholder="Ask DSIQ"
+                className="min-h-12 flex-1 resize-none bg-transparent px-1 py-3 text-base text-[#111827] outline-none placeholder:text-[#6B7280]"
+              />
+
+              <button
+                type="button"
+                className="mb-1 hidden rounded-full border border-[#E5E7EB] px-4 py-2 text-sm font-medium text-[#111827] transition hover:border-[#10A37F] sm:inline-flex"
+              >
+                Coach
+              </button>
+
+              <button
+                type="button"
+                aria-label="Use microphone"
+                className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#6B7280] transition hover:bg-[#F4F7FB] hover:text-[#111827]"
+              >
+                <Mic className="h-5 w-5" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                aria-label="Send message"
+                className="mb-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#10A37F] text-white transition hover:bg-[#0D8C6D]"
+              >
+                <Send className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </PrivateRoute>
   );
