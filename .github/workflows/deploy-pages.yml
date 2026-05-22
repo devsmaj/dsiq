@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Linux CSS native package
-        run: npm install lightningcss-linux-x64-gnu --workspace frontend --no-save
+      - name: Install Linux CSS native packages
+        run: npm install lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu --workspace frontend --no-save
 
       - name: Build static frontend
         run: npm run build:frontend
