@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
@@ -35,21 +36,21 @@ export function PrivateHeader() {
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <a href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center">
             <span className="text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--color-text)]">
               DSIQ
             </span>
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-7 lg:flex">
             {privateNavItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
                 className="text-sm font-medium text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -81,14 +82,14 @@ export function PrivateHeader() {
           <div className="mt-4 rounded-[1.75rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_40px_rgba(11,37,39,0.08)] lg:hidden">
             <nav className="flex flex-col gap-2">
               {privateNavItems.map((item) => (
-                <a
+                <Link
                   key={item.label}
                   href={item.href}
                   className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface)]"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
 

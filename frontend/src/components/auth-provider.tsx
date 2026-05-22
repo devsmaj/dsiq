@@ -22,7 +22,10 @@ import {
 } from "firebase/auth";
 
 import { auth, hasFirebaseConfig } from "@/lib/firebase";
-import { syncFirebaseUserRecord } from "@/lib/firebase-user-records";
+import {
+  deleteFirebaseUserRecord,
+  syncFirebaseUserRecord,
+} from "@/lib/firebase-user-records";
 
 type AppUser = {
   uid: string;
@@ -292,6 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
+          await deleteFirebaseUserRecord(auth.currentUser.uid);
           await deleteUser(auth.currentUser);
           setUser(null);
         } catch (error) {

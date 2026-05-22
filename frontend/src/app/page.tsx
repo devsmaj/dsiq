@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PublicFooter } from "@/components/public-footer";
 import { PublicHeader } from "@/components/public-header";
 
@@ -57,18 +58,18 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row">
-                <a
+                <Link
                   href="/signup"
                   className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-center text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.26)] transition hover:bg-[color:var(--color-brand-strong)]"
                 >
                   Get Started
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/how-it-works"
                   className="rounded-full border border-[color:var(--color-line)] px-7 py-4 text-center text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
                 >
                   See How It Works
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -202,12 +203,12 @@ export default function Home() {
                 Built for direction, momentum, and accountability.
               </h2>
             </div>
-            <a
+            <Link
               href="/features"
               className="text-sm font-semibold text-[color:var(--color-brand)]"
             >
               Explore all features
-            </a>
+            </Link>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -295,18 +296,18 @@ export default function Home() {
               missions, and opportunities designed around your goals.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-              <a
+              <Link
                 href="/signup"
                 className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-strong)]"
               >
                 Create Account
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/contact"
                 className="rounded-full border border-[color:var(--color-line)] px-7 py-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
               >
                 Contact Us
-              </a>
+              </Link>
             </div>
           </div>
         </section>

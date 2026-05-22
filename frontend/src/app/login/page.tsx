@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { AuthPageGuard } from "@/components/auth-page-guard";
 import { useAuth } from "@/components/auth-provider";
@@ -13,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { authMessage, login } = useAuth();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -24,6 +24,7 @@ export default function LoginPage() {
       setError("");
 
       await login({ email, password, rememberMe });
+      const searchParams = new URLSearchParams(window.location.search);
       router.replace(searchParams.get("next") || "/dashboard");
     } catch (nextError) {
       const message =
@@ -39,11 +40,11 @@ export default function LoginPage() {
       <main className="hero-grid flex min-h-screen items-center justify-center px-6 py-16">
         <div className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_90px_rgba(11,37,39,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
           <section className="bg-[linear-gradient(160deg,#0b2527_0%,#11484a_48%,#007a66_100%)] px-8 py-12 text-white lg:px-12 lg:py-16">
-            <a href="/" className="inline-flex items-center">
+            <Link href="/" className="inline-flex items-center">
               <span className="text-lg font-semibold tracking-[0.18em]">
                 DSIQ
               </span>
-            </a>
+            </Link>
 
             <div className="mt-16 max-w-md space-y-6">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -116,12 +117,12 @@ export default function LoginPage() {
                     >
                       Password
                     </label>
-                    <a
+                    <Link
                       href="/forgot-password"
                       className="text-sm font-medium text-[color:var(--color-brand)]"
                     >
                       Forgot password?
-                    </a>
+                    </Link>
                   </div>
                   <input
                     id="password"
@@ -176,12 +177,12 @@ export default function LoginPage() {
               <div className="mt-8 rounded-3xl bg-[color:var(--color-surface)] p-5">
                 <p className="text-sm text-[color:var(--color-muted)]">
                   New to DSIQ?{" "}
-                  <a
+                  <Link
                     href="/signup"
                     className="font-semibold text-[color:var(--color-brand)]"
                   >
                     Create an account
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>

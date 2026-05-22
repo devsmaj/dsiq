@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
 
 export function AuthPageGuard({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isLoading && user) {
+      const searchParams = new URLSearchParams(window.location.search);
       router.replace(searchParams.get("next") || "/dashboard");
     }
-  }, [isLoading, router, searchParams, user]);
+  }, [isLoading, router, user]);
 
   if (isLoading) {
     return (

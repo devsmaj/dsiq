@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
 import type { OnboardingAnswers } from "@/lib/user-profile-store";
@@ -89,4 +89,13 @@ export async function getFirebaseUserProfile(uid: string) {
   }
 
   return snapshot.data() as FirebaseUserProfile;
+}
+
+export async function deleteFirebaseUserRecord(uid: string) {
+  if (!db) {
+    return;
+  }
+
+  const userRef = doc(db, "users", uid);
+  await deleteDoc(userRef);
 }

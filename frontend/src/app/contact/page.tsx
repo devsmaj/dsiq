@@ -25,6 +25,40 @@ const initialFormState: FormState = {
   message: "",
 };
 
+function buildMailtoUrl(form: FormState) {
+  const body = [
+    `Name: ${form.name}`,
+    `Email: ${form.email}`,
+    "",
+    form.message,
+  ].join("\n");
+
+  return `mailto:hello@dsiq.app?subject=${encodeURIComponent(
+    form.subject,
+  )}&body=${encodeURIComponent(body)}`;
+}
+
+function saveFallbackSubmission(form: FormState) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const storageKey = "dsiq.contact-submissions";
+  const existing = window.localStorage.getItem(storageKey);
+  const submissions = existing ? (JSON.parse(existing) as unknown[]) : [];
+
+  window.localStorage.setItem(
+    storageKey,
+    JSON.stringify([
+      ...submissions,
+      {
+        ...form,
+        submittedAt: new Date().toISOString(),
+      },
+    ]),
+  );
+}
+
 export default function ContactPage() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,21 +78,23 @@ export default function ContactPage() {
     try {
       setIsSubmitting(true);
 
+      saveFallbackSubmission(form);
       const mailtoSubject = encodeURIComponent(form.subject.trim());
       const mailtoBody = encodeURIComponent(
-        `Name: ${form.name.trim()}\nEmail: ${form.email.trim()}\n\n${form.message.trim()}`
+        `Name: ${form.name.trim()}\nEmail: ${form.email.trim()}\n\n${form.message.trim()}`,
       );
 
       window.location.href = `mailto:hello@dsiq.app?subject=${mailtoSubject}&body=${mailtoBody}`;
 
       setSuccess("Your email app should now open with your message pre-filled.");
       setForm(initialFormState);
-    } catch (submissionError) {
-      setError(
-        submissionError instanceof Error
-          ? submissionError.message
-          : "We could not send your message right now.",
+    } catch {
+      saveFallbackSubmission(form);
+      window.location.href = buildMailtoUrl(form);
+      setSuccess(
+        "Your email app is opening with this message. We also saved a local copy in this browser.",
       );
+      setForm(initialFormState);
     } finally {
       setIsSubmitting(false);
     }

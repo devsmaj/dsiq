@@ -153,7 +153,8 @@ export default function SettingsPage() {
               <p className="mt-4 text-sm leading-8 text-[#7a2d2d]">
                 This action removes your current account session permanently. In
                 local demo mode it clears your local DSIQ data from this browser.
-                In Firebase mode you may be asked to log in again before deletion.
+                In Firebase mode it also removes your saved DSIQ user record, and
+                you may be asked to log in again before deletion.
               </p>
               <label className="mt-6 block">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b3c3c]">

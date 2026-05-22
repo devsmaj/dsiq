@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 
 import { AuthPageGuard } from "@/components/auth-page-guard";
 import { useAuth } from "@/components/auth-provider";
@@ -37,12 +38,12 @@ export default function ForgotPasswordPage() {
     <AuthPageGuard>
       <main className="hero-grid flex min-h-screen items-center justify-center px-6 py-16">
         <div className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-8 shadow-[0_30px_90px_rgba(11,37,39,0.12)] lg:p-12">
-          <a
+          <Link
             href="/login"
             className="text-sm font-semibold text-[color:var(--color-brand)]"
           >
             Back to login
-          </a>
+          </Link>
           <p className="mt-6 text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             Forgot password
           </p>

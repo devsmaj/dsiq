@@ -74,6 +74,24 @@ From the repo root:
 - `npm run build:frontend` builds the frontend
 - `npm run build:backend` builds the backend
 
+## GitHub Pages Deploy
+
+The frontend is configured for static export and deploys from GitHub Actions.
+
+1. Push changes to the `main` branch.
+2. In GitHub, open `Settings > Pages`.
+3. Set `Build and deployment` to `GitHub Actions`.
+4. The site will publish to `https://devsmaj.github.io/dsiq/`.
+
+Add Firebase public config as repository secrets if you want live Firebase auth:
+
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+
 ## Current Status
 
 Early startup MVP development with a clean frontend/backend structure in place.

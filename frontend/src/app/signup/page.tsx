@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { AuthPageGuard } from "@/components/auth-page-guard";
@@ -40,11 +41,11 @@ export default function SignupPage() {
       <main className="hero-grid flex min-h-screen items-center justify-center px-6 py-16">
         <div className="grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-[0_30px_90px_rgba(11,37,39,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
           <section className="bg-[linear-gradient(160deg,#0b2527_0%,#11484a_48%,#007a66_100%)] px-8 py-12 text-white lg:px-12 lg:py-16">
-            <a href="/" className="inline-flex items-center">
+            <Link href="/" className="inline-flex items-center">
               <span className="text-lg font-semibold tracking-[0.18em]">
                 DSIQ
               </span>
-            </a>
+            </Link>
 
             <div className="mt-16 max-w-md space-y-6">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -123,12 +124,12 @@ export default function SignupPage() {
 
               <p className="mt-8 text-sm text-[color:var(--color-muted)]">
                 Already have an account?{" "}
-                <a
+                <Link
                   href="/login"
                   className="font-semibold text-[color:var(--color-brand)]"
                 >
                   Sign in
-                </a>
+                </Link>
               </p>
             </div>
           </section>
