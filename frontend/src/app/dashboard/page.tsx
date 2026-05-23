@@ -1,10 +1,13 @@
 "use client";
 
 import { Circle, Menu, Mic, Plus, Search } from "lucide-react";
+import { useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
 
 function Composer() {
+  const [isRecording, setIsRecording] = useState(false);
+
   return (
     <div className="w-full rounded-[22px] border border-[#d9d9d9] bg-[#f4f4f4] px-4 py-3 shadow-[0_8px_16px_rgba(0,0,0,0.04)]">
       <div className="flex items-center gap-3">
@@ -15,12 +18,20 @@ function Composer() {
           className="h-8 flex-1 bg-transparent text-[16px] text-[#252525] outline-none placeholder:text-[#9a9a9a]"
         />
         <button className="hidden text-sm text-[#737373] sm:inline-flex">Instant</button>
-        <Mic className="h-4 w-4 text-[#1f1f1f]" />
+        <button
+          aria-label="Microphone"
+          className="text-[#1f1f1f] hover:opacity-70 transition-opacity"
+        >
+          <Mic className="h-4 w-4" />
+        </button>
         <button
           aria-label="Start recording"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#090909]"
+          onClick={() => setIsRecording(!isRecording)}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+            isRecording ? "bg-red-600" : "bg-[#090909]"
+          }`}
         >
-          <Circle className="h-4 w-4 fill-white text-white" />
+          <Circle className={`h-4 w-4 ${isRecording ? "text-red-600" : "fill-white text-white"}`} />
         </button>
       </div>
     </div>
@@ -31,34 +42,117 @@ export default function DashboardPage() {
   return (
     <PrivateRoute>
       <div className="min-h-screen bg-[#efefef]">
+        {/* Desktop View */}
         <div className="hidden min-h-screen md:flex">
           <aside className="flex w-[68px] flex-col items-center justify-between border-r border-[#dfdfdf] bg-[#ececec] py-5">
             <div className="flex flex-col items-center gap-6">
-              <div className="h-7 w-7 rounded-full border border-[#111]" />
-              <button aria-label="Edit" className="text-[#141414]">✎</button>
-              <Search className="h-5 w-5 text-[#141414]" />
-              <div className="h-5 w-5 rounded-full border border-[#141414]" />
+              {/* Logo */}
+              <button
+                aria-label="Logo"
+                className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#111] hover:bg-[#f0f0f0] transition-colors"
+              >
+                <span className="text-xs font-bold text-[#111]">D</span>
+              </button>
+              
+              {/* Edit */}
+              <button
+                aria-label="Edit"
+                className="text-[#141414] hover:opacity-70 transition-opacity text-lg"
+              >
+                ✎
+              </button>
+              
+              {/* Search */}
+              <button
+                aria-label="Search"
+                className="text-[#141414] hover:opacity-70 transition-opacity"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+              
+              {/* Profile */}
+              <button
+                aria-label="Profile"
+                className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#141414] hover:bg-[#141414] hover:text-white transition-colors"
+              />
             </div>
-            <div className="h-8 w-8 rounded-full bg-[#8a8a8a]" />
+            
+            {/* User Avatar */}
+            <button
+              aria-label="User menu"
+              className="h-8 w-8 rounded-full bg-[#8a8a8a] hover:bg-[#7a7a7a] transition-colors"
+            />
           </aside>
 
-          <main className="flex flex-1 items-center justify-center px-6">
-            <div className="w-full max-w-[760px]">
-              <h1 className="mb-10 text-center text-[40px] font-normal text-[#1f1f1f]">How can I help, CEO?</h1>
+          <main className="flex flex-1 items-center justify-center px-6 py-8">
+            <div className="w-full max-w-[760px] space-y-8">
+              <div className="flex items-center justify-between">
+                <div />
+                <button
+                  aria-label="Notifications"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d9d9] bg-white hover:bg-[#f9f9f9] transition-colors"
+                >
+                  <span className="text-sm">🔔</span>
+                </button>
+              </div>
+
+              <h1 className="text-center text-[40px] font-normal text-[#1f1f1f] leading-tight">
+                How can I help, CEO?
+              </h1>
+              
               <Composer />
             </div>
           </main>
         </div>
 
+        {/* Mobile View */}
         <div className="flex min-h-screen flex-col md:hidden">
-          <header className="flex items-center justify-between px-4 pt-6">
-            <Menu className="h-5 w-5 text-[#2c2c2c]" />
-            <div className="h-5 w-5 rounded-full border border-[#2c2c2c]" />
+          <header className="flex items-center justify-between px-4 pt-6 pb-4">
+            <button
+              aria-label="Menu"
+              className="text-[#2c2c2c] hover:opacity-70 transition-opacity"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <button
+              aria-label="Notifications"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d9d9] bg-white"
+            >
+              <span className="text-sm">🔔</span>
+            </button>
           </header>
 
-          <div className="flex-1" />
+          <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+            <h1 className="mb-8 text-[28px] font-normal text-[#1f1f1f] leading-tight">
+              How can I help, CEO?
+            </h1>
+          </div>
 
-          <div className="px-3 pb-3">
+          <div className="space-y-4 px-3 pb-6">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
+                aria-label="Create an image"
+              >
+                <span className="text-xl">🖼️</span>
+                <span className="text-xs text-[#666] text-center">Create an image</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
+                aria-label="Write or edit"
+              >
+                <span className="text-xl">✏️</span>
+                <span className="text-xs text-[#666] text-center">Write or edit</span>
+              </button>
+              <button
+                className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
+                aria-label="Look something up"
+              >
+                <span className="text-xl">🔍</span>
+                <span className="text-xs text-[#666] text-center">Look something up</span>
+              </button>
+            </div>
+
             <Composer />
           </div>
         </div>
