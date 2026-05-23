@@ -1,202 +1,182 @@
 "use client";
 
-import Link from "next/link";
-import { Bot, CheckCircle2, Compass, TrendingUp } from "lucide-react";
-
-import { PrivateFooter } from "@/components/private-footer";
-import { PrivateHeader } from "@/components/private-header";
-import { PrivateRoute } from "@/components/private-route";
-import { ProfileStatePanel } from "@/components/profile-state-panel";
 import {
-  buildCoachMessages,
-  buildOpportunityGroups,
-  buildProgressMetrics,
-  buildWeeklyTasks,
-} from "@/lib/personalization";
-import { useUserProfile } from "@/lib/use-user-profile";
+  ChevronDown,
+  CircleDashed,
+  Menu,
+  MessageCircle,
+  Mic,
+  Pencil,
+  Plus,
+  Search,
+  SlidersVertical,
+  Image as ImageIcon,
+  Globe2,
+  AudioLines,
+} from "lucide-react";
+
+import { PrivateRoute } from "@/components/private-route";
+
+const railItems = [
+  { label: "New chat", icon: Pencil },
+  { label: "Search", icon: Search },
+  { label: "Messages", icon: MessageCircle },
+];
+
+const actionItems = [
+  { label: "Create an image", icon: ImageIcon },
+  { label: "Write or edit", icon: Pencil },
+  { label: "Look something up", icon: Globe2 },
+];
+
+function DashboardMark() {
+  return (
+    <a
+      href="/dashboard"
+      aria-label="DSIQ dashboard"
+      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#dcdcdc] text-[8px] font-semibold leading-none text-[#111111]"
+    >
+      D
+    </a>
+  );
+}
+
+function Composer() {
+  return (
+    <form className="w-full rounded-[24px] border border-[#dedede] bg-white px-4 py-2.5 shadow-[0_18px_48px_rgba(0,0,0,0.08)]">
+      <div className="flex h-8 items-center gap-3">
+        <button
+          type="button"
+          aria-label="Add attachment"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#202020] transition hover:bg-[#f5f5f5]"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+        <input
+          type="text"
+          placeholder="Ask anything"
+          className="h-8 min-w-0 flex-1 bg-transparent text-[12px] text-[#202020] outline-none placeholder:text-[#8b8b8b]"
+        />
+        <button
+          type="button"
+          className="hidden h-8 items-center gap-1 rounded-full px-2 text-[12px] text-[#7b7b7b] transition hover:bg-[#f5f5f5] sm:inline-flex"
+        >
+          Instant
+          <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          aria-label="Microphone"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#202020] transition hover:bg-[#f5f5f5]"
+        >
+          <Mic className="h-4 w-4" />
+        </button>
+        <button
+          type="submit"
+          aria-label="Start recording"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white transition hover:bg-[#1f1f1f]"
+        >
+          <AudioLines className="h-4 w-4" />
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function QuickActions() {
+  return (
+    <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+      {actionItems.map((item) => {
+        const Icon = item.icon;
+
+        return (
+          <button
+            type="button"
+            key={item.label}
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-[#e0e0e0] bg-white px-4 text-[12px] text-[#3f3f3f] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition hover:bg-[#f8f8f8]"
+          >
+            <Icon className="h-4 w-4 text-[#5e5e5e]" aria-hidden="true" />
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Sidebar() {
+  return (
+    <aside className="flex w-[48px] flex-col items-center justify-between border-r border-[#eeeeee] bg-white py-4">
+      <div className="flex flex-col items-center gap-6 text-[#111111]">
+        <DashboardMark />
+        {railItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              aria-label={item.label}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-md transition hover:bg-[#f4f4f4]"
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#5f5f5f] text-[7px] font-semibold leading-none text-white shadow-inner">
+        SMAJ
+      </div>
+    </aside>
+  );
+}
 
 export default function DashboardPage() {
-  const { answers, authMessage, hasAnswers, isProfileLoading, profileError, user } =
-    useUserProfile();
-  const coachMessage = buildCoachMessages(answers).find(
-    (message) => message.role === "coach",
-  );
-  const weeklyTasks = buildWeeklyTasks(answers).slice(0, 3);
-  const opportunity = buildOpportunityGroups(answers)[0];
-  const progressMetrics = buildProgressMetrics(answers);
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "Builder";
-
   return (
     <PrivateRoute>
-      <div className="min-h-screen bg-[color:var(--color-background)]">
-        <PrivateHeader />
+      <div className="min-h-screen bg-[#f5f5f5] p-0.5 text-[#111111]">
+        <div className="hidden min-h-[calc(100vh-4px)] overflow-hidden rounded-[9px] border border-[#d8d8d8] bg-white md:flex">
+          <Sidebar />
 
-        <main className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8">
-          <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <article className="rounded-[2rem] bg-[linear-gradient(145deg,#0b2527_0%,#11484a_55%,#007a66_100%)] p-8 text-white shadow-[0_28px_70px_rgba(11,37,39,0.22)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
-                Welcome section
-              </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                Welcome back, {displayName}. Your next move is already taking shape.
+          <main className="relative flex flex-1 items-center justify-center px-8">
+            <button
+              type="button"
+              aria-label="Activity"
+              className="absolute right-8 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#111111] transition hover:bg-[#f5f5f5]"
+            >
+              <CircleDashed className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+
+            <div className="w-full max-w-[694px] -translate-y-2">
+              <h1 className="mb-11 text-center text-[22px] font-normal leading-tight text-[#111111]">
+                What&apos;s on your mind today?
               </h1>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-white/78">
-                DSIQ is tracking your coaching context, weekly missions, best-fit
-                opportunities, and progress signals in one focused workspace.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/coach" className="btn-primary bg-[#ffffff] text-[#0d3d3a] hover:bg-[#ffffff]">
-                  Ask Coach
-                </Link>
-                <Link href="/missions" className="btn-secondary border-white/25 text-white hover:border-white hover:text-white">
-                  View Missions
-                </Link>
-              </div>
-            </article>
-
-            <article className="surface-card p-8">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand)]">
-                  <Bot className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                    Coach message card
-                  </p>
-                  <h2 className="mt-1 text-xl font-semibold text-[color:var(--color-text)]">
-                    Today&apos;s advice
-                  </h2>
-                </div>
-              </div>
-              <p className="mt-6 text-sm leading-8 text-[color:var(--color-muted)]">
-                {coachMessage?.text}
-              </p>
-              <div className="mt-6 flex items-center gap-2 text-[color:var(--color-brand)]">
-                <span className="typing-dot" />
-                <span className="typing-dot [animation-delay:120ms]" />
-                <span className="typing-dot [animation-delay:240ms]" />
-                <span className="text-xs font-semibold uppercase tracking-[0.18em]">
-                  AI ready
-                </span>
-              </div>
-            </article>
-          </section>
-
-          <section className="mt-6 grid gap-6 lg:grid-cols-3">
-            <article className="surface-card p-8 lg:col-span-2">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                    Weekly missions card
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                    Priority checklist
-                  </h2>
-                </div>
-                <CheckCircle2 className="h-6 w-6 text-[color:var(--color-brand)]" aria-hidden="true" />
-              </div>
-              <div className="mt-6 space-y-3">
-                {weeklyTasks.map((task) => (
-                  <label
-                    key={task}
-                    className="flex items-start gap-4 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] px-4 py-4"
-                  >
-                    <input
-                      type="checkbox"
-                      className="mt-1 h-4 w-4 rounded border-[color:var(--color-line)] accent-[color:var(--color-brand)]"
-                    />
-                    <span className="text-sm leading-7 text-[color:var(--color-text)]">
-                      {task}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </article>
-
-            <article className="opportunity-card">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-brand)]">
-                    Opportunity card
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                    {opportunity.title}
-                  </h2>
-                </div>
-                <Compass className="h-6 w-6 text-[color:var(--color-brand)]" aria-hidden="true" />
-              </div>
-              <p className="mt-5 text-sm leading-8 text-[color:var(--color-muted)]">
-                {opportunity.items[0]}
-              </p>
-              <Link href="/opportunities" className="mt-6 inline-flex text-sm font-semibold text-[color:var(--color-brand)]">
-                Explore opportunities
-              </Link>
-            </article>
-          </section>
-
-          <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-8">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                  Progress overview
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--color-text)]">
-                  Your consistency signals
-                </h2>
-              </div>
-              <TrendingUp className="h-6 w-6 text-[color:var(--color-brand)]" aria-hidden="true" />
+              <Composer />
+              <QuickActions />
             </div>
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {progressMetrics.map((metric) => (
-                <article key={metric.label} className="stat-card bg-[color:var(--color-surface-strong)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                    {metric.label}
-                  </p>
-                  <p className="mt-3 text-3xl font-semibold text-[color:var(--color-text)]">
-                    {metric.value}
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-[color:var(--color-muted)]">
-                    {metric.note}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
+          </main>
+        </div>
 
-          {isProfileLoading ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Loading"
-                body="We are loading your personalized dashboard context."
-              />
-            </div>
-          ) : null}
+        <div className="flex min-h-screen flex-col bg-white md:hidden">
+          <header className="flex items-center justify-between px-4 pt-6 text-[#1f1f1f]">
+            <button type="button" aria-label="Open menu">
+              <Menu className="h-5 w-5" />
+            </button>
+            <DashboardMark />
+            <button type="button" aria-label="Controls">
+              <SlidersVertical className="h-4 w-4" />
+            </button>
+          </header>
 
-          {profileError ? (
-            <div className="mt-6">
-              <ProfileStatePanel title="Profile Error" body={profileError} tone="error" />
-            </div>
-          ) : null}
-
-          {!isProfileLoading && !profileError && !hasAnswers ? (
-            <div className="mt-6">
-              <ProfileStatePanel
-                title="Finish Onboarding"
-                body="Your dashboard works with starter content, but DSIQ becomes much sharper after onboarding."
-                actionHref="/onboarding"
-                actionLabel="Complete Onboarding"
-              />
-            </div>
-          ) : null}
-
-          {authMessage ? (
-            <div className="mt-6">
-              <ProfileStatePanel title="Auth Mode" body={authMessage} />
-            </div>
-          ) : null}
-        </main>
-
-        <PrivateFooter />
+          <main className="flex flex-1 flex-col justify-center px-4 pb-16">
+            <h1 className="mb-8 text-center text-[22px] font-normal leading-tight text-[#111111]">
+              What&apos;s on your mind today?
+            </h1>
+            <Composer />
+            <QuickActions />
+          </main>
+        </div>
       </div>
     </PrivateRoute>
   );
