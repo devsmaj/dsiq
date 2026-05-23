@@ -1,6 +1,6 @@
 "use client";
 
-import { Circle, Menu, Mic, Plus, Search } from "lucide-react";
+import { Circle, Menu, Mic, Plus, Search, Image, PenTool, Globe, Zap } from "lucide-react";
 import { useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
@@ -31,7 +31,7 @@ function Composer() {
             isRecording ? "bg-red-600" : "bg-[#090909]"
           }`}
         >
-          <Circle className={`h-4 w-4 ${isRecording ? "text-red-600" : "fill-white text-white"}`} />
+          <Zap className={`h-4 w-4 ${isRecording ? "text-red-300" : "fill-white text-white"}`} />
         </button>
       </div>
     </div>
@@ -57,9 +57,9 @@ export default function DashboardPage() {
               {/* Edit */}
               <button
                 aria-label="Edit"
-                className="text-[#141414] hover:opacity-70 transition-opacity text-lg"
+                className="text-[#141414] hover:opacity-70 transition-opacity"
               >
-                ✎
+                <PenTool className="h-5 w-5" />
               </button>
               
               {/* Search */}
@@ -92,15 +92,30 @@ export default function DashboardPage() {
                   aria-label="Notifications"
                   className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d9d9] bg-white hover:bg-[#f9f9f9] transition-colors"
                 >
-                  <span className="text-sm">🔔</span>
+                  <Zap className="h-4 w-4 text-[#666]" />
                 </button>
               </div>
 
               <h1 className="text-center text-[40px] font-normal text-[#1f1f1f] leading-tight">
-                How can I help, CEO?
+                Ready when you are.
               </h1>
               
               <Composer />
+              
+              <div className="flex gap-3 justify-center flex-wrap pt-4">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#d9d9d9] bg-white text-[#1f1f1f] hover:bg-[#f9f9f9] transition-colors text-sm">
+                  <Image className="h-4 w-4" />
+                  Create an image
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#d9d9d9] bg-white text-[#1f1f1f] hover:bg-[#f9f9f9] transition-colors text-sm">
+                  <PenTool className="h-4 w-4" />
+                  Write or edit
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#d9d9d9] bg-white text-[#1f1f1f] hover:bg-[#f9f9f9] transition-colors text-sm">
+                  <Globe className="h-4 w-4" />
+                  Look something up
+                </button>
+              </div>
             </div>
           </main>
         </div>
@@ -118,13 +133,13 @@ export default function DashboardPage() {
               aria-label="Notifications"
               className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d9d9] bg-white"
             >
-              <span className="text-sm">🔔</span>
+              <Zap className="h-4 w-4 text-[#666]" />
             </button>
           </header>
 
           <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
             <h1 className="mb-8 text-[28px] font-normal text-[#1f1f1f] leading-tight">
-              How can I help, CEO?
+              Ready when you are.
             </h1>
           </div>
 
@@ -134,21 +149,21 @@ export default function DashboardPage() {
                 className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
                 aria-label="Create an image"
               >
-                <span className="text-xl">🖼️</span>
+                <Image className="h-5 w-5 text-[#666]" />
                 <span className="text-xs text-[#666] text-center">Create an image</span>
               </button>
               <button
                 className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
                 aria-label="Write or edit"
               >
-                <span className="text-xl">✏️</span>
+                <PenTool className="h-5 w-5 text-[#666]" />
                 <span className="text-xs text-[#666] text-center">Write or edit</span>
               </button>
               <button
                 className="flex flex-col items-center gap-2 rounded-lg bg-white p-3 hover:bg-[#f9f9f9] transition-colors border border-[#e5e5e5]"
                 aria-label="Look something up"
               >
-                <span className="text-xl">🔍</span>
+                <Globe className="h-5 w-5 text-[#666]" />
                 <span className="text-xs text-[#666] text-center">Look something up</span>
               </button>
             </div>
