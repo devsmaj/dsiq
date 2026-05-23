@@ -3,10 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { DsiqLogo } from "@/components/dsiq-logo";
 
 const navItems = [
-  { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/features", label: "Features" },
   { href: "/how-it-works", label: "How It Works" },
@@ -20,9 +18,7 @@ export function PublicHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/60 bg-[color:var(--color-surface)]/85 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
-        <div className="flex items-center justify-between">
-          <DsiqLogo href="/" />
-
+        <div className="flex items-center justify-end">
           <nav className="hidden items-center gap-8 lg:flex">
             {navItems.map((item) => (
               <Link
@@ -33,22 +29,13 @@ export function PublicHeader() {
                 {item.label}
               </Link>
             ))}
-          </nav>
-
-          <div className="hidden items-center gap-3 lg:flex">
             <Link
               href="/login"
-              className="btn-secondary px-5 py-2.5"
+              className="nav-link"
             >
               Login
             </Link>
-            <Link
-              href="/login"
-              className="btn-primary px-5 py-2.5"
-            >
-              Get Started
-            </Link>
-          </div>
+          </nav>
 
           <button
             type="button"
@@ -81,20 +68,13 @@ export function PublicHeader() {
               ))}
             </nav>
 
-            <div className="mt-4 flex flex-col gap-3 border-t border-[color:var(--color-line)] pt-4">
+            <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/login"
                 className="btn-secondary"
                 onClick={() => setIsOpen(false)}
               >
                 Login
-              </Link>
-              <Link
-                href="/login"
-                className="btn-primary"
-                onClick={() => setIsOpen(false)}
-              >
-                Get Started
               </Link>
             </div>
           </div>
