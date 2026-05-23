@@ -30,7 +30,7 @@ export function useUserProfile() {
       setProfileError(null);
 
       try {
-        if (authMode === "firebase") {
+        if (authMode === "firebase" && !user.uid.startsWith("local-")) {
           const nextProfile = await getFirebaseUserProfile(user.uid);
           setProfile(nextProfile);
         } else {

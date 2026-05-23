@@ -13,3 +13,99 @@ Creating turbopack project { dir: 'C:\\Users\\Dell\\Desktop\\dsiq\\frontend', te
  GET /login/ 200 in 2.4s (next.js: 669ms, application-code: 1724ms)
 ✓ Finished writing to filesystem cache in 33.5s
 ✓ Finished writing to filesystem cache in 28.3s
+ GET /login/ 200 in 70s (next.js: 62s, application-code: 8.1s)
+○ Compiling /manifest.webmanifest ...
+✓ Finished writing to filesystem cache in 19.6s
+ GET /manifest.webmanifest 200 in 4.5min (next.js: 4.4min, application-code: 2.4s)
+✓ Finished filesystem cache database compaction in 54s
+✓ Compiled in 38s
+ GET /login/ 200 in 26.3s (next.js: 18.1s, application-code: 8.2s)
+ GET /manifest.webmanifest 200 in 2.5s (next.js: 2.3s, application-code: 145ms)
+✓ Compiled in 6.3s
+ GET /login/ 200 in 12.1s (next.js: 11.1s, application-code: 1013ms)
+○ Compiling /signup ...
+✓ Finished writing to filesystem cache in 19.4s
+ GET /signup/ 200 in 5.0min (next.js: 4.9min, application-code: 2.3s)
+ GET /signup/ 200 in 4.6min (next.js: 4.5min, application-code: 3.1s)
+ GET /signup/ 200 in 4.6min (next.js: 4.5min, application-code: 3.2s)
+ GET /signup/ 200 in 4.6min (next.js: 4.5min, application-code: 3.3s)
+ GET /signup/ 200 in 4.6min (next.js: 4.5min, application-code: 3.3s)
+ GET /signup/ 200 in 4.6min (next.js: 4.5min, application-code: 2.8s)
+ GET /signup/ 200 in 7.8s (next.js: 5.9s, application-code: 1808ms)
+ GET /signup/ 200 in 7.0s (next.js: 6.8s, application-code: 263ms)
+✓ Finished writing to filesystem cache in 22.4s
+ GET /manifest.webmanifest 200 in 7.7s (next.js: 6.3s, application-code: 1453ms)
+✓ Finished filesystem cache database compaction in 84s
+✓ Compiled in 67.9s
+ GET /signup/ 200 in 13.3s (next.js: 10.3s, application-code: 3.0s)
+ GET /signup/ 200 in 1021ms (next.js: 177ms, application-code: 844ms)
+ GET /signup/ 200 in 571ms (next.js: 6ms, application-code: 565ms)
+ GET /signup/ 200 in 777ms (next.js: 108ms, application-code: 670ms)
+ GET /signup/ 200 in 136ms (next.js: 7ms, application-code: 128ms)
+ GET /signup/ 200 in 55ms (next.js: 5ms, application-code: 50ms)
+ GET /manifest.webmanifest 200 in 1257ms (next.js: 1238ms, application-code: 19ms)
+✓ Finished writing to filesystem cache in 13.2s
+✓ Compiled in 133s
+ GET /signup/ 200 in 29.4s (next.js: 19.0s, application-code: 10.5s)
+ GET /signup/ 200 in 726ms (next.js: 56ms, application-code: 669ms)
+ GET /manifest.webmanifest 200 in 3.5s (next.js: 3.3s, application-code: 261ms)
+ GET /login/ 200 in 5.8s (next.js: 1279ms, application-code: 4.5s)
+✓ Compiled in 3.1s
+ GET /signup/ 200 in 12.9s (next.js: 12.1s, application-code: 809ms)
+ GET /manifest.webmanifest 200 in 3.0s (next.js: 2.7s, application-code: 342ms)
+✓ Finished writing to filesystem cache in 11.3s
+ GET /signup/ 200 in 3.3s (next.js: 2.2s, application-code: 1116ms)
+ GET /signup/ 200 in 422ms (next.js: 6ms, application-code: 416ms)
+ GET /manifest.webmanifest 200 in 5.4s (next.js: 5.4s, application-code: 71ms)
+✓ Compiled in 152.7s
+ GET /signup/ 200 in 8.3s (next.js: 61ms, application-code: 8.3s)
+✓ Finished writing to filesystem cache in 18.9s
+ GET /login/ 200 in 5.0s (next.js: 4.6s, application-code: 376ms)
+✓ Finished filesystem cache database compaction in 74s
+ GET /login/ 200 in 5.7s (next.js: 154ms, application-code: 5.6s)
+ GET /manifest.webmanifest 200 in 70ms (next.js: 4ms, application-code: 66ms)
+ GET /signup/ 200 in 128ms (next.js: 14ms, application-code: 114ms)
+ GET /manifest.webmanifest 200 in 65ms (next.js: 55ms, application-code: 10ms)
+ GET / 200 in 6.4s (next.js: 4.7s, application-code: 1677ms)
+ GET / 200 in 1010ms (next.js: 8ms, application-code: 1001ms)
+ GET / 200 in 425ms (next.js: 6ms, application-code: 419ms)
+ GET / 200 in 192ms (next.js: 12ms, application-code: 180ms)
+ GET /manifest.webmanifest 200 in 17ms (next.js: 5ms, application-code: 12ms)
+ GET /login/ 200 in 312ms (next.js: 186ms, application-code: 126ms)
+ GET /manifest.webmanifest 200 in 52ms (next.js: 38ms, application-code: 14ms)
+✓ Compiled in 11.4s
+ GET /login/ 200 in 2.7s (next.js: 1873ms, application-code: 872ms)
+ GET /manifest.webmanifest 200 in 2.1s (next.js: 2.1s, application-code: 68ms)
+ GET /login/ 200 in 8.2s (next.js: 914ms, application-code: 7.3s)
+ GET /manifest.webmanifest 200 in 15ms (next.js: 6ms, application-code: 9ms)
+✓ Compiled in 56.9s
+ GET /login/ 200 in 39.5s (next.js: 39.3s, application-code: 224ms)
+ GET /login/ 200 in 219ms (next.js: 112ms, application-code: 107ms)
+ GET /login/ 200 in 154ms (next.js: 11ms, application-code: 143ms)
+ GET /login/ 200 in 181ms (next.js: 18ms, application-code: 163ms)
+ GET /manifest.webmanifest 200 in 197ms (next.js: 162ms, application-code: 35ms)
+ GET /login/ 200 in 28.0s (next.js: 27.2s, application-code: 789ms)
+ GET /login/ 200 in 202ms (next.js: 150ms, application-code: 52ms)
+ GET /manifest.webmanifest 200 in 7.3s (next.js: 7.3s, application-code: 22ms)
+ GET /login/ 200 in 498ms (next.js: 312ms, application-code: 186ms)
+ GET /manifest.webmanifest 200 in 490ms (next.js: 473ms, application-code: 16ms)
+ GET /login/ 200 in 118ms (next.js: 60ms, application-code: 59ms)
+✓ Compiled in 72s
+ GET /manifest.webmanifest 200 in 135ms (next.js: 76ms, application-code: 58ms)
+ GET /login/ 200 in 1053ms (next.js: 158ms, application-code: 895ms)
+ GET /login/ 200 in 513ms (next.js: 226ms, application-code: 288ms)
+ GET /login/ 200 in 132ms (next.js: 9ms, application-code: 123ms)
+ GET /login/ 200 in 132ms (next.js: 58ms, application-code: 74ms)
+ GET /manifest.webmanifest 200 in 20.2s (next.js: 20.2s, application-code: 12ms)
+✓ Finished writing to filesystem cache in 27.8s
+ GET /login/ 200 in 3.7s (next.js: 5ms, application-code: 3.7s)
+ GET /signup/ 200 in 1911ms (next.js: 415ms, application-code: 1496ms)
+ GET /login/ 200 in 481ms (next.js: 159ms, application-code: 322ms)
+ GET /manifest.webmanifest 200 in 14ms (next.js: 5ms, application-code: 8ms)
+○ Compiling /dashboard ...
+ GET /dashboard/ 200 in 2.3min (next.js: 2.3min, application-code: 212ms)
+ GET /dashboard/ 200 in 88s (next.js: 88s, application-code: 48ms)
+ GET /dashboard/ 200 in 114s (next.js: 114s, application-code: 102ms)
+ GET /manifest.webmanifest 200 in 48s (next.js: 24.4s, application-code: 23.6s)
+✓ Finished writing to filesystem cache in 54s
+✓ Finished filesystem cache database compaction in 78s

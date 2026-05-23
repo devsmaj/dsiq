@@ -1,4 +1,5 @@
 import { DsiqLogo } from "@/components/dsiq-logo";
+import Link from "next/link";
 
 type AuthShellProps = {
   title: string;
@@ -8,28 +9,38 @@ type AuthShellProps = {
 
 export function AuthShell({ title, description, children }: AuthShellProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-background)] px-4 py-8 sm:px-6">
-      <section className="w-full max-w-md">
-        <div className="mb-8 flex justify-center">
+    <main className="relative flex min-h-screen items-center justify-center bg-[color:var(--color-background)] px-4 py-10 sm:px-6">
+      <div className="absolute left-5 top-5 sm:left-7 sm:top-7">
+        <DsiqLogo href="/" />
+      </div>
+
+      <section className="flex w-full max-w-sm flex-col items-center text-center">
+        <div className="mb-10 sm:hidden">
           <DsiqLogo href="/" />
         </div>
 
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold text-[color:var(--color-text)]">
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold leading-tight text-[color:var(--color-text)]">
             {title}
           </h1>
-          <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
+          <p className="mx-auto mt-3 max-w-[18rem] text-sm leading-6 text-[color:var(--color-muted)]">
             {description}
           </p>
         </div>
 
-        <div className="rounded-[var(--radius-lg)] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-8">
+        <div className="w-full">
           {children}
         </div>
 
-        <p className="mt-6 text-center text-xs text-[color:var(--color-muted)]">
-          Powered by DSIQ. Part of the SMAJ Ecosystem.
-        </p>
+        <div className="mt-10 flex items-center justify-center gap-3 text-xs text-[color:var(--color-muted)]">
+          <Link href="/terms" className="underline underline-offset-2 hover:text-[color:var(--color-text)]">
+            Terms of Use
+          </Link>
+          <span>|</span>
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-[color:var(--color-text)]">
+            Privacy Policy
+          </Link>
+        </div>
       </section>
     </main>
   );

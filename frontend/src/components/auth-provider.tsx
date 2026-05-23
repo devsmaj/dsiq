@@ -54,6 +54,7 @@ type AuthContextValue = {
     password: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<string>;
+  tryDemo: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
@@ -318,6 +319,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         await sendPasswordResetEmail(auth, email);
         return "Password reset instructions have been sent to your email.";
+      },
+      tryDemo: async () => {
+        const nextUser = {
+          uid: "local-demo-user",
+          email: "demo@dsiq.local",
+          displayName: "Demo User",
+        };
+
+        writeLocalUser(nextUser);
+        setUser(nextUser);
       },
       logout: async () => {
         if (authMode === "local") {

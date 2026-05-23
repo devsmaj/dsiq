@@ -43,7 +43,7 @@ export function PublicHeader() {
               Login
             </Link>
             <Link
-              href="/signup"
+              href="/login"
               className="btn-primary px-5 py-2.5"
             >
               Get Started
@@ -90,7 +90,7 @@ export function PublicHeader() {
                 Login
               </Link>
               <Link
-                href="/signup"
+                href="/login"
                 className="btn-primary"
                 onClick={() => setIsOpen(false)}
               >

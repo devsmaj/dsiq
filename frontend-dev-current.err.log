@@ -1,3 +1,6 @@
 ⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
 ⚠ Slow filesystem detected. The benchmark took 618ms. If C:\Users\Dell\Desktop\dsiq\frontend/.next/dev is a network drive, consider moving it to a local folder.
 See more: https://nextjs.org/docs/app/guides/local-development
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+⚠ Fast Refresh had to perform a full reload when ./frontend/src/components/auth-provider.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
