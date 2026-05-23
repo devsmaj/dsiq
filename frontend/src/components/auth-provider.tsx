@@ -64,6 +64,18 @@ const LOCAL_PASSWORD_PREFIX = "dsiq.local.password:";
 const appleProvider = new OAuthProvider("apple.com");
 const googleProvider = new GoogleAuthProvider();
 
+appleProvider.addScope("email");
+appleProvider.addScope("name");
+appleProvider.setCustomParameters({
+  locale: "en",
+});
+
+googleProvider.addScope("email");
+googleProvider.addScope("profile");
+googleProvider.setCustomParameters({
+  prompt: "select_account",
+});
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function mapFirebaseUser(user: {
@@ -135,6 +147,28 @@ function clearLocalDemoAccount(uid?: string | null, email?: string | null) {
   keysToDelete.forEach((key) => {
     window.localStorage.removeItem(key);
   });
+}
+
+async function signInWithSocialProvider(
+  provider: GoogleAuthProvider | OAuthProvider,
+  authProvider: "apple" | "google",
+) {
+  if (!auth) {
+    throw new Error("Firebase Auth is not available.");
+  }
+
+  await setPersistence(auth, browserLocalPersistence);
+  const credential = await signInWithPopup(auth, provider);
+
+  await syncFirebaseUserRecord({
+    uid: credential.user.uid,
+    email: credential.user.email,
+    displayName: credential.user.displayName,
+    reason: "login",
+    authProvider,
+  });
+
+  return mapFirebaseUser(credential.user);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -217,45 +251,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       loginWithApple: async () => {
         if (authMode === "local") {
-          throw new Error("Add Firebase keys to enable Apple sign-in.");
+          throw new Error(
+            "Apple sign-in needs Firebase keys and Apple enabled in Firebase Authentication.",
+          );
         }
 
-        if (!auth) {
-          throw new Error("Firebase Auth is not available.");
-        }
-
-        await setPersistence(auth, browserLocalPersistence);
-        const credential = await signInWithPopup(auth, appleProvider);
-
-        await syncFirebaseUserRecord({
-          uid: credential.user.uid,
-          email: credential.user.email,
-          displayName: credential.user.displayName,
-          reason: "login",
-          authProvider: "apple",
-        });
-        setUser(mapFirebaseUser(credential.user));
+        setUser(await signInWithSocialProvider(appleProvider, "apple"));
       },
       loginWithGoogle: async () => {
         if (authMode === "local") {
-          throw new Error("Add Firebase keys to enable Google sign-in.");
+          throw new Error(
+            "Google sign-in needs Firebase keys and Google enabled in Firebase Authentication.",
+          );
         }
 
-        if (!auth) {
-          throw new Error("Firebase Auth is not available.");
-        }
-
-        await setPersistence(auth, browserLocalPersistence);
-        const credential = await signInWithPopup(auth, googleProvider);
-
-        await syncFirebaseUserRecord({
-          uid: credential.user.uid,
-          email: credential.user.email,
-          displayName: credential.user.displayName,
-          reason: "login",
-          authProvider: "google",
-        });
-        setUser(mapFirebaseUser(credential.user));
+        setUser(await signInWithSocialProvider(googleProvider, "google"));
       },
       signup: async ({ fullName, email, password }) => {
         if (authMode === "local") {

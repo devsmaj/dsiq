@@ -23,6 +23,18 @@ function getAuthErrorMessage(error: unknown) {
     return "Sign-in was cancelled.";
   }
 
+  if (code.includes("popup-blocked")) {
+    return "Your browser blocked the sign-in popup. Allow popups for this site and try again.";
+  }
+
+  if (code.includes("operation-not-allowed")) {
+    return "This sign-in provider is not enabled yet. Enable it in Firebase Authentication.";
+  }
+
+  if (code.includes("unauthorized-domain")) {
+    return "This domain is not authorized in Firebase Authentication settings.";
+  }
+
   if (message) {
     return message;
   }
@@ -41,20 +53,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<
+    "apple" | "demo" | "email" | "google" | null
+  >(null);
+  const isLoading = loadingAction !== null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
     try {
-      setIsLoading(true);
+      setLoadingAction("email");
       await login({ email, password, rememberMe: true });
       router.replace(getRedirectPath());
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -62,13 +77,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      setIsLoading(true);
+      setLoadingAction("google");
       await loginWithGoogle();
       router.replace(getRedirectPath());
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -76,13 +91,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      setIsLoading(true);
+      setLoadingAction("apple");
       await loginWithApple();
       router.replace(getRedirectPath());
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -90,13 +105,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      setIsLoading(true);
+      setLoadingAction("demo");
       await tryDemo();
       router.replace("/dashboard");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
-      setIsLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -112,7 +127,7 @@ export default function LoginPage() {
         className="mb-3 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
-        <span>Continue with Google</span>
+        <span>{loadingAction === "google" ? "Opening Google..." : "Continue with Google"}</span>
         <span />
       </button>
 
@@ -123,7 +138,7 @@ export default function LoginPage() {
         className="mb-5 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <AppleIcon />
-        <span>Continue with Apple</span>
+        <span>{loadingAction === "apple" ? "Opening Apple..." : "Continue with Apple"}</span>
         <span />
       </button>
 
@@ -133,7 +148,7 @@ export default function LoginPage() {
         disabled={isLoading}
         className="mb-5 h-11 w-full rounded-full text-sm font-medium text-[#111111] underline underline-offset-4 transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Try it first
+        {loadingAction === "demo" ? "Opening demo..." : "Try it first"}
       </button>
 
       <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-[color:var(--color-text)]">
@@ -174,7 +189,7 @@ export default function LoginPage() {
           disabled={isLoading}
           className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Continuing..." : "Continue"}
+          {loadingAction === "email" ? "Continuing..." : "Continue"}
         </button>
       </form>
 
