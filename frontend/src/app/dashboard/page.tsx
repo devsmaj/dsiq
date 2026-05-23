@@ -1,6 +1,6 @@
 "use client";
 
-import { Circle, Menu, Mic, Plus, Search, Image, PenTool, Globe, Zap, X, Trash2, Copy, Home, MessageSquare, CheckCircle, Lightbulb, TrendingUp, User, LogOut, Settings } from "lucide-react";
+import { Menu, Mic, Plus, Search, Image, PenTool, Globe, Zap, X, Trash2, Home, MessageSquare, CheckCircle, Lightbulb, TrendingUp, User, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 
