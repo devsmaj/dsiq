@@ -9,9 +9,25 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+const requiredFirebaseConfig = {
+  apiKey: firebaseConfig.apiKey,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  messagingSenderId: firebaseConfig.messagingSenderId,
+  appId: firebaseConfig.appId,
+};
+
+export const hasFirebaseConfig = Object.values(requiredFirebaseConfig).every((value) => {
+  if (!value) {
+    return false;
+  }
+
+  return !String(value).startsWith("your-");
+});
 
 const app = hasFirebaseConfig
   ? getApps().length > 0

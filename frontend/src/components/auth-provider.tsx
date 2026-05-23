@@ -13,10 +13,13 @@ import {
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  OAuthProvider,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -43,6 +46,8 @@ type AuthContextValue = {
     password: string;
     rememberMe: boolean;
   }) => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   signup: (input: {
     fullName: string;
     email: string;
@@ -55,6 +60,8 @@ type AuthContextValue = {
 
 const LOCAL_USER_KEY = "dsiq.local.user";
 const LOCAL_PASSWORD_PREFIX = "dsiq.local.password:";
+const appleProvider = new OAuthProvider("apple.com");
+const googleProvider = new GoogleAuthProvider();
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -204,6 +211,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: credential.user.email,
           displayName: credential.user.displayName,
           reason: "login",
+          authProvider: "password",
+        });
+        setUser(mapFirebaseUser(credential.user));
+      },
+      loginWithApple: async () => {
+        if (authMode === "local") {
+          throw new Error("Add Firebase keys to enable Apple sign-in.");
+        }
+
+        if (!auth) {
+          throw new Error("Firebase Auth is not available.");
+        }
+
+        await setPersistence(auth, browserLocalPersistence);
+        const credential = await signInWithPopup(auth, appleProvider);
+
+        await syncFirebaseUserRecord({
+          uid: credential.user.uid,
+          email: credential.user.email,
+          displayName: credential.user.displayName,
+          reason: "login",
+          authProvider: "apple",
+        });
+        setUser(mapFirebaseUser(credential.user));
+      },
+      loginWithGoogle: async () => {
+        if (authMode === "local") {
+          throw new Error("Add Firebase keys to enable Google sign-in.");
+        }
+
+        if (!auth) {
+          throw new Error("Firebase Auth is not available.");
+        }
+
+        await setPersistence(auth, browserLocalPersistence);
+        const credential = await signInWithPopup(auth, googleProvider);
+
+        await syncFirebaseUserRecord({
+          uid: credential.user.uid,
+          email: credential.user.email,
+          displayName: credential.user.displayName,
+          reason: "login",
+          authProvider: "google",
         });
         setUser(mapFirebaseUser(credential.user));
       },
@@ -239,6 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: credential.user.email,
           displayName: fullName.trim() || credential.user.displayName,
           reason: "signup",
+          authProvider: "password",
         });
 
         setUser(

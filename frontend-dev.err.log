@@ -1,2 +1,15 @@
-⚠ Slow filesystem detected. The benchmark took 946ms. If C:\Users\Dell\Desktop\dsiq\frontend/.next/dev is a network drive, consider moving it to a local folder.
-See more: https://nextjs.org/docs/app/guides/local-development
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3001
+- PID:          5680
+- Dir:          C:\Users\Dell\Desktop\dsiq\frontend
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 5680 /F to stop it.
+npm error Lifecycle script `dev` failed with error:
+npm error code 1
+npm error path C:\Users\Dell\Desktop\dsiq\frontend
+npm error workspace @dsiq/frontend@0.1.0
+npm error location C:\Users\Dell\Desktop\dsiq\frontend
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c next dev

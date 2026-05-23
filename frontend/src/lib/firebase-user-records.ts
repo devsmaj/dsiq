@@ -8,6 +8,7 @@ type SyncFirebaseUserInput = {
   email: string | null;
   displayName: string | null;
   reason: "signup" | "login";
+  authProvider?: "password" | "google" | "apple";
 };
 
 type SaveOnboardingInput = {
@@ -43,7 +44,7 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
       ...baseFields,
       createdAt: serverTimestamp(),
       onboardingCompleted: false,
-      authProvider: "password",
+      authProvider: input.authProvider || "password",
     });
     return;
   }
@@ -52,6 +53,7 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
     userRef,
     {
       ...baseFields,
+      authProvider: input.authProvider || "password",
       ...(input.reason === "signup" ? { createdAt: serverTimestamp() } : {}),
     },
     { merge: true },

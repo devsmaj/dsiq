@@ -3,13 +3,13 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { AuthShell } from "@/components/auth-shell";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/components/auth-provider";
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+  const message = error instanceof Error ? error.message : "";
 
   if (code.includes("invalid-email")) {
     return "Enter a valid email address.";
@@ -19,11 +19,25 @@ function getAuthErrorMessage(error: unknown) {
     return "Email or password is incorrect.";
   }
 
+  if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) {
+    return "Sign-in was cancelled.";
+  }
+
+  if (message) {
+    return message;
+  }
+
   return "We could not log you in. Please try again.";
+}
+
+function getRedirectPath() {
+  const searchParams = new URLSearchParams(window.location.search);
+  return searchParams.get("next") || "/dashboard";
 }
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, loginWithApple, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,15 +47,38 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
 
-    if (!auth) {
-      setError("Firebase is not configured yet.");
-      return;
+    try {
+      setIsLoading(true);
+      await login({ email, password, rememberMe: true });
+      router.replace(getRedirectPath());
+    } catch (submissionError) {
+      setError(getAuthErrorMessage(submissionError));
+    } finally {
+      setIsLoading(false);
     }
+  }
+
+  async function handleGoogleLogin() {
+    setError("");
 
     try {
       setIsLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/dashboard");
+      await loginWithGoogle();
+      router.replace(getRedirectPath());
+    } catch (submissionError) {
+      setError(getAuthErrorMessage(submissionError));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleAppleLogin() {
+    setError("");
+
+    try {
+      setIsLoading(true);
+      await loginWithApple();
+      router.replace(getRedirectPath());
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -54,6 +91,36 @@ export default function LoginPage() {
       title="Welcome back"
       description="Log in to continue your coaching, missions, and progress tracking."
     >
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        disabled={isLoading}
+        className="mb-5 flex w-full items-center justify-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-line)] bg-[color:var(--color-background)] px-5 py-3 text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-black text-[#4285f4]">
+          G
+        </span>
+        Continue with Google
+      </button>
+
+      <button
+        type="button"
+        onClick={handleAppleLogin}
+        disabled={isLoading}
+        className="mb-5 flex w-full items-center justify-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-line)] bg-[color:var(--color-background)] px-5 py-3 text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-black text-black">
+          A
+        </span>
+        Continue with Apple
+      </button>
+
+      <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+        <span className="h-px flex-1 bg-[color:var(--color-line)]" />
+        or
+        <span className="h-px flex-1 bg-[color:var(--color-line)]" />
+      </div>
+
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block">
           <span className="text-sm font-medium text-[color:var(--color-text)]">Email</span>
