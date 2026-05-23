@@ -138,9 +138,11 @@ function clearLocalDemoAccount(uid?: string | null, email?: string | null) {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const authMode: "firebase" | "local" = hasFirebaseConfig ? "firebase" : "local";
+  const [user, setUser] = useState<AppUser | null>(() =>
+    authMode === "local" ? readLocalUser() : null,
+  );
+  const [isLoading, setIsLoading] = useState(authMode === "firebase");
   const authMessage =
     authMode === "local"
       ? "Running in local demo auth mode. Add Firebase keys later to switch to real authentication."
@@ -148,13 +150,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (authMode === "local") {
-      setUser(readLocalUser());
-      setIsLoading(false);
       return;
     }
 
     if (!auth) {
-      setIsLoading(false);
       return;
     }
 
