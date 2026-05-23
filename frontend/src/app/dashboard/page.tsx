@@ -1,7 +1,8 @@
 "use client";
 
-import { Circle, Menu, Mic, Plus, Search, Image, PenTool, Globe, Zap, X, Trash2, Copy } from "lucide-react";
+import { Circle, Menu, Mic, Plus, Search, Image, PenTool, Globe, Zap, X, Trash2, Copy, Home, MessageSquare, CheckCircle, Lightbulb, TrendingUp, User, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 import { PrivateRoute } from "@/components/private-route";
 
@@ -47,6 +48,15 @@ function ChatHistory({ isOpen, onClose }) {
     { id: 5, title: "Product Development Ideas", date: "2 weeks ago" },
   ]);
 
+  const navigationLinks = [
+    { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/coach", label: "Coach", icon: MessageSquare },
+    { href: "/missions", label: "Missions", icon: CheckCircle },
+    { href: "/opportunities", label: "Opportunities", icon: Lightbulb },
+    { href: "/progress", label: "Progress", icon: TrendingUp },
+    { href: "/profile", label: "Profile", icon: User },
+  ];
+
   return (
     <>
       {/* Overlay */}
@@ -65,7 +75,7 @@ function ChatHistory({ isOpen, onClose }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#dfdfdf]">
-          <h2 className="font-semibold text-[#1f1f1f] text-sm">Chat History</h2>
+          <h2 className="font-semibold text-[#1f1f1f] text-sm">DSIQ</h2>
           <button
             onClick={onClose}
             className="md:hidden text-[#1f1f1f] hover:opacity-70 transition-opacity"
@@ -80,8 +90,27 @@ function ChatHistory({ isOpen, onClose }) {
           New Chat
         </button>
 
-        {/* Conversations List */}
+        {/* Navigation Links */}
+        <div className="px-3 py-2 border-b border-[#dfdfdf] space-y-1">
+          {navigationLinks.map((link) => {
+            const IconComponent = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[#1f1f1f] hover:bg-[#e0e0e0] transition-colors"
+                onClick={onClose}
+              >
+                <IconComponent className="h-4 w-4 flex-shrink-0" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Chat History */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+          <div className="text-xs font-semibold text-[#666] px-3 py-2 uppercase">Chat History</div>
           {conversations.map((conv) => (
             <div
               key={conv.id}
@@ -101,11 +130,19 @@ function ChatHistory({ isOpen, onClose }) {
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Settings & Logout */}
         <div className="border-t border-[#dfdfdf] p-3 space-y-2">
-          <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-[#e0e0e0] transition-colors text-sm text-[#1f1f1f]">
-            <Copy className="h-4 w-4" />
-            Clear History
+          <Link
+            href="/settings"
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-[#e0e0e0] transition-colors text-sm text-[#1f1f1f]"
+            onClick={onClose}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+          <button className="flex items-center gap-3 w-full px-3 py-2 rounded-lg hover:bg-[#e0e0e0] transition-colors text-sm text-[#1f1f1f]">
+            <LogOut className="h-4 w-4" />
+            Logout
           </button>
         </div>
       </div>
@@ -151,15 +188,19 @@ export default function DashboardPage() {
               {/* Profile */}
               <button
                 aria-label="Profile"
-                className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#141414] hover:bg-[#141414] hover:text-white transition-colors"
-              />
+                className="text-[#141414] hover:opacity-70 transition-opacity"
+              >
+                <User className="h-5 w-5" />
+              </button>
             </div>
             
             {/* User Avatar */}
             <button
               aria-label="User menu"
-              className="h-8 w-8 rounded-full bg-[#8a8a8a] hover:bg-[#7a7a7a] transition-colors"
-            />
+              className="h-8 w-8 rounded-full bg-[#8a8a8a] hover:bg-[#7a7a7a] transition-colors flex items-center justify-center text-white"
+            >
+              <User className="h-4 w-4" />
+            </button>
           </aside>
 
           {/* Chat History Menu */}
