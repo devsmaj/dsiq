@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  AudioLines,
   ChevronDown,
   CircleDashed,
+  Globe2,
+  Image as ImageIcon,
   Menu,
   MessageCircle,
   Mic,
@@ -10,9 +13,6 @@ import {
   Plus,
   Search,
   SlidersVertical,
-  Image as ImageIcon,
-  Globe2,
-  AudioLines,
 } from "lucide-react";
 
 import { PrivateRoute } from "@/components/private-route";
