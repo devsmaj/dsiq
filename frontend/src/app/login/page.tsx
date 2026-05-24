@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -13,6 +13,14 @@ function getAuthErrorMessage(error: unknown) {
 
   if (code.includes("invalid-email")) {
     return "Enter a valid email address.";
+  }
+
+  if (code.includes("email-already-in-use")) {
+    return "An account already exists for this email. Log in instead.";
+  }
+
+  if (code.includes("weak-password")) {
+    return "Use a stronger password with at least 6 characters.";
   }
 
   if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) {
@@ -49,7 +57,10 @@ function getRedirectPath() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithApple, loginWithGoogle, tryDemo } = useAuth();
+  const pathname = usePathname();
+  const isSignup = pathname === "/signup";
+  const { login, loginWithApple, loginWithGoogle, signup, tryDemo } = useAuth();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -64,7 +75,11 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("email");
-      await login({ email, password, rememberMe: true });
+      if (isSignup) {
+        await signup({ fullName, email, password });
+      } else {
+        await login({ email, password, rememberMe: true });
+      }
       router.replace(getRedirectPath());
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
@@ -117,8 +132,12 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Log in or sign up"
-      description="Continue to your coaching, missions, and progress tracking."
+      title={isSignup ? "Create your account" : "Log in or sign up"}
+      description={
+        isSignup
+          ? "Create your DSIQ account with Firebase authentication."
+          : "Continue to your coaching, missions, and progress tracking."
+      }
     >
       <button
         type="button"
@@ -158,6 +177,21 @@ export default function LoginPage() {
       </div>
 
       <form className="space-y-3" onSubmit={handleSubmit}>
+        {isSignup ? (
+          <label className="block text-left">
+            <span className="sr-only">Full name</span>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              required
+              autoComplete="name"
+              className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+              placeholder="Full name"
+            />
+          </label>
+        ) : null}
+
         <label className="block text-left">
           <span className="sr-only">Email address</span>
           <input
@@ -189,7 +223,11 @@ export default function LoginPage() {
           disabled={isLoading}
           className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loadingAction === "email" ? "Continuing..." : "Continue"}
+          {loadingAction === "email"
+            ? "Continuing..."
+            : isSignup
+              ? "Create account"
+              : "Continue"}
         </button>
       </form>
 

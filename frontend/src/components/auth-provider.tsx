@@ -160,7 +160,7 @@ async function signInWithSocialProvider(
   await setPersistence(auth, browserLocalPersistence);
   const credential = await signInWithPopup(auth, provider);
 
-  await syncFirebaseUserRecord({
+  await syncFirebaseUserRecordSafely({
     uid: credential.user.uid,
     email: credential.user.email,
     displayName: credential.user.displayName,
@@ -169,6 +169,16 @@ async function signInWithSocialProvider(
   });
 
   return mapFirebaseUser(credential.user);
+}
+
+async function syncFirebaseUserRecordSafely(
+  input: Parameters<typeof syncFirebaseUserRecord>[0],
+) {
+  try {
+    await syncFirebaseUserRecord(input);
+  } catch (error) {
+    console.warn("Firebase user profile sync failed.", error);
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -240,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           rememberMe ? browserLocalPersistence : browserSessionPersistence,
         );
         const credential = await signInWithEmailAndPassword(auth, email, password);
-        await syncFirebaseUserRecord({
+        await syncFirebaseUserRecordSafely({
           uid: credential.user.uid,
           email: credential.user.email,
           displayName: credential.user.displayName,
@@ -294,7 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await updateProfile(credential.user, { displayName: fullName.trim() });
         }
 
-        await syncFirebaseUserRecord({
+        await syncFirebaseUserRecordSafely({
           uid: credential.user.uid,
           email: credential.user.email,
           displayName: fullName.trim() || credential.user.displayName,
