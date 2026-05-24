@@ -137,6 +137,17 @@ a {
   }
 }
 
+@keyframes dsiq-recording-wave {
+  0%,
+  100% {
+    height: 0.35rem;
+  }
+
+  50% {
+    height: 1.1rem;
+  }
+}
+
 @layer components {
   .btn-primary,
   .btn-secondary {
@@ -287,6 +298,14 @@ a {
     border-radius: 9999px;
     background: currentColor;
     animation: dsiq-typing 1s ease-in-out infinite;
+  }
+
+  .recording-wave {
+    display: inline-block;
+    width: 0.18rem;
+    border-radius: 9999px;
+    background: currentColor;
+    animation: dsiq-recording-wave 720ms ease-in-out infinite;
   }
 }
 

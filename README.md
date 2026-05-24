@@ -92,6 +92,15 @@ Add Firebase public config as repository secrets if you want live Firebase auth:
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 
+For Gemini chat on GitHub Pages, deploy the backend separately with:
+
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (optional, defaults to `gemini-2.0-flash`)
+
+Then add this frontend repository secret so the static site can reach it:
+
+- `NEXT_PUBLIC_CHAT_API_URL` (for example, `https://your-backend.example.com/api/chat`)
+
 ## Current Status
 
 Early startup MVP development with a clean frontend/backend structure in place.

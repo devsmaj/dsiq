@@ -4,7 +4,9 @@ export type GeminiChatMessage = {
 };
 
 export async function askGemini(messages: GeminiChatMessage[]) {
-  const response = await fetch("/api/chat/", {
+  const endpoint =
+    process.env.NEXT_PUBLIC_CHAT_API_URL?.trim() || "/api/chat/";
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

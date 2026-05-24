@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  FileText,
+  ImageIcon,
   Menu,
   Mic,
   Plus,
@@ -24,22 +26,56 @@ const navItems = [
 
 const promptModes = [
   {
-    label: "Write",
-    prompt: "Help me write something that supports my goal.",
+    label: "Write pitch",
+    prompt:
+      "Help me write a short opportunity pitch. Ask what I am applying for, then draft a polished version.",
   },
   {
-    label: "Plan",
-    prompt: "Create a step-by-step plan for my goal.",
+    label: "Build plan",
+    prompt:
+      "Create a 7-day action plan for my goal with daily tasks, time estimates, and a clear first step.",
   },
   {
-    label: "Find",
-    prompt: "Help me find the best opportunity based on my skills and goals.",
+    label: "Find matches",
+    prompt:
+      "Help me find opportunities that match my skills, location, budget, and available time.",
   },
   {
-    label: "Learn",
-    prompt: "Create a learning roadmap for me based on my goal.",
+    label: "Learn path",
+    prompt:
+      "Create a learning roadmap for my goal with beginner, intermediate, and portfolio milestones.",
   },
 ];
+
+type SpeechRecognitionResultLike = {
+  0?: {
+    transcript?: string;
+  };
+};
+
+type SpeechRecognitionEventLike = {
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechWindow = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+  };
 
 function shufflePromptModes() {
   const modes = [...promptModes];
@@ -57,9 +93,14 @@ export function HomeChat() {
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
+  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [quickActions] = useState(shufflePromptModes);
   const promptInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   function openNewChatDialog() {
     setIsDesktopDrawerOpen(false);
@@ -88,6 +129,78 @@ export function HomeChat() {
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
     });
+  }
+
+  function appendAttachmentNames(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const names = Array.from(files)
+      .map((file) => file.name)
+      .join(", ");
+
+    setPrompt((current) =>
+      current.trim()
+        ? `${current.trim()} Attached: ${names}`
+        : `Attached: ${names}`,
+    );
+    setIsUploadPanelOpen(false);
+  }
+
+  function handleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const speechWindow = window as SpeechWindow;
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setPrompt((current) =>
+        current.trim()
+          ? `${current.trim()} Voice input is not supported in this browser.`
+          : "Voice input is not supported in this browser.",
+      );
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const spokenText = transcript.trim();
+      if (!spokenText) {
+        return;
+      }
+
+      setPrompt((current) =>
+        current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
+      );
+      window.requestAnimationFrame(() => {
+        promptInputRef.current?.focus();
+      });
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    setIsListening(true);
+    recognition.start();
   }
 
   return (
@@ -200,9 +313,52 @@ export function HomeChat() {
                 />
 
                 <div className="mt-5 flex items-center gap-5">
-                  <button type="button" aria-label="Add" className="text-[#303134]">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label="Add"
+                      aria-expanded={isUploadPanelOpen}
+                      onClick={() => setIsUploadPanelOpen((value) => !value)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
+                    >
                     <Plus className="h-5 w-5" />
-                  </button>
+                    </button>
+                    {isUploadPanelOpen ? (
+                      <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                        >
+                          <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                          Upload photos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                        >
+                          <FileText className="h-4 w-4" aria-hidden="true" />
+                          Upload files
+                        </button>
+                      </div>
+                    ) : null}
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => appendAttachmentNames(event.target.files)}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => appendAttachmentNames(event.target.files)}
+                    />
+                  </div>
                   <button
                     type="button"
                     className="inline-flex items-center gap-2 text-sm text-[color:var(--color-text)]"
@@ -211,8 +367,26 @@ export function HomeChat() {
                     Tools
                   </button>
                   <div className="flex-1" />
-                  <button type="button" aria-label="Microphone" className="text-[#303134]">
-                    <Mic className="h-4 w-4" />
+                  <button
+                    type="button"
+                    onClick={handleVoiceInput}
+                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-full px-3 transition ${
+                      isListening
+                        ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
+                        : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
+                    }`}
+                  >
+                    {isListening ? (
+                      <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
+                        <span className="recording-wave" />
+                        <span className="recording-wave [animation-delay:110ms]" />
+                        <span className="recording-wave [animation-delay:220ms]" />
+                        <span className="recording-wave [animation-delay:330ms]" />
+                      </span>
+                    ) : (
+                      <Mic className="h-4 w-4" aria-hidden="true" />
+                    )}
                   </button>
                   <button
                     type="submit"

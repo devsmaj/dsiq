@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Mic, Send, SquarePen } from "lucide-react";
+import { FileText, ImageIcon, Mic, Plus, Send, SquarePen } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -47,20 +47,24 @@ type SpeechWindow = Window &
 
 const quickActions = [
   {
-    label: "Write",
-    prompt: "Help me write something that supports my goal.",
+    label: "Write pitch",
+    prompt:
+      "Help me write a short opportunity pitch. Ask what I am applying for, then draft a polished version.",
   },
   {
-    label: "Plan",
-    prompt: "Create a step-by-step plan for my goal.",
+    label: "Build plan",
+    prompt:
+      "Create a 7-day action plan for my goal with daily tasks, time estimates, and a clear first step.",
   },
   {
-    label: "Find",
-    prompt: "Help me find the best opportunity based on my skills and goals.",
+    label: "Find matches",
+    prompt:
+      "Help me find opportunities that match my skills, location, budget, and available time.",
   },
   {
-    label: "Learn",
-    prompt: "Create a learning roadmap for me based on my goal.",
+    label: "Learn path",
+    prompt:
+      "Create a learning roadmap for my goal with beginner, intermediate, and portfolio milestones.",
   },
 ];
 
@@ -91,11 +95,14 @@ export function PublicChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [error, setError] = useState("");
   const handledInitialQuestion = useRef(false);
   const chatIdRef = useRef<string | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -236,6 +243,26 @@ export function PublicChat() {
 
   function handleQuickAction(promptText: string) {
     setInput(promptText);
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }
+
+  function appendAttachmentNames(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const names = Array.from(files)
+      .map((file) => file.name)
+      .join(", ");
+
+    setInput((current) =>
+      current.trim()
+        ? `${current.trim()} Attached: ${names}`
+        : `Attached: ${names}`,
+    );
+    setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
@@ -399,6 +426,53 @@ export function PublicChat() {
           className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
         >
           <div className="flex items-center gap-3">
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsUploadPanelOpen((value) => !value)}
+                aria-label="Add attachment"
+                aria-expanded={isUploadPanelOpen}
+                disabled={isSending}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+              </button>
+              {isUploadPanelOpen ? (
+                <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                    Upload photos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    Upload files
+                  </button>
+                </div>
+              ) : null}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(event) => appendAttachmentNames(event.target.files)}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(event) => appendAttachmentNames(event.target.files)}
+              />
+            </div>
             <input
               ref={inputRef}
               type="text"
@@ -411,14 +485,23 @@ export function PublicChat() {
               type="button"
               onClick={handleVoiceInput}
               disabled={isSending}
-              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isListening
-                  ? "bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                  ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
                   : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
               }`}
               aria-label={isListening ? "Stop voice input" : "Start voice input"}
             >
-              <Mic className="h-4 w-4" aria-hidden="true" />
+              {isListening ? (
+                <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
+                  <span className="recording-wave" />
+                  <span className="recording-wave [animation-delay:110ms]" />
+                  <span className="recording-wave [animation-delay:220ms]" />
+                  <span className="recording-wave [animation-delay:330ms]" />
+                </span>
+              ) : (
+                <Mic className="h-4 w-4" aria-hidden="true" />
+              )}
             </button>
             <button
               type="submit"
