@@ -121,7 +121,7 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title={isSignup ? "Sign up" : "Log in"}
+      title="Login or sign up"
       description={
         isSignup
           ? "Create your DSIQ account to save your chats and progress."
@@ -230,9 +230,7 @@ export default function LoginPage() {
         >
           {loadingAction === "email"
             ? "Continuing..."
-            : isSignup
-              ? "Sign up with email"
-              : "Log in with email"}
+            : "Continue"}
         </button>
       </form>
 

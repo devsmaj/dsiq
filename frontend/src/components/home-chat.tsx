@@ -117,28 +117,14 @@ export function HomeChat() {
               >
                 Log in
               </Link>
-              <Link
-                href="/signup"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium !text-white transition hover:bg-black"
-              >
-                Sign up
-              </Link>
             </nav>
 
-            <div className="flex items-center gap-2 lg:hidden">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-[color:var(--color-text)] transition hover:text-black"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
-              >
-                Sign up
-              </Link>
-            </div>
+            <Link
+              href="/login"
+              className="text-sm font-medium text-[color:var(--color-text)] transition hover:text-black lg:hidden"
+            >
+              Log in
+            </Link>
           </header>
 
           <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
