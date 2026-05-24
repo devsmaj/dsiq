@@ -7,7 +7,6 @@ const isUserOrOrgSite = repo.endsWith(".github.io");
 const basePath = isGithubPages && !isUserOrOrgSite ? `/${repo}` : "";
 
 const nextConfig: NextConfig = {
-  output: "export",
   trailingSlash: true,
   images: {
     unoptimized: true,
