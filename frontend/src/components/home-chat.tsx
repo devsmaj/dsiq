@@ -45,15 +45,11 @@ export function HomeChat() {
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
-            aria-label={isDesktopDrawerOpen ? "Close menu" : "Open menu"}
+            aria-label="Open menu"
             aria-expanded={isDesktopDrawerOpen}
             onClick={() => setIsDesktopDrawerOpen((value) => !value)}
           >
-            {isDesktopDrawerOpen ? (
-              <X className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
-            )}
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
           {isDesktopDrawerOpen ? (
@@ -199,14 +195,8 @@ export function HomeChat() {
       </div>
 
       {isMobileDrawerOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            aria-label="Close menu backdrop"
-            className="absolute inset-0 bg-black/20"
-            onClick={() => setIsMobileDrawerOpen(false)}
-          />
-          <aside className="absolute right-3 top-3 flex h-[calc(100dvh-1.5rem)] w-[min(20rem,calc(100vw-1.5rem))] flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+        <div className="fixed left-4 top-16 z-50 w-72 md:hidden">
+          <aside className="flex min-h-80 flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <span className="text-sm font-semibold text-[color:var(--color-text)]">
@@ -216,9 +206,9 @@ export function HomeChat() {
                   type="button"
                   aria-label="Close menu"
                   className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
-                onClick={() => setIsMobileDrawerOpen(false)}
-              >
-                <X className="h-5 w-5" aria-hidden="true" />
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                >
+                  <X className="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
 
