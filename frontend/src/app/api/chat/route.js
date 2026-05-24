@@ -1,23 +1,5 @@
 import { NextResponse } from "next/server";
 
-type GeminiChatMessage = {
-  role: "model" | "user";
-  text: string;
-};
-
-type ChatRequestBody = {
-  message?: string;
-  messages?: GeminiChatMessage[];
-};
-
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
-  }>;
-};
-
 const DSIQ_SYSTEM_PROMPT = `You are DSIQ, an AI Opportunity Coach and Accountability Assistant designed for students, developers, freelancers, and entrepreneurs.
 
 Your goal is to help users:
@@ -39,31 +21,28 @@ If user gives little information, ask simple follow-up questions first.
 Never give identical fixed responses to everyone.
 Adapt answers based on user goals, skills, time, interests, and budget.`;
 
-function isValidMessage(message: unknown): message is GeminiChatMessage {
-  if (!message || typeof message !== "object") {
-    return false;
-  }
-
-  const candidate = message as Partial<GeminiChatMessage>;
+function isValidMessage(message) {
   return (
-    (candidate.role === "model" || candidate.role === "user") &&
-    typeof candidate.text === "string" &&
-    candidate.text.trim().length > 0
+    message &&
+    typeof message === "object" &&
+    (message.role === "model" || message.role === "user") &&
+    typeof message.text === "string" &&
+    message.text.trim().length > 0
   );
 }
 
-function readResponseText(data: GeminiResponse) {
+function readResponseText(data) {
   return data.candidates?.[0]?.content?.parts
     ?.map((part) => part.text || "")
     .join("")
     .trim();
 }
 
-export async function POST(request: Request) {
-  let body: ChatRequestBody;
+export async function POST(request) {
+  let body;
 
   try {
-    body = (await request.json()) as ChatRequestBody;
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -71,7 +50,7 @@ export async function POST(request: Request) {
   const messages = Array.isArray(body.messages)
     ? body.messages.filter(isValidMessage)
     : body.message?.trim()
-      ? [{ role: "user" as const, text: body.message.trim() }]
+      ? [{ role: "user", text: body.message.trim() }]
       : [];
 
   if (messages.length === 0) {
@@ -124,7 +103,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const data = (await response.json()) as GeminiResponse;
+  const data = await response.json();
   const text = readResponseText(data);
 
   if (!text) {

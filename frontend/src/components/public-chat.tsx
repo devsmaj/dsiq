@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, SquarePen } from "lucide-react";
+import { Mic, Send, SquarePen } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -14,6 +14,36 @@ import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
 
 const GUEST_CHAT_KEY = "dsiq.guest.chat";
 const LOGGED_IN_CHAT_KEY = "dsiq.current.public-chat-id";
+
+type SpeechRecognitionResultLike = {
+  0?: {
+    transcript?: string;
+  };
+};
+
+type SpeechRecognitionEventLike = {
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechWindow = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+  };
 
 const quickActions = [
   {
@@ -60,11 +90,13 @@ export function PublicChat() {
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
   const handledInitialQuestion = useRef(false);
   const chatIdRef = useRef<string | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
     if (isAuthLoading || user) {
@@ -209,9 +241,61 @@ export function PublicChat() {
     });
   }
 
+  function handleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const speechWindow = window as SpeechWindow;
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setError("Voice input is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const spokenText = transcript.trim();
+      if (!spokenText) {
+        return;
+      }
+
+      setInput((current) =>
+        current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
+      );
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    };
+    recognition.onerror = () => {
+      setError("Voice input could not start. Please try again.");
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    setError("");
+    setIsListening(true);
+    recognition.start();
+  }
+
   return (
-    <main className="min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-      <header className="border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
+    <main className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+      <header className="shrink-0 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="text-xl font-medium tracking-tight">
             DSIQ
@@ -237,9 +321,9 @@ export function PublicChat() {
         </div>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col px-4 py-6 sm:px-6">
+      <section className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6">
         {isGuest ? (
-          <div className="mb-5 rounded-[1.25rem] border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm text-[color:var(--color-muted)] shadow-[0_12px_35px_rgba(0,0,0,0.05)]">
+          <div className="mb-4 shrink-0 rounded-[1.25rem] border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm text-[color:var(--color-muted)] shadow-[0_12px_35px_rgba(0,0,0,0.05)]">
             <Link
               href="/login"
               className="font-semibold text-[color:var(--color-text)] underline underline-offset-4"
@@ -250,9 +334,9 @@ export function PublicChat() {
           </div>
         ) : null}
 
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {messages.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center text-center">
+            <div className="flex min-h-full items-center justify-center text-center">
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight">
                   Ask DSIQ anything.
@@ -275,7 +359,7 @@ export function PublicChat() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 py-2">
               {messages.map((message, index) => (
                 <article
                   key={`${message.role}-${index}`}
@@ -304,7 +388,7 @@ export function PublicChat() {
           )}
 
           {error ? (
-            <p className="rounded-[1rem] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+            <p className="mt-4 rounded-[1rem] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
               {error}
             </p>
           ) : null}
@@ -312,21 +396,34 @@ export function PublicChat() {
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 rounded-[30px] bg-white px-5 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+          className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask DSIQ"
-            className="h-9 w-full bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
-          />
-          <div className="mt-4 flex items-center justify-end">
+          <div className="flex items-center gap-3">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask DSIQ"
+              className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
+            />
+            <button
+              type="button"
+              onClick={handleVoiceInput}
+              disabled={isSending}
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                isListening
+                  ? "bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                  : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
+              }`}
+              aria-label={isListening ? "Stop voice input" : "Start voice input"}
+            >
+              <Mic className="h-4 w-4" aria-hidden="true" />
+            </button>
             <button
               type="submit"
               disabled={isSending || !input.trim()}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Send message"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
