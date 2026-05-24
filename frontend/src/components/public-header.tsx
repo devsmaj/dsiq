@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 
+import { DsiqLogo } from "@/components/dsiq-logo";
+
 const navItems = [
   { href: "/about", label: "About" },
   { href: "/features", label: "Features" },
@@ -16,9 +18,11 @@ export function PublicHeader() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/60 bg-[color:var(--color-surface)]/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <DsiqLogo href="/" />
+
           <nav className="hidden items-center gap-8 lg:flex">
             {navItems.map((item) => (
               <Link
@@ -39,7 +43,7 @@ export function PublicHeader() {
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
             aria-controls="public-mobile-menu"

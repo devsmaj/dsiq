@@ -42,7 +42,7 @@ export default function AboutPage() {
         <section className="hero-grid overflow-hidden">
           <div className="mx-auto grid w-full max-w-7xl gap-16 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-24">
             <div className="space-y-8">
-              <span className="inline-flex rounded-full border border-[color:var(--color-brand-soft)] bg-white/80 px-4 py-2 text-sm font-medium text-[color:var(--color-brand)]">
+              <span className="inline-flex rounded-full border border-[color:var(--color-line)] bg-white px-4 py-2 text-sm font-medium text-[color:var(--color-muted)]">
                 Your AI coach for skills, opportunities, and action
               </span>
 
@@ -60,13 +60,13 @@ export default function AboutPage() {
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
                   href="/signup"
-                  className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-center text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.26)] transition hover:bg-[color:var(--color-brand-strong)]"
+                  className="rounded-full bg-[#111111] px-7 py-4 text-center text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition hover:bg-black"
                 >
                   Get Started
                 </Link>
                 <Link
                   href="/how-it-works"
-                  className="rounded-full border border-[color:var(--color-line)] px-7 py-4 text-center text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
+                  className="rounded-full border border-[color:var(--color-line)] bg-white px-7 py-4 text-center text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
                 >
                   See How It Works
                 </Link>
@@ -74,8 +74,7 @@ export default function AboutPage() {
             </div>
 
             <div className="relative">
-              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[color:var(--color-brand-soft)] blur-3xl" />
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white p-6 shadow-[0_24px_80px_rgba(11,37,39,0.12)]">
+              <div className="relative overflow-hidden rounded-[2rem] border border-[color:var(--color-line)] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-[color:var(--color-text)]">
@@ -85,7 +84,7 @@ export default function AboutPage() {
                       Personal roadmap preview
                     </p>
                   </div>
-                  <span className="rounded-full bg-[color:var(--color-cream)] px-3 py-1 text-xs font-semibold text-[color:var(--color-brand)]">
+                  <span className="rounded-full bg-[color:var(--color-surface-strong)] px-3 py-1 text-xs font-semibold text-[color:var(--color-text)]">
                     Live AI
                   </span>
                 </div>
@@ -138,7 +137,7 @@ export default function AboutPage() {
         </section>
 
         <section className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-20 lg:grid-cols-2 lg:px-8">
-          <div className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.06)]">
+          <div className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
               Problem
             </p>
@@ -152,7 +151,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="rounded-[2rem] bg-[color:var(--color-text)] p-8 text-white shadow-[0_20px_60px_rgba(11,37,39,0.18)]">
+          <div className="rounded-[2rem] bg-[color:var(--color-text)] p-8 text-white shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">
               Solution
             </p>
@@ -180,9 +179,9 @@ export default function AboutPage() {
             {steps.map((step, index) => (
               <article
                 key={step}
-                className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-7 shadow-[0_18px_40px_rgba(11,37,39,0.05)]"
+                className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-7 shadow-[0_18px_40px_rgba(0,0,0,0.05)]"
               >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-brand-soft)] text-lg font-semibold text-[color:var(--color-brand)]">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)] text-lg font-semibold text-[color:var(--color-text)]">
                   0{index + 1}
                 </span>
                 <p className="mt-6 text-base leading-8 text-[color:var(--color-muted)]">
@@ -205,7 +204,7 @@ export default function AboutPage() {
             </div>
             <Link
               href="/features"
-              className="text-sm font-semibold text-[color:var(--color-brand)]"
+              className="text-sm font-semibold text-[color:var(--color-text)] underline underline-offset-4"
             >
               Explore all features
             </Link>
@@ -218,7 +217,7 @@ export default function AboutPage() {
                 className="rounded-[2rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-7"
               >
                 <div className="flex items-start gap-4">
-                  <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-brand)] text-white">
+                  <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111111] text-white">
                     +
                   </span>
                   <p className="text-lg leading-8 text-[color:var(--color-text)]">
@@ -231,7 +230,7 @@ export default function AboutPage() {
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-6 py-20 lg:px-8">
-          <div className="rounded-[2.5rem] bg-[linear-gradient(135deg,#0b2527_0%,#11484a_100%)] px-8 py-12 text-white lg:px-12">
+          <div className="rounded-[2.5rem] bg-[#111111] px-8 py-12 text-white lg:px-12">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">
               Target Users
             </p>
@@ -270,7 +269,7 @@ export default function AboutPage() {
               </p>
             </article>
 
-            <article className="rounded-[2rem] bg-[color:var(--color-brand)] p-8 text-white shadow-[0_22px_50px_rgba(0,122,102,0.24)]">
+            <article className="rounded-[2rem] bg-[#111111] p-8 text-white shadow-[0_22px_50px_rgba(0,0,0,0.18)]">
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
                 Pro
               </p>
@@ -284,7 +283,7 @@ export default function AboutPage() {
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-6 pb-24 pt-10 lg:px-8">
-          <div className="rounded-[2.5rem] border border-[color:var(--color-line)] bg-white px-8 py-12 text-center shadow-[0_24px_60px_rgba(11,37,39,0.08)] lg:px-16">
+          <div className="rounded-[2.5rem] border border-[color:var(--color-line)] bg-white px-8 py-12 text-center shadow-[0_24px_60px_rgba(0,0,0,0.08)] lg:px-16">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
               Call To Action
             </p>
@@ -298,13 +297,13 @@ export default function AboutPage() {
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/signup"
-                className="rounded-full bg-[color:var(--color-brand)] px-7 py-4 text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-strong)]"
+                className="rounded-full bg-[#111111] px-7 py-4 text-sm font-semibold text-white transition hover:bg-black"
               >
                 Create Account
               </Link>
               <Link
                 href="/contact"
-                className="rounded-full border border-[color:var(--color-line)] px-7 py-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:border-[color:var(--color-brand)] hover:text-[color:var(--color-brand)]"
+                className="rounded-full border border-[color:var(--color-line)] px-7 py-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
               >
                 Contact Us
               </Link>

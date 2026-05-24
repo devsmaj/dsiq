@@ -112,21 +112,21 @@ export default function ContactPage() {
       <PublicHeader />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
-        <section className="rounded-[2rem] bg-[linear-gradient(145deg,#0b2527_0%,#11484a_55%,#007a66_100%)] px-8 py-12 text-white shadow-[0_28px_70px_rgba(11,37,39,0.22)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+        <section className="rounded-[2rem] border border-[color:var(--color-line)] bg-white px-8 py-12 text-[color:var(--color-text)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             Contact
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
             Reach out if you want to collaborate, ask questions, or partner.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
+          <p className="mt-4 max-w-3xl text-base leading-8 text-[color:var(--color-muted)]">
             DSIQ is growing, and we are open to conversations around community,
             product feedback, education, and opportunities.
           </p>
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
+          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
               Contact form
             </p>
@@ -137,28 +137,28 @@ export default function ContactPage() {
                 placeholder="Your name"
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
               />
               <input
                 type="email"
                 placeholder="Your email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
               />
               <input
                 type="text"
                 placeholder="Subject"
                 value={form.subject}
                 onChange={(event) => updateField("subject", event.target.value)}
-                className="w-full rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
               />
               <textarea
                 placeholder="Tell us what you need"
                 value={form.message}
                 onChange={(event) => updateField("message", event.target.value)}
                 rows={6}
-                className="w-full rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm leading-7 text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                className="w-full rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm leading-7 text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
               />
 
               {error ? (
@@ -168,7 +168,7 @@ export default function ContactPage() {
               ) : null}
 
               {success ? (
-                <p className="rounded-[1.25rem] border border-[color:var(--color-brand-soft)] bg-[color:var(--color-brand-soft)]/30 px-4 py-3 text-sm text-[color:var(--color-text)]">
+                <p className="rounded-[1.25rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm text-[color:var(--color-text)]">
                   {success}
                 </p>
               ) : null}
@@ -176,14 +176,14 @@ export default function ContactPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-full bg-[color:var(--color-brand)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.22)] transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[#111111] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Sending..." : "Send message"}
               </button>
             </form>
           </article>
 
-          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
+          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
               Email and social links
             </p>
@@ -194,7 +194,7 @@ export default function ContactPage() {
                   href={link.href}
                   target={link.href.startsWith("http") ? "_blank" : undefined}
                   rel={link.href.startsWith("http") ? "noreferrer" : undefined}
-                  className="block rounded-[1.5rem] bg-[color:var(--color-surface)] px-5 py-4 transition hover:bg-[color:var(--color-brand-soft)]/35"
+                  className="block rounded-[1.5rem] bg-[color:var(--color-surface-strong)] px-5 py-4 transition hover:bg-white hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
                     {link.label}

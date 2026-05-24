@@ -46,14 +46,14 @@ export default function HowItWorksPage() {
       <PublicHeader />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
-        <section className="rounded-[2rem] bg-[linear-gradient(145deg,#0b2527_0%,#11484a_55%,#007a66_100%)] px-8 py-12 text-white shadow-[0_28px_70px_rgba(11,37,39,0.22)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+        <section className="rounded-[2rem] border border-[color:var(--color-line)] bg-white px-8 py-12 text-[color:var(--color-text)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             How It Works
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
             DSIQ guides users from first questions to focused action.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
+          <p className="mt-4 max-w-3xl text-base leading-8 text-[color:var(--color-muted)]">
             The process is simple: understand the user, generate a path, and
             keep momentum alive through missions and coaching.
           </p>
@@ -63,14 +63,14 @@ export default function HowItWorksPage() {
           {steps.map((step, index) => (
             <article
               key={step.title}
-              className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]"
+              className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--color-brand-soft)] text-lg font-semibold text-[color:var(--color-brand)]">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)] text-lg font-semibold text-[color:var(--color-text)]">
                   0{index + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-brand)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
                     {step.title}
                   </p>
                   <p className="mt-4 text-base leading-8 text-[color:var(--color-text)]">

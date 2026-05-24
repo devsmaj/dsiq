@@ -48,21 +48,21 @@ export default function PricingPage() {
       <PublicHeader />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-8">
-        <section className="rounded-[2rem] bg-[linear-gradient(145deg,#0b2527_0%,#11484a_55%,#007a66_100%)] px-8 py-12 text-white shadow-[0_28px_70px_rgba(11,37,39,0.22)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+        <section className="rounded-[2rem] border border-[color:var(--color-line)] bg-white px-8 py-12 text-[color:var(--color-text)] shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             Pricing
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
             Start free and upgrade when you need stronger coaching support.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
+          <p className="mt-4 max-w-3xl text-base leading-8 text-[color:var(--color-muted)]">
             DSIQ is designed to help users get moving quickly, then grow into a
             more personalized and accountable experience over time.
           </p>
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
+          <article className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
               Free plan
             </p>
@@ -75,7 +75,7 @@ export default function PricingPage() {
             </p>
           </article>
 
-          <article className="rounded-[2rem] bg-[color:var(--color-brand)] p-8 text-white shadow-[0_22px_50px_rgba(0,122,102,0.24)]">
+          <article className="rounded-[2rem] bg-[#111111] p-8 text-white shadow-[0_22px_50px_rgba(0,0,0,0.18)]">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">
               Pro plan
             </p>
@@ -89,7 +89,7 @@ export default function PricingPage() {
           </article>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
+        <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             What is included
           </p>
@@ -107,7 +107,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(11,37,39,0.08)]">
+        <section className="mt-6 rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
             FAQ
           </p>
