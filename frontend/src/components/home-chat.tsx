@@ -11,7 +11,7 @@ import {
   SquarePen,
   X,
 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const navItems = [
@@ -22,7 +22,24 @@ const navItems = [
   { href: "/contact", label: "Contact" },
 ];
 
-const promptModes = ["Write", "Plan", "Research", "Learn"];
+const promptModes = [
+  {
+    label: "Write",
+    prompt: "Help me write something that supports my goal.",
+  },
+  {
+    label: "Plan",
+    prompt: "Create a step-by-step plan for my goal.",
+  },
+  {
+    label: "Find",
+    prompt: "Help me find the best opportunity based on my skills and goals.",
+  },
+  {
+    label: "Learn",
+    prompt: "Create a learning roadmap for me based on my goal.",
+  },
+];
 
 export function HomeChat() {
   const router = useRouter();
@@ -30,6 +47,7 @@ export function HomeChat() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const promptInputRef = useRef<HTMLInputElement>(null);
 
   function openNewChatDialog() {
     setIsDesktopDrawerOpen(false);
@@ -50,6 +68,13 @@ export function HomeChat() {
     }
 
     router.push(`/chat?guest=true&q=${encodeURIComponent(message)}`);
+  }
+
+  function handleQuickPrompt(promptText: string) {
+    setPrompt(promptText);
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+    });
   }
 
   return (
@@ -153,6 +178,7 @@ export function HomeChat() {
                 onSubmit={handlePromptSubmit}
               >
                 <input
+                  ref={promptInputRef}
                   type="text"
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
@@ -190,10 +216,11 @@ export function HomeChat() {
                 {promptModes.map((mode) => (
                   <button
                     type="button"
-                    key={mode}
-                    className="inline-flex h-14 items-center justify-center rounded-full bg-white px-5 text-base text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                    key={mode.label}
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
+                    onClick={() => handleQuickPrompt(mode.prompt)}
                   >
-                    {mode}
+                    {mode.label}
                   </button>
                 ))}
               </div>

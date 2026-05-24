@@ -211,7 +211,7 @@ export function PublicChat() {
             >
               Sign in
             </Link>{" "}
-            to save this chat, missions, and progress.
+            to save your chats, missions, and progress.
           </div>
         ) : null}
 
