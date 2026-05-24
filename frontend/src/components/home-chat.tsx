@@ -198,10 +198,7 @@ export function HomeChat() {
         <div className="fixed left-4 top-16 z-50 w-72 md:hidden">
           <aside className="flex min-h-80 flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[color:var(--color-text)]">
-                  DSIQ
-                </span>
+              <div className="mb-4 flex justify-end">
                 <button
                   type="button"
                   aria-label="Close menu"

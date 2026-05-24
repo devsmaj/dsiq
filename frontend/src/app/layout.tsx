@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth-provider";
+import { GlobalLoadingDelay } from "@/components/global-loading-delay";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -60,7 +61,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <GlobalLoadingDelay />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

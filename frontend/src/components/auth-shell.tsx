@@ -15,10 +15,6 @@ export function AuthShell({ title, description, children }: AuthShellProps) {
       </div>
 
       <section className="flex w-full max-w-sm flex-col items-center text-center">
-        <div className="mb-10 sm:hidden">
-          <DsiqLogo href="/" />
-        </div>
-
         <div className="mb-6">
           <h1 className="text-3xl font-semibold leading-tight text-[color:var(--color-text)]">
             {title}
