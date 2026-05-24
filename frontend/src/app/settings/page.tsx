@@ -165,7 +165,7 @@ export default function SettingsPage() {
                   value={deleteConfirmation}
                   onChange={(event) => setDeleteConfirmation(event.target.value)}
                   placeholder="DELETE"
-                  className="mt-3 w-full rounded-[1.25rem] border border-[#e0b9b9] bg-white px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[#b88484] focus:border-[#9b3c3c]"
+                  className="mt-3 w-full rounded-[1.25rem] border border-[#e0b9b9] bg-white px-4 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[#b88484] focus:border-transparent focus:ring-0"
                 />
               </label>
               {deleteError ? (

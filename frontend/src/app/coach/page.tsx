@@ -71,7 +71,7 @@ export default function CoachPage() {
                 <input
                   type="text"
                   placeholder="Ask your coach what to focus on next..."
-                  className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[color:var(--color-brand)]"
+                  className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3.5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
                 />
                 <button
                   type="button"

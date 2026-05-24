@@ -137,28 +137,28 @@ export default function ContactPage() {
                 placeholder="Your name"
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
               />
               <input
                 type="email"
                 placeholder="Your email"
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
               />
               <input
                 type="text"
                 placeholder="Subject"
                 value={form.subject}
                 onChange={(event) => updateField("subject", event.target.value)}
-                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+                className="w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
               />
               <textarea
                 placeholder="Tell us what you need"
                 value={form.message}
                 onChange={(event) => updateField("message", event.target.value)}
                 rows={6}
-                className="w-full rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm leading-7 text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+                className="w-full rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm leading-7 text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
               />
 
               {error ? (

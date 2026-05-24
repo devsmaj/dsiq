@@ -16,26 +16,40 @@ const navItems = [
 
 export function PublicHeader() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  function showNavigationLoading() {
+    setIsNavigating(true);
+    setIsOpen(false);
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
+      {isNavigating ? (
+        <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-[color:var(--color-line)]">
+          <span className="block h-full w-1/3 animate-[dsiq-loading-bar_900ms_ease-in-out_infinite] bg-[#111111]" />
+        </div>
+      ) : null}
+
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
           <DsiqLogo href="/" />
 
-          <nav className="hidden items-center gap-8 lg:flex">
+          <nav className="hidden items-center gap-5 text-[13px] font-medium text-[color:var(--color-text)] lg:flex">
             {navItems.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="nav-link"
+                className="transition hover:text-black"
+                onClick={showNavigationLoading}
               >
                 {item.label}
               </Link>
             ))}
             <Link
               href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium text-white transition hover:bg-black"
+              className="inline-flex h-10 min-w-20 items-center justify-center rounded-full bg-[#111111] px-6 text-[13px] font-medium leading-none text-white transition hover:bg-black"
+              onClick={showNavigationLoading}
             >
               Login
             </Link>
@@ -68,7 +82,7 @@ export function PublicHeader() {
                   key={item.label}
                   href={item.href}
                   className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
-                  onClick={() => setIsOpen(false)}
+                  onClick={showNavigationLoading}
                 >
                   {item.label}
                 </Link>
@@ -78,8 +92,8 @@ export function PublicHeader() {
             <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/login"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black"
-                onClick={() => setIsOpen(false)}
+                className="inline-flex h-11 w-full min-w-20 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium leading-none text-white transition hover:bg-black"
+                onClick={showNavigationLoading}
               >
                 Login
               </Link>

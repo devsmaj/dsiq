@@ -76,7 +76,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: none;
 }
 
 a {
@@ -124,6 +124,16 @@ a {
   40% {
     opacity: 1;
     transform: translateY(-2px);
+  }
+}
+
+@keyframes dsiq-loading-bar {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(320%);
   }
 }
 
@@ -199,8 +209,8 @@ a {
   }
 
   .form-input:focus {
-    border-color: var(--color-brand);
-    box-shadow: 0 0 0 4px var(--color-brand-soft);
+    border-color: transparent;
+    box-shadow: none;
   }
 
   .surface-card {
