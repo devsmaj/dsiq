@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Bot, CheckCircle2, Compass, TrendingUp } from "lucide-react";
 
+import { PrivateFooter } from "@/components/private-footer";
+import { PrivateHeader } from "@/components/private-header";
 import { PrivateRoute } from "@/components/private-route";
 import { ProfileStatePanel } from "@/components/profile-state-panel";
 import {
