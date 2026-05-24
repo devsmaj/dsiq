@@ -186,7 +186,7 @@ export default function LoginPage() {
               onChange={(event) => setFullName(event.target.value)}
               required
               autoComplete="name"
-              className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+              className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111] focus:ring-4 focus:ring-black/10"
               placeholder="Full name"
             />
           </label>
@@ -200,7 +200,7 @@ export default function LoginPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             autoComplete="email"
-            className="h-12 w-full rounded-full border border-[#8aa2ff] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+            className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111] focus:ring-4 focus:ring-black/10"
             placeholder="Email address"
           />
         </label>
@@ -213,7 +213,7 @@ export default function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             required
             autoComplete="current-password"
-            className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#4c6fff] focus:ring-4 focus:ring-[#4c6fff]/10"
+            className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111] focus:ring-4 focus:ring-black/10"
             placeholder="Password"
           />
         </label>

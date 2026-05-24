@@ -35,7 +35,7 @@ export function PublicHeader() {
             ))}
             <Link
               href="/login"
-              className="nav-link"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium text-white transition hover:bg-black"
             >
               Login
             </Link>
@@ -78,7 +78,7 @@ export function PublicHeader() {
             <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/login"
-                className="btn-secondary"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black"
                 onClick={() => setIsOpen(false)}
               >
                 Login

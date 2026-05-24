@@ -38,22 +38,33 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[color:var(--color-background)] p-0.5 text-[color:var(--color-text)]">
       <div className="flex min-h-[calc(100vh-4px)] overflow-hidden rounded-[9px] border border-[color:var(--color-line)] bg-[color:var(--color-background)]">
-        <aside className="hidden w-72 flex-col justify-between bg-[color:var(--color-surface-strong)] px-4 py-7 md:flex">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            New Chat
-          </Link>
+        <aside className="relative hidden w-[72px] bg-[color:var(--color-surface-strong)] px-4 py-7 md:block">
+          <details className="group">
+            <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white">
+              <span className="sr-only">Open menu</span>
+              <Menu className="h-5 w-5 group-open:hidden" aria-hidden="true" />
+              <span className="hidden text-lg leading-none group-open:block" aria-hidden="true">
+                ×
+              </span>
+            </summary>
+            <div className="absolute left-4 top-20 z-40 flex h-[calc(100vh-8rem)] w-72 flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+              <Link
+                href="/"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                New Chat
+              </Link>
 
-          <Link
-            href="/settings"
-            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white"
-          >
-            <Settings className="h-4 w-4" aria-hidden="true" />
-            Settings & Help
-          </Link>
+              <Link
+                href="/settings"
+                className="flex items-center gap-3 rounded-2xl border-t border-[color:var(--color-line)] px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <Settings className="h-4 w-4" aria-hidden="true" />
+                Settings & Help
+              </Link>
+            </div>
+          </details>
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col">
