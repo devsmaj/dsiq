@@ -82,14 +82,14 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-[var(--radius-md)] bg-[color:var(--color-brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--color-brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-[var(--radius-md)] bg-[#111111] px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? "Sending reset link..." : "Send reset link"}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-[color:var(--color-muted)]">
-        <Link href="/login" className="font-semibold text-[color:var(--color-brand)]">
+        <Link href="/login" className="font-semibold text-[color:var(--color-text)] underline underline-offset-4">
           Back to login
         </Link>
       </p>

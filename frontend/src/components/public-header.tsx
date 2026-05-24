@@ -51,7 +51,7 @@ export function PublicHeader() {
               className="inline-flex h-10 min-w-20 items-center justify-center rounded-full bg-[#111111] px-6 text-[13px] font-medium leading-none text-white transition hover:bg-black"
               onClick={showNavigationLoading}
             >
-              Login
+              Get Started
             </Link>
           </nav>
 
@@ -95,7 +95,7 @@ export function PublicHeader() {
                 className="inline-flex h-11 w-full min-w-20 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium leading-none text-white transition hover:bg-black"
                 onClick={showNavigationLoading}
               >
-                Login
+                Get Started
               </Link>
             </div>
           </div>

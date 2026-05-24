@@ -115,7 +115,7 @@ export function HomeChat() {
                 href="/login"
                 className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium text-white transition hover:bg-black"
               >
-                Login
+                Get Started
               </Link>
             </nav>
 
@@ -123,7 +123,7 @@ export function HomeChat() {
               href="/login"
               className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black lg:hidden"
             >
-              Login
+              Get Started
             </Link>
           </header>
 

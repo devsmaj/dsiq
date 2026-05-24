@@ -132,11 +132,11 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title={isSignup ? "Create your account" : "Log in or sign up"}
+      title={isSignup ? "Sign up" : "Log in"}
       description={
         isSignup
-          ? "Create your DSIQ account with Firebase authentication."
-          : "Continue to your coaching, missions, and progress tracking."
+          ? "Create your DSIQ account to save your chats and progress."
+          : "Log in to continue your chats, coaching, missions, and progress."
       }
     >
       <button
@@ -146,7 +146,13 @@ export default function LoginPage() {
         className="mb-3 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
-        <span>{loadingAction === "google" ? "Opening Google..." : "Continue with Google"}</span>
+        <span>
+          {loadingAction === "google"
+            ? "Opening Google..."
+            : isSignup
+              ? "Sign up with Google"
+              : "Sign in with Google"}
+        </span>
         <span />
       </button>
 
@@ -157,7 +163,13 @@ export default function LoginPage() {
         className="mb-5 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <AppleIcon />
-        <span>{loadingAction === "apple" ? "Opening Apple..." : "Continue with Apple"}</span>
+        <span>
+          {loadingAction === "apple"
+            ? "Opening Apple..."
+            : isSignup
+              ? "Sign up with Apple"
+              : "Sign in with Apple"}
+        </span>
         <span />
       </button>
 
@@ -221,15 +233,35 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loadingAction === "email"
             ? "Continuing..."
             : isSignup
-              ? "Create account"
-              : "Continue"}
+              ? "Sign up with email"
+              : "Log in with email"}
         </button>
       </form>
+
+      {!isSignup ? (
+        <div className="mt-4 text-center">
+          <a
+            href="/forgot-password"
+            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+          >
+            Forgot password?
+          </a>
+        </div>
+      ) : (
+        <div className="mt-4 text-center">
+          <a
+            href="/login"
+            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+          >
+            Already have an account? Log in
+          </a>
+        </div>
+      )}
 
       {error ? (
         <p className="rounded-[var(--radius-md)] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
