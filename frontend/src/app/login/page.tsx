@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { AuthShell } from "@/components/auth-shell";
@@ -233,7 +234,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-            className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loadingAction === "email"
             ? "Continuing..."
@@ -244,22 +245,28 @@ export default function LoginPage() {
       </form>
 
       {!isSignup ? (
-        <div className="mt-4 text-center">
-          <a
+        <div className="mt-4 space-y-3 text-center">
+          <Link
             href="/forgot-password"
-            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+            className="block text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
           >
             Forgot password?
-          </a>
+          </Link>
+          <Link
+            href="/signup"
+            className="block text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+          >
+            Do not have an account? Sign up
+          </Link>
         </div>
       ) : (
         <div className="mt-4 text-center">
-          <a
+          <Link
             href="/login"
             className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
           >
             Already have an account? Log in
-          </a>
+          </Link>
         </div>
       )}
 
