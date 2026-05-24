@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import {
-  ChevronDown,
   Menu,
   Mic,
   Plus,
+  Send,
   Settings,
   SlidersHorizontal,
   SquarePen,
@@ -69,6 +69,7 @@ export function HomeChat() {
 
   function startNewChat() {
     setIsNewChatDialogOpen(false);
+    router.push("/chat");
   }
 
   function handlePromptSubmit(event: FormEvent<HTMLFormElement>) {
@@ -210,16 +211,16 @@ export function HomeChat() {
                     Tools
                   </button>
                   <div className="flex-1" />
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 text-sm text-[color:var(--color-text)]"
-                  >
-                    Flash
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#111111]" />
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
                   <button type="button" aria-label="Microphone" className="text-[#303134]">
                     <Mic className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!prompt.trim()}
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Send message"
+                  >
+                    <Send className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
               </form>
