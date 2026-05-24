@@ -11,7 +11,8 @@ import {
   SquarePen,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const navItems = [
   { href: "/about", label: "About" },
@@ -24,9 +25,11 @@ const navItems = [
 const promptModes = ["Write", "Plan", "Research", "Learn"];
 
 export function HomeChat() {
+  const router = useRouter();
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
+  const [prompt, setPrompt] = useState("");
 
   function openNewChatDialog() {
     setIsDesktopDrawerOpen(false);
@@ -36,6 +39,17 @@ export function HomeChat() {
 
   function startNewChat() {
     setIsNewChatDialogOpen(false);
+  }
+
+  function handlePromptSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const message = prompt.trim();
+    if (!message) {
+      return;
+    }
+
+    router.push(`/chat?guest=true&q=${encodeURIComponent(message)}`);
   }
 
   return (
@@ -134,9 +148,14 @@ export function HomeChat() {
                 <br className="hidden sm:block" /> AI assistant
               </h1>
 
-              <form className="mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]">
+              <form
+                className="mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+                onSubmit={handlePromptSubmit}
+              >
                 <input
                   type="text"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
                   placeholder="Ask DSIQ"
                   className="h-9 w-full bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
                 />
