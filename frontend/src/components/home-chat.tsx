@@ -41,12 +41,24 @@ const promptModes = [
   },
 ];
 
+function shufflePromptModes() {
+  const modes = [...promptModes];
+
+  for (let index = modes.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [modes[index], modes[swapIndex]] = [modes[swapIndex], modes[index]];
+  }
+
+  return modes;
+}
+
 export function HomeChat() {
   const router = useRouter();
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [quickActions] = useState(shufflePromptModes);
   const promptInputRef = useRef<HTMLInputElement>(null);
 
   function openNewChatDialog() {
@@ -213,11 +225,12 @@ export function HomeChat() {
               </form>
 
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                {promptModes.map((mode) => (
+                {quickActions.map((mode, index) => (
                   <button
                     type="button"
                     key={mode.label}
-                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
+                    className="inline-flex min-h-12 animate-fade-up items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
+                    style={{ animationDelay: `${index * 70}ms` }}
                     onClick={() => handleQuickPrompt(mode.prompt)}
                   >
                     {mode.label}
