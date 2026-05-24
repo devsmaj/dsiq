@@ -58,7 +58,10 @@ export function PublicHeader() {
         </div>
 
         {isOpen ? (
-          <div id="public-mobile-menu" className="mobile-menu-panel mt-4 p-4 lg:hidden">
+          <div
+            id="public-mobile-menu"
+            className="mobile-menu-panel mt-4 flex flex-col justify-between p-4 lg:hidden"
+          >
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link

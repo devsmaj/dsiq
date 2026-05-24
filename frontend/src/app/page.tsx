@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Menu,
   Mic,
-  Pencil,
   Plus,
   Settings,
   SlidersHorizontal,
@@ -39,27 +38,57 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[color:var(--color-background)] p-0.5 text-[color:var(--color-text)]">
       <div className="flex min-h-[calc(100vh-4px)] overflow-hidden rounded-[9px] border border-[color:var(--color-line)] bg-[color:var(--color-background)]">
-        <aside className="hidden w-[72px] flex-col items-center justify-between bg-[color:var(--color-surface-strong)] py-7 md:flex">
-          <div className="flex flex-col items-center gap-12 text-[#2b2f33]">
-            <button type="button" aria-label="Open menu">
-              <Menu className="h-5 w-5" />
-            </button>
-            <button type="button" aria-label="New prompt" className="text-[color:var(--color-muted)]">
-              <Pencil className="h-5 w-5" />
-            </button>
-          </div>
+        <aside className="hidden w-72 flex-col justify-between bg-[color:var(--color-surface-strong)] px-4 py-7 md:flex">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New Chat
+          </Link>
 
-          <button type="button" aria-label="Settings" className="text-[#2b2f33]">
-            <Settings className="h-5 w-5" />
-          </button>
+          <Link
+            href="/settings"
+            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white"
+          >
+            <Settings className="h-4 w-4" aria-hidden="true" />
+            Settings & Help
+          </Link>
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
-              <button type="button" aria-label="Open menu" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </button>
+              <details className="relative md:hidden">
+                <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]">
+                  <span className="sr-only">Open menu</span>
+                  <Menu className="h-5 w-5" />
+                </summary>
+                <div className="absolute left-0 top-12 z-40 flex h-[calc(100dvh-7rem)] w-72 flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+                  <Link
+                    href="/"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    New Chat
+                  </Link>
+
+                  <div className="space-y-2 border-t border-[color:var(--color-line)] pt-4">
+                    <Link
+                      href="/about"
+                      className="block rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                    >
+                      About DSIQ
+                    </Link>
+                    <Link
+                      href="/settings"
+                      className="block rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                    >
+                      Settings & Help
+                    </Link>
+                  </div>
+                </div>
+              </details>
               <Link href="/" className="text-xl font-medium tracking-tight">
                 DSIQ
               </Link>

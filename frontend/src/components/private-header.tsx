@@ -80,7 +80,10 @@ export function PrivateHeader() {
         </div>
 
         {isOpen ? (
-          <div id="private-mobile-menu" className="mobile-menu-panel mt-4 p-4 lg:hidden">
+          <div
+            id="private-mobile-menu"
+            className="mobile-menu-panel mt-4 flex flex-col justify-between p-4 lg:hidden"
+          >
             <nav className="flex flex-col gap-2">
               {privateNavItems.map((item) => (
                 <Link
