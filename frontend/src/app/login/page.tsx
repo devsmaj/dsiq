@@ -61,7 +61,7 @@ export default function LoginPage() {
   const router = useRouter();
   const pathname = usePathname();
   const isSignup = pathname === "/signup";
-  const { login, loginWithApple, loginWithGoogle, signup, tryDemo } = useAuth();
+  const { login, loginWithApple, loginWithGoogle, signup } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -119,20 +119,6 @@ export default function LoginPage() {
     }
   }
 
-  async function handleTryDemo() {
-    setError("");
-
-    try {
-      setLoadingAction("demo");
-      await tryDemo();
-      router.replace("/dashboard");
-    } catch (submissionError) {
-      setError(getAuthErrorMessage(submissionError));
-    } finally {
-      setLoadingAction(null);
-    }
-  }
-
   return (
     <AuthShell
       title={isSignup ? "Sign up" : "Log in"}
@@ -170,11 +156,11 @@ export default function LoginPage() {
 
       <button
         type="button"
-        onClick={handleTryDemo}
+        onClick={() => router.push("/")}
         disabled={isLoading}
         className="mb-5 h-11 w-full rounded-full text-sm font-medium text-[#111111] underline underline-offset-4 transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loadingAction === "demo" ? "Opening demo..." : "Try it first"}
+        Chat
       </button>
 
       <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-[color:var(--color-text)]">
