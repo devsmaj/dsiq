@@ -60,7 +60,7 @@ export default function AboutPage() {
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
                   href="/signup"
-                  className="rounded-full bg-[#111111] px-7 py-4 text-center text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition hover:bg-black"
+                  className="rounded-full bg-[#111111] px-7 py-4 text-center text-sm font-semibold !text-white shadow-[0_18px_40px_rgba(0,0,0,0.16)] transition hover:bg-black"
                 >
                   Get Started
                 </Link>
@@ -297,7 +297,7 @@ export default function AboutPage() {
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="/signup"
-                className="rounded-full bg-[#111111] px-7 py-4 text-sm font-semibold text-white transition hover:bg-black"
+                className="rounded-full bg-[#111111] px-7 py-4 text-sm font-semibold !text-white transition hover:bg-black"
               >
                 Create Account
               </Link>

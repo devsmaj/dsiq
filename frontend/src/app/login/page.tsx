@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -64,6 +65,7 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "demo" | "email" | "google" | null
@@ -148,11 +150,7 @@ export default function LoginPage() {
       >
         <GoogleIcon />
         <span>
-          {loadingAction === "google"
-            ? "Opening Google..."
-            : isSignup
-              ? "Sign up with Google"
-              : "Sign in with Google"}
+          {loadingAction === "google" ? "Opening Google..." : "Continue with Google"}
         </span>
         <span />
       </button>
@@ -165,11 +163,7 @@ export default function LoginPage() {
       >
         <AppleIcon />
         <span>
-          {loadingAction === "apple"
-            ? "Opening Apple..."
-            : isSignup
-              ? "Sign up with Apple"
-              : "Sign in with Apple"}
+          {loadingAction === "apple" ? "Opening Apple..." : "Continue with Apple"}
         </span>
         <span />
       </button>
@@ -218,17 +212,29 @@ export default function LoginPage() {
           />
         </label>
 
-        <label className="block text-left">
+        <label className="relative block text-left">
           <span className="sr-only">Password</span>
           <input
-            type="password"
+            type={isPasswordVisible ? "text" : "password"}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
             autoComplete="current-password"
-            className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
+            className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 pr-12 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
             placeholder="Password"
           />
+          <button
+            type="button"
+            aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+            className="absolute right-4 top-1/2 flex -translate-y-1/2 text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+            onClick={() => setIsPasswordVisible((value) => !value)}
+          >
+            {isPasswordVisible ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
         </label>
 
         <button
@@ -245,18 +251,12 @@ export default function LoginPage() {
       </form>
 
       {!isSignup ? (
-        <div className="mt-4 space-y-3 text-center">
+        <div className="mt-4 text-center">
           <Link
             href="/forgot-password"
-            className="block text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
           >
             Forgot password?
-          </Link>
-          <Link
-            href="/signup"
-            className="block text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
-          >
-            Do not have an account? Sign up
           </Link>
         </div>
       ) : (

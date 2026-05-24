@@ -113,18 +113,32 @@ export function HomeChat() {
               ))}
               <Link
                 href="/login"
-                className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium text-white transition hover:bg-black"
+                className="transition hover:text-black"
               >
-                Get Started
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-medium !text-white transition hover:bg-black"
+              >
+                Sign up
               </Link>
             </nav>
 
-            <Link
-              href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black lg:hidden"
-            >
-              Get Started
-            </Link>
+            <div className="flex items-center gap-2 lg:hidden">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-[color:var(--color-text)] transition hover:text-black"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
+              >
+                Sign up
+              </Link>
+            </div>
           </header>
 
           <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
@@ -268,7 +282,7 @@ export function HomeChat() {
               <button
                 type="button"
                 onClick={startNewChat}
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
               >
                 New Chat
               </button>

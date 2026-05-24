@@ -48,10 +48,17 @@ export function PublicHeader() {
             ))}
             <Link
               href="/login"
-              className="inline-flex h-10 min-w-20 items-center justify-center rounded-full bg-[#111111] px-6 text-[13px] font-medium leading-none text-white transition hover:bg-black"
+              className="transition hover:text-black"
               onClick={showNavigationLoading}
             >
-              Get Started
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex h-10 min-w-20 items-center justify-center rounded-full bg-[#111111] px-6 text-[13px] font-medium leading-none !text-white transition hover:bg-black"
+              onClick={showNavigationLoading}
+            >
+              Sign up
             </Link>
           </nav>
 
@@ -90,13 +97,22 @@ export function PublicHeader() {
             </nav>
 
             <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
-              <Link
-                href="/login"
-                className="inline-flex h-11 w-full min-w-20 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium leading-none text-white transition hover:bg-black"
-                onClick={showNavigationLoading}
-              >
-                Get Started
-              </Link>
+              <div className="grid gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-medium leading-none text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                  onClick={showNavigationLoading}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex h-11 w-full min-w-20 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium leading-none !text-white transition hover:bg-black"
+                  onClick={showNavigationLoading}
+                >
+                  Sign up
+                </Link>
+              </div>
             </div>
           </div>
         ) : null}
