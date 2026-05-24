@@ -13,6 +13,7 @@ import {
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
+  fetchSignInMethodsForEmail,
   GoogleAuthProvider,
   onAuthStateChanged,
   OAuthProvider,
@@ -45,6 +46,10 @@ type AuthContextValue = {
     email: string;
     password: string;
     rememberMe: boolean;
+  }) => Promise<void>;
+  loginOrSignupWithEmail: (input: {
+    email: string;
+    password: string;
   }) => Promise<void>;
   loginWithApple: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
@@ -181,6 +186,24 @@ async function syncFirebaseUserRecordSafely(
   }
 }
 
+function getAuthCode(error: unknown) {
+  return typeof error === "object" && error && "code" in error
+    ? String(error.code)
+    : "";
+}
+
+function getSocialAccountMessage(methods: string[]) {
+  if (methods.includes("google.com")) {
+    return "This email is already registered with Google. Please continue with Google.";
+  }
+
+  if (methods.includes("apple.com")) {
+    return "This email is already registered with Apple. Please continue with Apple.";
+  }
+
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const authMode: "firebase" | "local" = hasFirebaseConfig ? "firebase" : "local";
   const [user, setUser] = useState<AppUser | null>(() =>
@@ -258,6 +281,110 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           authProvider: "password",
         });
         setUser(mapFirebaseUser(credential.user));
+      },
+      loginOrSignupWithEmail: async ({ email, password }) => {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (authMode === "local") {
+          const storedPassword = window.localStorage.getItem(
+            `${LOCAL_PASSWORD_PREFIX}${normalizedEmail}`,
+          );
+
+          if (storedPassword && storedPassword !== password) {
+            throw new Error("Email or password is incorrect.");
+          }
+
+          const nextUser = {
+            uid: `local-${normalizedEmail}`,
+            email: normalizedEmail,
+            displayName: normalizedEmail.split("@")[0],
+          };
+
+          if (!storedPassword) {
+            window.localStorage.setItem(
+              `${LOCAL_PASSWORD_PREFIX}${normalizedEmail}`,
+              password,
+            );
+          }
+
+          writeLocalUser(nextUser);
+          setUser(nextUser);
+          return;
+        }
+
+        if (!auth) {
+          throw new Error("Firebase Auth is not available.");
+        }
+
+        await setPersistence(auth, browserLocalPersistence);
+
+        try {
+          const credential = await signInWithEmailAndPassword(
+            auth,
+            normalizedEmail,
+            password,
+          );
+          await syncFirebaseUserRecordSafely({
+            uid: credential.user.uid,
+            email: credential.user.email,
+            displayName: credential.user.displayName,
+            reason: "login",
+            authProvider: "password",
+          });
+          setUser(mapFirebaseUser(credential.user));
+          return;
+        } catch (signInError) {
+          const signInCode = getAuthCode(signInError);
+
+          if (
+            signInCode.includes("wrong-password") ||
+            signInCode.includes("invalid-credential")
+          ) {
+            const methods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+            const socialMessage = getSocialAccountMessage(methods);
+
+            if (socialMessage) {
+              throw new Error(socialMessage);
+            }
+
+            if (methods.includes("password")) {
+              throw new Error("Email or password is incorrect.");
+            }
+          } else if (!signInCode.includes("user-not-found")) {
+            throw signInError;
+          }
+        }
+
+        try {
+          const credential = await createUserWithEmailAndPassword(
+            auth,
+            normalizedEmail,
+            password,
+          );
+          await syncFirebaseUserRecordSafely({
+            uid: credential.user.uid,
+            email: credential.user.email,
+            displayName: credential.user.displayName,
+            reason: "signup",
+            authProvider: "password",
+          });
+          setUser(mapFirebaseUser(credential.user));
+        } catch (createError) {
+          const createCode = getAuthCode(createError);
+
+          if (createCode.includes("email-already-in-use")) {
+            const methods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+            const socialMessage = getSocialAccountMessage(methods);
+
+            if (socialMessage) {
+              throw new Error(socialMessage);
+            }
+
+            throw new Error("Email or password is incorrect.");
+          }
+
+          throw createError;
+        }
       },
       loginWithApple: async () => {
         if (authMode === "local") {

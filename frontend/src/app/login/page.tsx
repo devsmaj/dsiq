@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 import { AuthShell } from "@/components/auth-shell";
@@ -52,17 +52,9 @@ function getAuthErrorMessage(error: unknown) {
   return "We could not log you in. Please try again.";
 }
 
-function getRedirectPath() {
-  const searchParams = new URLSearchParams(window.location.search);
-  return searchParams.get("next") || "/dashboard";
-}
-
 export default function LoginPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const isSignup = pathname === "/signup";
-  const { login, loginWithApple, loginWithGoogle, signup } = useAuth();
-  const [fullName, setFullName] = useState("");
+  const { loginOrSignupWithEmail, loginWithApple, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -78,12 +70,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("email");
-      if (isSignup) {
-        await signup({ fullName, email, password });
-      } else {
-        await login({ email, password, rememberMe: true });
-      }
-      router.replace(getRedirectPath());
+      await loginOrSignupWithEmail({ email, password });
+      router.replace("/dashboard");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -97,7 +85,7 @@ export default function LoginPage() {
     try {
       setLoadingAction("google");
       await loginWithGoogle();
-      router.replace(getRedirectPath());
+      router.replace("/dashboard");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -111,7 +99,7 @@ export default function LoginPage() {
     try {
       setLoadingAction("apple");
       await loginWithApple();
-      router.replace(getRedirectPath());
+      router.replace("/dashboard");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -121,12 +109,8 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Login or sign up"
-      description={
-        isSignup
-          ? "Create your DSIQ account to save your chats and progress."
-          : "Log in to continue your chats, coaching, missions, and progress."
-      }
+      title="Login or Sign Up"
+      description="Continue to your chats, coaching, missions, and progress."
     >
       <button
         type="button"
@@ -170,21 +154,6 @@ export default function LoginPage() {
       </div>
 
       <form className="space-y-3" onSubmit={handleSubmit}>
-        {isSignup ? (
-          <label className="block text-left">
-            <span className="sr-only">Full name</span>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              required
-              autoComplete="name"
-              className="h-12 w-full rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-transparent focus:ring-0"
-              placeholder="Full name"
-            />
-          </label>
-        ) : null}
-
         <label className="block text-left">
           <span className="sr-only">Email address</span>
           <input
@@ -234,25 +203,14 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {!isSignup ? (
-        <div className="mt-4 text-center">
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
-          >
-            Forgot password?
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-4 text-center">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
-          >
-            Already have an account? Log in
-          </Link>
-        </div>
-      )}
+      <div className="mt-4 text-center">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-medium text-[color:var(--color-text)] underline underline-offset-4"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       {error ? (
         <p className="rounded-[var(--radius-md)] border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
