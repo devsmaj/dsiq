@@ -31,7 +31,7 @@ export function GlobalLoadingDelay() {
 
 function RouteLoadingDelay({ pathname }: { pathname: string }) {
   const [shouldBypassHomeChat] = useState(
-    () => pathname === "/dsiq/chat" && hasActiveHomeChatBypass(),
+    () => pathname === "/chat" && hasActiveHomeChatBypass(),
   );
 
   useEffect(() => {

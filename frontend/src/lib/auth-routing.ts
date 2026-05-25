@@ -13,7 +13,7 @@ export async function getPostAuthPath(
 ) {
   const localProfile = readLocalUserProfile(user.uid);
   if (localProfile?.onboardingCompleted) {
-    return "/dsiq/chat";
+    return "/chat";
   }
 
   try {
@@ -22,7 +22,7 @@ export async function getPostAuthPath(
         ? await getFirebaseUserProfile(user.uid)
         : localProfile;
 
-    return profile?.onboardingCompleted ? "/dsiq/chat" : "/onboarding";
+    return profile?.onboardingCompleted ? "/chat" : "/onboarding";
   } catch (error) {
     console.warn("DSIQ profile routing failed; sending user to onboarding.", error);
     return "/onboarding";

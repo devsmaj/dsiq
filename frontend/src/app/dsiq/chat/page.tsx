@@ -21,8 +21,6 @@ import {
   Send,
   Settings,
   SquarePen,
-  Target,
-  TrendingUp,
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
@@ -33,15 +31,12 @@ import { getPostAuthPath } from "@/lib/auth-routing";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
-  { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
-  { label: "Search Chats", href: "/dsiq/chat", icon: Search },
-  { label: "DSIQ Coach", href: "/coach", icon: Bot },
+  { label: "New Chat", href: "/chat", icon: SquarePen },
+  { label: "Search Chats", href: "/chat", icon: Search },
+  { label: "AI Mentor", href: "/coach", icon: Bot },
   { label: "Learning Roadmap", href: "/coach", icon: Compass },
-  { label: "Weekly Missions", href: "/missions", icon: Target },
-  { label: "Projects", href: "/dsiq/chat", icon: FolderKanban },
-  { label: "Opportunities", href: "/opportunities", icon: Rocket },
-  { label: "Progress Tracker", href: "/progress", icon: TrendingUp },
-  { label: "Saved Chats", href: "/dsiq/chat", icon: LayoutList },
+  { label: "Projects", href: "/chat", icon: FolderKanban },
+  { label: "Saved Chats", href: "/chat", icon: LayoutList },
 ] as const;
 
 const collapsedItems = [
@@ -49,7 +44,7 @@ const collapsedItems = [
   sidebarItems[1],
   sidebarItems[2],
   sidebarItems[4],
-  sidebarItems[7],
+  sidebarItems[5],
 ] as const;
 
 const suggestedPrompts = [
@@ -132,7 +127,7 @@ export default function DsiqChatPage() {
       >
         <div className="flex items-center justify-between">
           <Link
-            href="/dsiq/chat"
+            href="/chat"
             className={`flex h-11 items-center rounded-2xl px-3 text-[color:var(--color-text)] transition hover:bg-white ${
               expanded ? "gap-3" : "w-11 justify-center"
             }`}
@@ -272,7 +267,7 @@ export default function DsiqChatPage() {
         </div>
       </aside>
     );
-  }
+  };
 
   return (
     <PrivateRoute>
@@ -424,3 +419,4 @@ export default function DsiqChatPage() {
     </PrivateRoute>
   );
 }
+
