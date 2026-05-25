@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   BriefcaseBusiness,
   CalendarCheck,
   Check,
@@ -51,6 +52,7 @@ const roleOptions = [
 ];
 
 type OnboardingStep = "account" | "goals" | "success";
+type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
 export default function OnboardingPage() {
   const [step, setStep] = useState<OnboardingStep>("account");
@@ -60,6 +62,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState("Student");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -80,6 +83,30 @@ export default function OnboardingPage() {
     void routeCompletedUsers();
   }, [authMode, router, user]);
 
+  useEffect(() => {
+    const normalizedNickname = normalizeNickname(nickname);
+    if (!normalizedNickname || !user) {
+      setNicknameStatus("idle");
+      return;
+    }
+
+    setNicknameStatus("checking");
+    const timeout = window.setTimeout(async () => {
+      try {
+        const nicknameTaken =
+          authMode === "firebase"
+            ? await isFirebaseNicknameTaken(user.uid, normalizedNickname)
+            : isLocalNicknameTaken(user.uid, normalizedNickname);
+
+        setNicknameStatus(nicknameTaken ? "taken" : "available");
+      } catch {
+        setNicknameStatus("error");
+      }
+    }, 450);
+
+    return () => window.clearTimeout(timeout);
+  }, [authMode, nickname, user]);
+
   async function handleAccountNext() {
     if (!user) {
       setError("You need to be signed in before continuing.");
@@ -94,6 +121,11 @@ export default function OnboardingPage() {
     const normalizedNickname = normalizeNickname(nickname);
     if (!normalizedNickname) {
       setError("Choose a nickname to continue.");
+      return;
+    }
+
+    if (nicknameStatus === "taken") {
+      setError("This nickname is already taken. Choose another one.");
       return;
     }
 
@@ -205,7 +237,7 @@ export default function OnboardingPage() {
             <div>
               <div className="text-center">
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  How old are you?
+                  Create your DSIQ profile
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)]">
                   This helps DSIQ personalize your coaching, learning path, and
@@ -229,11 +261,35 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     value={nickname}
-                    onChange={(event) => setNickname(event.target.value)}
+                    onChange={(event) =>
+                      setNickname(normalizeNickname(event.target.value))
+                    }
                     placeholder="Nickname"
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
+                {nicknameStatus !== "idle" ? (
+                  <p
+                    className={`px-1 text-left text-xs leading-5 ${
+                      nicknameStatus === "available"
+                        ? "text-[color:var(--color-brand-strong)]"
+                        : "text-[color:var(--color-muted)]"
+                    }`}
+                  >
+                    {nicknameStatus === "checking"
+                      ? "Checking nickname..."
+                      : null}
+                    {nicknameStatus === "available"
+                      ? "Good, this nickname is available."
+                      : null}
+                    {nicknameStatus === "taken"
+                      ? "This nickname is already taken. Choose another one."
+                      : null}
+                    {nicknameStatus === "error"
+                      ? "We could not check this nickname yet."
+                      : null}
+                  </p>
+                ) : null}
                 <label className="block">
                   <span className="sr-only">Age</span>
                   <input
@@ -295,6 +351,17 @@ export default function OnboardingPage() {
 
           {step === "goals" ? (
             <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setStep("account");
+                }}
+                className="mb-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
               <div className="text-center">
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   What do you want to achieve with DSIQ?
@@ -370,6 +437,17 @@ export default function OnboardingPage() {
 
           {step === "success" ? (
             <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setStep("goals");
+                }}
+                className="mb-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]">
                 <Check className="h-7 w-7" aria-hidden="true" />
               </div>

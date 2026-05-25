@@ -36,6 +36,8 @@ const goalOptions = [
   "Other",
 ];
 
+type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -56,6 +58,7 @@ export default function ProfilePage() {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -72,6 +75,30 @@ export default function ProfilePage() {
     setProfileImageUrl(profile?.profileImageUrl || answers?.profileImageUrl || "");
     setSelectedGoals(profile?.selectedGoals || answers?.selectedGoals || []);
   }, [answers, profile, user]);
+
+  useEffect(() => {
+    const normalizedNickname = normalizeNickname(nickname);
+    if (!normalizedNickname || !user) {
+      setNicknameStatus("idle");
+      return;
+    }
+
+    setNicknameStatus("checking");
+    const timeout = window.setTimeout(async () => {
+      try {
+        const nicknameTaken =
+          authMode === "firebase"
+            ? await isFirebaseNicknameTaken(user.uid, normalizedNickname)
+            : isLocalNicknameTaken(user.uid, normalizedNickname);
+
+        setNicknameStatus(nicknameTaken ? "taken" : "available");
+      } catch {
+        setNicknameStatus("error");
+      }
+    }, 450);
+
+    return () => window.clearTimeout(timeout);
+  }, [authMode, nickname, user]);
 
   function toggleGoal(goal: string) {
     setSelectedGoals((current) =>
@@ -95,6 +122,11 @@ export default function ProfilePage() {
     const normalizedNickname = normalizeNickname(nickname);
     if (!normalizedNickname) {
       setError("Choose a nickname.");
+      return;
+    }
+
+    if (nicknameStatus === "taken") {
+      setError("This nickname is already taken. Choose another one.");
       return;
     }
 
@@ -195,9 +227,31 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
+                onChange={(event) =>
+                  setNickname(normalizeNickname(event.target.value))
+                }
                 className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
               />
+              {nicknameStatus !== "idle" ? (
+                <span
+                  className={`mt-2 block text-xs leading-5 ${
+                    nicknameStatus === "available"
+                      ? "text-[color:var(--color-brand-strong)]"
+                      : "text-[color:var(--color-muted)]"
+                  }`}
+                >
+                  {nicknameStatus === "checking" ? "Checking nickname..." : null}
+                  {nicknameStatus === "available"
+                    ? "Good, this nickname is available."
+                    : null}
+                  {nicknameStatus === "taken"
+                    ? "This nickname is already taken. Choose another one."
+                    : null}
+                  {nicknameStatus === "error"
+                    ? "We could not check this nickname yet."
+                    : null}
+                </span>
+              ) : null}
             </label>
 
             <label className="block">
