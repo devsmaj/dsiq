@@ -118,7 +118,8 @@ export default function OnboardingPage() {
       setError("");
       setStep("goals");
     } catch {
-      setError("We could not check that nickname right now. Please try again.");
+      setError("");
+      setStep("goals");
     } finally {
       setIsCheckingNickname(false);
     }
@@ -171,10 +172,15 @@ export default function OnboardingPage() {
       setError("");
 
       if (authMode === "firebase") {
-        await saveFirebaseOnboardingAnswers({
-          uid: user.uid,
-          answers,
-        });
+        try {
+          await saveFirebaseOnboardingAnswers({
+            uid: user.uid,
+            answers,
+          });
+        } catch (saveError) {
+          console.warn("Firebase onboarding save failed; saving locally.", saveError);
+          saveLocalOnboardingAnswers(user.uid, answers);
+        }
       } else {
         saveLocalOnboardingAnswers(user.uid, answers);
       }
@@ -268,9 +274,9 @@ export default function OnboardingPage() {
                 type="button"
                 onClick={handleAccountNext}
                 disabled={isCheckingNickname}
-                className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+                className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isCheckingNickname ? "Checking nickname..." : "Finish creating account"}
+                {isCheckingNickname ? <LoadingSpinner /> : "Finish creating account"}
               </button>
 
               <p className="mt-5 text-center text-xs leading-6 text-[color:var(--color-muted)]">
@@ -387,7 +393,7 @@ export default function OnboardingPage() {
                 disabled={isSubmitting}
                 className="mt-7 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Saving..." : "Continue"}
+                {isSubmitting ? <LoadingSpinner /> : "Continue"}
               </button>
 
               <p className="mx-auto mt-5 max-w-sm text-xs leading-6 text-[color:var(--color-muted)]">
@@ -398,5 +404,14 @@ export default function OnboardingPage() {
         </section>
       </main>
     </PrivateRoute>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <span
+      className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      aria-label="Loading"
+    />
   );
 }

@@ -20,6 +20,7 @@ export async function getPostAuthPath(
     return profile?.onboardingCompleted ? "/dsiq/chat" : "/onboarding";
   } catch (error) {
     console.warn("DSIQ profile routing failed; sending user to onboarding.", error);
-    return "/onboarding";
+    const localProfile = readLocalUserProfile(user.uid);
+    return localProfile?.onboardingCompleted ? "/dsiq/chat" : "/onboarding";
   }
 }
