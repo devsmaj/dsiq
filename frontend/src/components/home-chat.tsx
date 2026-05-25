@@ -324,7 +324,7 @@ export function HomeChat() {
 
           <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
             <div className="w-full max-w-[760px]">
-              <h1 className="text-[34px] font-normal leading-[1.18] text-[color:var(--color-text)] sm:text-[40px]">
+              <h1 className="text-[24px] font-normal leading-[1.18] text-[color:var(--color-text)] sm:text-[34px]">
                 <span className="block">Meet DSIQ,</span>
                 <span
                   key={heroLines[heroLineIndex]}
