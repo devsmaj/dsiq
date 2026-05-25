@@ -173,10 +173,16 @@ export function SettingsHelpPopup() {
 
   useEffect(() => {
     applyAppearance(appearance);
-    setTranslateCookie(language);
+
+    // Disable Google Translate usage.
+    if (ENABLE_GOOGLE_TRANSLATE) {
+      setTranslateCookie(language);
+    }
   }, [appearance, language]);
 
   useEffect(() => {
+    if (!ENABLE_GOOGLE_TRANSLATE) return;
+
     const translateWindow = window as GoogleTranslateWindow;
     translateWindow.googleTranslateElementInit = () => {
       if (!translateWindow.google?.translate?.TranslateElement) {
@@ -209,6 +215,8 @@ export function SettingsHelpPopup() {
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_GOOGLE_TRANSLATE) return;
+
     const savedLanguage =
       (window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null) ||
       "auto";
@@ -240,24 +248,17 @@ export function SettingsHelpPopup() {
   }
 
   function selectLanguage(nextLanguage: LanguageCode) {
+    // Store selection, but do NOT apply Google Translate.
     setLanguage(nextLanguage);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
-    const translatedNow = applyGoogleTranslate(nextLanguage);
     setIsLanguageOpen(false);
-
-    if (!translatedNow) {
-      window.setTimeout(() => {
-        const translatedAfterLoad = applyGoogleTranslate(nextLanguage);
-        if (!translatedAfterLoad && nextLanguage !== "auto") {
-          window.location.reload();
-        }
-      }, 900);
-    }
   }
 
   return (
     <>
-      <div id="google_translate_element" className="dsiq-translate-widget" />
+      {ENABLE_GOOGLE_TRANSLATE ? (
+        <div id="google_translate_element" className="dsiq-translate-widget" />
+      ) : null}
 
       {isOpen ? (
         <div
