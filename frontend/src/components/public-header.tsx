@@ -40,7 +40,7 @@ export function PublicHeader() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="transition hover:text-black"
+                className="rounded-full px-3 py-2 transition hover:bg-[color:var(--color-surface-strong)] hover:text-black active:bg-[color:var(--color-line)]"
                 onClick={showNavigationLoading}
               >
                 {item.label}
@@ -48,7 +48,7 @@ export function PublicHeader() {
             ))}
             <Link
               href="/login"
-              className="transition hover:text-black"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
               onClick={showNavigationLoading}
             >
               Log in
@@ -81,7 +81,7 @@ export function PublicHeader() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                  className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] active:bg-[color:var(--color-line)]"
                   onClick={showNavigationLoading}
                 >
                   {item.label}
@@ -92,7 +92,7 @@ export function PublicHeader() {
             <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/login"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-medium leading-none text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium leading-none !text-white transition hover:bg-black"
                 onClick={showNavigationLoading}
               >
                 Log in

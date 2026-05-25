@@ -242,6 +242,10 @@ export function PublicChat() {
   }
 
   function handleQuickAction(promptText: string) {
+    if (isSending) {
+      return;
+    }
+
     setInput(promptText);
     window.requestAnimationFrame(() => {
       inputRef.current?.focus();
@@ -249,7 +253,7 @@ export function PublicChat() {
   }
 
   function appendAttachmentNames(files: FileList | null) {
-    if (!files?.length) {
+    if (!files?.length || isSending) {
       return;
     }
 
@@ -269,6 +273,10 @@ export function PublicChat() {
   }
 
   function handleVoiceInput() {
+    if (isSending) {
+      return;
+    }
+
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -377,7 +385,8 @@ export function PublicChat() {
                       key={action.label}
                       type="button"
                       onClick={() => handleQuickAction(action.prompt)}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)]"
+                      disabled={isSending}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {action.label}
                     </button>
@@ -390,10 +399,10 @@ export function PublicChat() {
               {messages.map((message, index) => (
                 <article
                   key={`${message.role}-${index}`}
-                  className={`max-w-3xl rounded-[1.5rem] px-5 py-4 text-sm leading-7 ${
+                  className={`max-w-3xl text-sm leading-7 ${
                     message.role === "user"
-                      ? "ml-auto bg-[#111111] !text-white"
-                      : "border border-[color:var(--color-line)] bg-white text-[color:var(--color-text)]"
+                      ? "ml-auto rounded-[1.5rem] bg-[#111111] px-5 py-4 !text-white"
+                      : "px-1 py-2 text-[color:var(--color-text)]"
                   }`}
                 >
                   {message.text}
@@ -442,7 +451,8 @@ export function PublicChat() {
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                    disabled={isSending}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <ImageIcon className="h-4 w-4" aria-hidden="true" />
                     Upload photos
@@ -450,7 +460,8 @@ export function PublicChat() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                    disabled={isSending}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <FileText className="h-4 w-4" aria-hidden="true" />
                     Upload files
@@ -478,8 +489,9 @@ export function PublicChat() {
               type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              disabled={isSending}
               placeholder="Ask DSIQ"
-              className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
+              className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
             />
             <button
               type="button"

@@ -9,7 +9,6 @@ import {
   Plus,
   Send,
   Settings,
-  SlidersHorizontal,
   SquarePen,
   X,
 } from "lucide-react";
@@ -272,13 +271,17 @@ export function HomeChat() {
 
             <nav className="hidden items-center gap-5 text-[13px] font-medium text-[color:var(--color-text)] lg:flex">
               {navItems.map((item) => (
-                <Link key={item.href} href={item.href} className="transition hover:text-black">
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-full px-3 py-2 transition hover:bg-[color:var(--color-surface-strong)] hover:text-black active:bg-[color:var(--color-line)]"
+                >
                   {item.label}
                 </Link>
               ))}
               <Link
                 href="/login"
-                className="transition hover:text-black"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
               >
                 Log in
               </Link>
@@ -286,7 +289,7 @@ export function HomeChat() {
 
             <Link
               href="/login"
-              className="text-sm font-medium text-[color:var(--color-text)] transition hover:text-black lg:hidden"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black lg:hidden"
             >
               Log in
             </Link>
@@ -359,13 +362,6 @@ export function HomeChat() {
                       onChange={(event) => appendAttachmentNames(event.target.files)}
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 text-sm text-[color:var(--color-text)]"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Tools
-                  </button>
                   <div className="flex-1" />
                   <button
                     type="button"

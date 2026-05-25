@@ -8,6 +8,10 @@ const LOADING_DELAY_MS = 5000;
 export function GlobalLoadingDelay() {
   const pathname = usePathname();
 
+  if (pathname === "/chat") {
+    return null;
+  }
+
   return <LoadingDelayOverlay key={pathname} />;
 }
 
