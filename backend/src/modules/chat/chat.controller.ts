@@ -127,5 +127,5 @@ export async function createChatCompletion(
       .json({ error: "DSIQ did not return a response. Please try again." });
   }
 
-  return response.json({ text });
+  return response.json({ reply: text });
 }

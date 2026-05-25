@@ -21,6 +21,11 @@ export function createApp() {
     next();
   });
   app.use(express.json());
+
+  app.get("/", (_request, response) => {
+    response.status(200).send("DSIQ backend is running");
+  });
+
   app.use("/api", apiRouter);
 
   return app;

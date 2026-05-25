@@ -5,13 +5,19 @@ export type GeminiChatMessage = {
 
 export async function askGemini(messages: GeminiChatMessage[]) {
   const endpoint =
-    process.env.NEXT_PUBLIC_CHAT_API_URL?.trim() || "/api/chat/";
+    process.env.NEXT_PUBLIC_CHAT_API_URL?.trim() || "/api/chat";
+  const latestUserMessage = [...messages]
+    .reverse()
+    .find((message) => message.role === "user");
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({
+      message: latestUserMessage?.text || "",
+      messages,
+    }),
   });
 
   if (!response.ok) {
@@ -24,7 +30,11 @@ export async function askGemini(messages: GeminiChatMessage[]) {
     );
   }
 
-  const data = (await response.json()) as { text?: string };
+  const data = (await response.json()) as { reply?: string; text?: string };
 
-  return data.text || "DSIQ did not return a response. Please try again.";
+  return (
+    data.reply ||
+    data.text ||
+    "DSIQ did not return a response. Please try again."
+  );
 }

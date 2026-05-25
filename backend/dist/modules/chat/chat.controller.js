@@ -87,5 +87,5 @@ async function createChatCompletion(request, response) {
             .status(502)
             .json({ error: "DSIQ did not return a response. Please try again." });
     }
-    return response.json({ text });
+    return response.json({ reply: text });
 }
