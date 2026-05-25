@@ -15,8 +15,13 @@ export async function askGemini(messages: GeminiChatMessage[]) {
   const timeoutId = window.setTimeout(() => {
     controller.abort();
   }, CHAT_TIMEOUT_MS);
+  const body = {
+    message: userMessage,
+    messages,
+  };
 
-  console.log("Calling Render backend", CHAT_API_URL);
+  console.log("Sending request to:", CHAT_API_URL);
+  console.log("Request body:", body);
   try {
     const response = await fetch(CHAT_API_URL, {
       method: "POST",
@@ -24,10 +29,7 @@ export async function askGemini(messages: GeminiChatMessage[]) {
         "Content-Type": "application/json",
       },
       signal: controller.signal,
-      body: JSON.stringify({
-        message: userMessage,
-        messages,
-      }),
+      body: JSON.stringify(body),
     });
     console.log("Render backend response", response.status, response.ok);
 
@@ -50,15 +52,19 @@ export async function askGemini(messages: GeminiChatMessage[]) {
       "DSIQ did not return a response. Please try again."
     );
   } catch (error) {
-    console.error("Render backend fetch failed", error);
+    console.error("Fetch failed:", error);
 
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("DSIQ is taking too long to respond. Please try again.");
     }
 
+    if (error instanceof TypeError) {
+      throw new Error("Unable to connect to DSIQ server.");
+    }
+
     throw error instanceof Error
       ? error
-      : new Error("DSIQ could not answer right now. Please try again.");
+      : new Error("Unable to connect to DSIQ server.");
   } finally {
     window.clearTimeout(timeoutId);
   }

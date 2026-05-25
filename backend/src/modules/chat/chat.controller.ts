@@ -63,6 +63,8 @@ export async function createChatCompletion(
   request: Request<unknown, unknown, ChatRequestBody>,
   response: Response,
 ) {
+  console.log("Incoming chat request");
+
   const body = request.body ?? {};
   const messages = Array.isArray(body.messages)
     ? body.messages.filter(isValidMessage)

@@ -37,6 +37,7 @@ function readResponseText(data) {
         .trim();
 }
 async function createChatCompletion(request, response) {
+    console.log("Incoming chat request");
     const body = request.body ?? {};
     const messages = Array.isArray(body.messages)
         ? body.messages.filter(isValidMessage)
