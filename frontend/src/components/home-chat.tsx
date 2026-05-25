@@ -12,8 +12,13 @@ import {
   SquarePen,
   X,
 } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const heroLines = [
+  "your AI coach for skills, opportunities, and action",
+  "your coach for smarter growth and consistent action",
+];
 
 const navItems = [
   { href: "/about", label: "About" },
@@ -94,12 +99,21 @@ export function HomeChat() {
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [heroLineIndex, setHeroLineIndex] = useState(0);
   const [prompt, setPrompt] = useState("");
   const [quickActions] = useState(shufflePromptModes);
   const promptInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setHeroLineIndex((currentIndex) => (currentIndex + 1) % heroLines.length);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   function openNewChatDialog() {
     setIsDesktopDrawerOpen(false);
@@ -298,8 +312,13 @@ export function HomeChat() {
           <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
             <div className="w-full max-w-[760px]">
               <h1 className="text-[42px] font-normal leading-[1.18] text-[color:var(--color-text)] sm:text-[46px]">
-                Meet DSIQ, your personal
-                <br className="hidden sm:block" /> AI assistant
+                <span className="block">Meet DSIQ,</span>
+                <span
+                  key={heroLines[heroLineIndex]}
+                  className="block animate-fade-up"
+                >
+                  {heroLines[heroLineIndex]}
+                </span>
               </h1>
 
               <form

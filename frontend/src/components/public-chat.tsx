@@ -89,8 +89,9 @@ function readGuestMessages() {
 export function PublicChat() {
   const searchParams = useSearchParams();
   const initialQuestion = searchParams.get("q")?.trim() || "";
+  const shouldUseGuestChat = searchParams.get("guest") === "true";
   const { isLoading: isAuthLoading, user } = useAuth();
-  const isGuest = !user;
+  const isGuest = shouldUseGuestChat || !user;
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -106,7 +107,7 @@ export function PublicChat() {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
-    if (isAuthLoading || user) {
+    if (initialQuestion || (!shouldUseGuestChat && (isAuthLoading || user))) {
       return;
     }
 
@@ -115,7 +116,7 @@ export function PublicChat() {
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [isAuthLoading, user]);
+  }, [initialQuestion, isAuthLoading, shouldUseGuestChat, user]);
 
   useEffect(() => {
     if (!isGuest || messages.length === 0) {
@@ -126,7 +127,11 @@ export function PublicChat() {
   }, [isGuest, messages]);
 
   useEffect(() => {
-    if (isAuthLoading || !initialQuestion || handledInitialQuestion.current) {
+    if (
+      !initialQuestion ||
+      handledInitialQuestion.current ||
+      (isAuthLoading && !shouldUseGuestChat)
+    ) {
       return;
     }
 
@@ -134,7 +139,7 @@ export function PublicChat() {
     void sendMessage(initialQuestion);
     // sendMessage intentionally stays outside deps so the query is handled once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuestion, isAuthLoading]);
+  }, [initialQuestion, isAuthLoading, shouldUseGuestChat]);
 
   useEffect(() => {
     latestMessageRef.current?.scrollIntoView({
@@ -401,7 +406,7 @@ export function PublicChat() {
                   key={`${message.role}-${index}`}
                   className={`max-w-3xl text-sm leading-7 ${
                     message.role === "user"
-                      ? "ml-auto rounded-[1.5rem] bg-[#111111] px-5 py-4 !text-white"
+                      ? "ml-auto px-1 py-2 text-right text-[color:var(--color-text)]"
                       : "px-1 py-2 text-[color:var(--color-text)]"
                   }`}
                 >
