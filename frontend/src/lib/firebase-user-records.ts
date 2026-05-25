@@ -17,6 +17,9 @@ type SaveOnboardingInput = {
 };
 
 export type FirebaseUserProfile = {
+  fullName?: string;
+  age?: string;
+  selectedGoals?: string[];
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
   displayName?: string | null;
@@ -70,6 +73,9 @@ export async function saveFirebaseOnboardingAnswers(input: SaveOnboardingInput) 
   await setDoc(
     userRef,
     {
+      fullName: input.answers.fullName,
+      age: input.answers.age,
+      selectedGoals: input.answers.selectedGoals,
       onboardingCompleted: true,
       onboardingAnswers: input.answers,
       updatedAt: serverTimestamp(),

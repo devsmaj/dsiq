@@ -4,17 +4,28 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
+import { getPostAuthPath } from "@/lib/auth-routing";
 
 export function AuthPageGuard({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { authMode, user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && user) {
+    async function routeSignedInUser() {
+      if (isLoading || !user) {
+        return;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
-      router.replace(searchParams.get("next") || "/dashboard");
+      const requestedPath = searchParams.get("next");
+      const postAuthPath = await getPostAuthPath(user, authMode);
+      router.replace(
+        postAuthPath === "/onboarding" ? postAuthPath : requestedPath || postAuthPath,
+      );
     }
-  }, [isLoading, router, user]);
+
+    void routeSignedInUser();
+  }, [authMode, isLoading, router, user]);
 
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
+import { getPostAuthPath } from "@/lib/auth-routing";
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -54,7 +55,14 @@ function getAuthErrorMessage(error: unknown) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginOrSignupWithEmail, loginWithApple, loginWithGoogle } = useAuth();
+  const {
+    authMode,
+    isLoading: isSessionLoading,
+    loginOrSignupWithEmail,
+    loginWithApple,
+    loginWithGoogle,
+    user,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -64,14 +72,26 @@ export default function LoginPage() {
   >(null);
   const isLoading = loadingAction !== null;
 
+  useEffect(() => {
+    async function routeExistingSession() {
+      if (isSessionLoading || !user) {
+        return;
+      }
+
+      router.replace(await getPostAuthPath(user, authMode));
+    }
+
+    void routeExistingSession();
+  }, [authMode, isSessionLoading, router, user]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
     try {
       setLoadingAction("email");
-      await loginOrSignupWithEmail({ email, password });
-      router.replace("/dashboard");
+      const nextUser = await loginOrSignupWithEmail({ email, password });
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -84,8 +104,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("google");
-      await loginWithGoogle();
-      router.replace("/dashboard");
+      const nextUser = await loginWithGoogle();
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -98,8 +118,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("apple");
-      await loginWithApple();
-      router.replace("/dashboard");
+      const nextUser = await loginWithApple();
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -119,9 +139,7 @@ export default function LoginPage() {
         className="mb-3 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
-        <span>
-          {loadingAction === "google" ? "Opening Google..." : "Continue with Google"}
-        </span>
+        <span>{loadingAction === "google" ? <LoadingSpinner /> : "Continue with Google"}</span>
         <span />
       </button>
 
@@ -132,9 +150,7 @@ export default function LoginPage() {
         className="mb-5 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <AppleIcon />
-        <span>
-          {loadingAction === "apple" ? "Opening Apple..." : "Continue with Apple"}
-        </span>
+        <span>{loadingAction === "apple" ? <LoadingSpinner /> : "Continue with Apple"}</span>
         <span />
       </button>
 
@@ -197,9 +213,7 @@ export default function LoginPage() {
           disabled={isLoading}
           className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loadingAction === "email"
-            ? "Continuing..."
-            : "Continue"}
+          {loadingAction === "email" ? <LoadingSpinner /> : "Continue"}
         </button>
       </form>
 
@@ -218,5 +232,14 @@ export default function LoginPage() {
         </p>
       ) : null}
     </AuthShell>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <span
+      className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      aria-label="Loading"
+    />
   );
 }

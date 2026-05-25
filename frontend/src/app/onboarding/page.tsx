@@ -13,12 +13,13 @@ import {
   Store,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
 import { saveFirebaseOnboardingAnswers } from "@/lib/firebase-user-records";
+import { getPostAuthPath } from "@/lib/auth-routing";
 import { saveLocalOnboardingAnswers } from "@/lib/user-profile-store";
 
 const goalOptions = [
@@ -44,6 +45,21 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { authMode, user } = useAuth();
+
+  useEffect(() => {
+    async function routeCompletedUsers() {
+      if (!user) {
+        return;
+      }
+
+      const postAuthPath = await getPostAuthPath(user, authMode);
+      if (postAuthPath === "/dsiq/chat") {
+        router.replace("/dsiq/chat");
+      }
+    }
+
+    void routeCompletedUsers();
+  }, [authMode, router, user]);
 
   function handleAccountNext() {
     if (!fullName.trim()) {
@@ -113,7 +129,7 @@ export default function OnboardingPage() {
         saveLocalOnboardingAnswers(user.uid, answers);
       }
 
-      router.replace("/dashboard");
+      router.replace("/dsiq/chat");
     } catch (nextError) {
       setError(
         nextError instanceof Error

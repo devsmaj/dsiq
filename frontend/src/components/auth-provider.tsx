@@ -46,20 +46,20 @@ type AuthContextValue = {
     email: string;
     password: string;
     rememberMe: boolean;
-  }) => Promise<void>;
+  }) => Promise<AppUser>;
   loginOrSignupWithEmail: (input: {
     email: string;
     password: string;
-  }) => Promise<void>;
-  loginWithApple: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  }) => Promise<AppUser>;
+  loginWithApple: () => Promise<AppUser>;
+  loginWithGoogle: () => Promise<AppUser>;
   signup: (input: {
     fullName: string;
     email: string;
     password: string;
-  }) => Promise<void>;
+  }) => Promise<AppUser>;
   resetPassword: (email: string) => Promise<string>;
-  tryDemo: () => Promise<void>;
+  tryDemo: () => Promise<AppUser>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 };
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           writeLocalUser(nextUser);
           setUser(nextUser);
-          return;
+          return nextUser;
         }
 
         if (!auth) {
@@ -280,7 +280,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           reason: "login",
           authProvider: "password",
         });
-        setUser(mapFirebaseUser(credential.user));
+        const nextUser = mapFirebaseUser(credential.user);
+        setUser(nextUser);
+        return nextUser;
       },
       loginOrSignupWithEmail: async ({ email, password }) => {
         const normalizedEmail = email.trim().toLowerCase();
@@ -309,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           writeLocalUser(nextUser);
           setUser(nextUser);
-          return;
+          return nextUser;
         }
 
         if (!auth) {
@@ -331,8 +333,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             reason: "login",
             authProvider: "password",
           });
-          setUser(mapFirebaseUser(credential.user));
-          return;
+          const nextUser = mapFirebaseUser(credential.user);
+          setUser(nextUser);
+          return nextUser;
         } catch (signInError) {
           const signInCode = getAuthCode(signInError);
 
@@ -368,7 +371,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             reason: "signup",
             authProvider: "password",
           });
-          setUser(mapFirebaseUser(credential.user));
+          const nextUser = mapFirebaseUser(credential.user);
+          setUser(nextUser);
+          return nextUser;
         } catch (createError) {
           const createCode = getAuthCode(createError);
 
@@ -393,7 +398,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        setUser(await signInWithSocialProvider(appleProvider, "apple"));
+        const nextUser = await signInWithSocialProvider(appleProvider, "apple");
+        setUser(nextUser);
+        return nextUser;
       },
       loginWithGoogle: async () => {
         if (authMode === "local") {
@@ -402,7 +409,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        setUser(await signInWithSocialProvider(googleProvider, "google"));
+        const nextUser = await signInWithSocialProvider(googleProvider, "google");
+        setUser(nextUser);
+        return nextUser;
       },
       signup: async ({ fullName, email, password }) => {
         if (authMode === "local") {
@@ -418,7 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
           writeLocalUser(nextUser);
           setUser(nextUser);
-          return;
+          return nextUser;
         }
 
         if (!auth) {
@@ -439,12 +448,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           authProvider: "password",
         });
 
-        setUser(
-          mapFirebaseUser({
+        const nextUser = mapFirebaseUser({
             ...credential.user,
             displayName: fullName.trim() || credential.user.displayName,
-          }),
-        );
+          });
+        setUser(nextUser);
+        return nextUser;
       },
       resetPassword: async (email) => {
         if (authMode === "local") {
@@ -475,6 +484,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         writeLocalUser(nextUser);
         setUser(nextUser);
+        return nextUser;
       },
       logout: async () => {
         if (authMode === "local") {

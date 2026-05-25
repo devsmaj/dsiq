@@ -10,6 +10,9 @@ export type OnboardingAnswers = {
 };
 
 export type StoredUserProfile = {
+  fullName?: string;
+  age?: string;
+  selectedGoals?: string[];
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
   updatedAt?: string;
@@ -30,6 +33,9 @@ export function saveLocalOnboardingAnswers(uid: string, answers: OnboardingAnswe
     getProfileKey(uid),
     JSON.stringify({
       ...existing,
+      fullName: answers.fullName,
+      age: answers.age,
+      selectedGoals: answers.selectedGoals,
       onboardingCompleted: true,
       onboardingAnswers: answers,
       updatedAt: new Date().toISOString(),
