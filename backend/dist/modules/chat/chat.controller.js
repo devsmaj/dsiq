@@ -44,6 +44,8 @@ async function createChatCompletion(request, response) {
         : body.message?.trim()
             ? [{ role: "user", text: body.message.trim() }]
             : [];
+    const latestMessage = [...messages].reverse().find((message) => message.role === "user");
+    console.log("Message received", latestMessage?.text || body.message || "");
     if (messages.length === 0) {
         return response.status(400).json({ error: "Message is required." });
     }
@@ -54,26 +56,41 @@ async function createChatCompletion(request, response) {
             .json({ error: "Gemini is not configured on the server." });
     }
     const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            systemInstruction: {
-                parts: [{ text: DSIQ_SYSTEM_PROMPT }],
+    let geminiResponse;
+    try {
+        geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
             },
-            contents: messages.slice(-20).map((message) => ({
-                role: message.role,
-                parts: [{ text: message.text }],
-            })),
-            generationConfig: {
-                temperature: 0.8,
-                topP: 0.95,
-            },
-        }),
-    });
+            body: JSON.stringify({
+                systemInstruction: {
+                    parts: [{ text: DSIQ_SYSTEM_PROMPT }],
+                },
+                contents: messages.slice(-20).map((message) => ({
+                    role: message.role,
+                    parts: [{ text: message.text }],
+                })),
+                generationConfig: {
+                    temperature: 0.8,
+                    topP: 0.95,
+                },
+            }),
+        });
+    }
+    catch (error) {
+        console.error("Gemini error:", error);
+        return response
+            .status(502)
+            .json({ error: "DSIQ could not answer right now. Please try again." });
+    }
+    console.log("Response status:", geminiResponse.status);
     if (!geminiResponse.ok) {
+        const errorText = await geminiResponse.text().catch((error) => {
+            console.error("Gemini error:", error);
+            return "";
+        });
+        console.error("Gemini error:", errorText || geminiResponse.statusText);
         return response
             .status(geminiResponse.status === 429 ? 429 : 502)
             .json({ error: "DSIQ could not answer right now. Please try again." });
