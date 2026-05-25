@@ -1,7 +1,17 @@
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import type { OnboardingAnswers } from "@/lib/user-profile-store";
+import { normalizeNickname, type OnboardingAnswers, type StoredUserProfile } from "@/lib/user-profile-store";
 
 type SyncFirebaseUserInput = {
   uid: string;
@@ -18,6 +28,10 @@ type SaveOnboardingInput = {
 
 export type FirebaseUserProfile = {
   fullName?: string;
+  nickname?: string;
+  nicknameLower?: string;
+  role?: string;
+  profileImageUrl?: string;
   age?: string;
   selectedGoals?: string[];
   onboardingCompleted?: boolean;
@@ -68,6 +82,12 @@ export async function saveFirebaseOnboardingAnswers(input: SaveOnboardingInput) 
     userRef,
     {
       fullName: input.answers.fullName,
+      nickname: input.answers.nickname,
+      nicknameLower: input.answers.nickname
+        ? normalizeNickname(input.answers.nickname)
+        : undefined,
+      role: input.answers.role,
+      profileImageUrl: input.answers.profileImageUrl,
       age: input.answers.age,
       selectedGoals: input.answers.selectedGoals,
       onboardingCompleted: true,
@@ -76,6 +96,66 @@ export async function saveFirebaseOnboardingAnswers(input: SaveOnboardingInput) 
     },
     { merge: true },
   );
+}
+
+export async function updateFirebaseUserProfile(input: {
+  uid: string;
+  updates: Partial<StoredUserProfile>;
+}) {
+  if (!db) {
+    return;
+  }
+
+  const userRef = doc(db, "users", input.uid);
+  const goalSummary = input.updates.selectedGoals?.length
+    ? input.updates.selectedGoals.join(", ")
+    : "Explore DSIQ";
+
+  await setDoc(
+    userRef,
+    {
+      ...input.updates,
+      nicknameLower: input.updates.nickname
+        ? normalizeNickname(input.updates.nickname)
+        : undefined,
+      onboardingCompleted: true,
+      onboardingAnswers: {
+        fullName: input.updates.fullName,
+        nickname: input.updates.nickname,
+        role: input.updates.role,
+        profileImageUrl: input.updates.profileImageUrl,
+        age: input.updates.age,
+        selectedGoals: input.updates.selectedGoals,
+        goal: goalSummary,
+        skills: goalSummary,
+        time: "Flexible",
+        budget: "Not specified",
+        interest: goalSummary,
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function isFirebaseNicknameTaken(uid: string, nickname: string) {
+  if (!db) {
+    return false;
+  }
+
+  const normalizedNickname = normalizeNickname(nickname);
+  if (!normalizedNickname) {
+    return false;
+  }
+
+  const usersRef = collection(db, "users");
+  const nicknameQuery = query(
+    usersRef,
+    where("nicknameLower", "==", normalizedNickname),
+  );
+  const snapshot = await getDocs(nicknameQuery);
+
+  return snapshot.docs.some((profileDoc) => profileDoc.id !== uid);
 }
 
 export async function getFirebaseUserProfile(uid: string) {

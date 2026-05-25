@@ -18,9 +18,16 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
-import { saveFirebaseOnboardingAnswers } from "@/lib/firebase-user-records";
+import {
+  isFirebaseNicknameTaken,
+  saveFirebaseOnboardingAnswers,
+} from "@/lib/firebase-user-records";
 import { getPostAuthPath } from "@/lib/auth-routing";
-import { saveLocalOnboardingAnswers } from "@/lib/user-profile-store";
+import {
+  isLocalNicknameTaken,
+  normalizeNickname,
+  saveLocalOnboardingAnswers,
+} from "@/lib/user-profile-store";
 
 const goalOptions = [
   { label: "Learn programming", icon: Code2 },
@@ -34,14 +41,26 @@ const goalOptions = [
   { label: "Other", icon: MoreHorizontal },
 ] as const;
 
+const roleOptions = [
+  "Student",
+  "Developer",
+  "Freelancer",
+  "Entrepreneur",
+  "Creator",
+  "Other",
+];
+
 type OnboardingStep = "account" | "goals" | "success";
 
 export default function OnboardingPage() {
   const [step, setStep] = useState<OnboardingStep>("account");
   const [fullName, setFullName] = useState("");
+  const [nickname, setNickname] = useState("");
   const [age, setAge] = useState("");
+  const [role, setRole] = useState("Student");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { authMode, user } = useAuth();
@@ -61,9 +80,20 @@ export default function OnboardingPage() {
     void routeCompletedUsers();
   }, [authMode, router, user]);
 
-  function handleAccountNext() {
+  async function handleAccountNext() {
+    if (!user) {
+      setError("You need to be signed in before continuing.");
+      return;
+    }
+
     if (!fullName.trim()) {
       setError("Enter your full name to continue.");
+      return;
+    }
+
+    const normalizedNickname = normalizeNickname(nickname);
+    if (!normalizedNickname) {
+      setError("Choose a nickname to continue.");
       return;
     }
 
@@ -73,8 +103,25 @@ export default function OnboardingPage() {
       return;
     }
 
-    setError("");
-    setStep("goals");
+    try {
+      setIsCheckingNickname(true);
+      const nicknameTaken =
+        authMode === "firebase"
+          ? await isFirebaseNicknameTaken(user.uid, nickname)
+          : isLocalNicknameTaken(user.uid, nickname);
+
+      if (nicknameTaken) {
+        setError("This nickname is already taken. Choose another one.");
+        return;
+      }
+
+      setError("");
+      setStep("goals");
+    } catch {
+      setError("We could not check that nickname right now. Please try again.");
+    } finally {
+      setIsCheckingNickname(false);
+    }
   }
 
   function toggleGoal(goal: string) {
@@ -107,6 +154,9 @@ export default function OnboardingPage() {
 
     const answers = {
       fullName: fullName.trim(),
+      nickname: normalizeNickname(nickname),
+      role,
+      profileImageUrl: "",
       age: age.trim(),
       selectedGoals,
       goal: goalSummary,
@@ -169,6 +219,16 @@ export default function OnboardingPage() {
                   />
                 </label>
                 <label className="block">
+                  <span className="sr-only">Nickname</span>
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(event) => setNickname(event.target.value)}
+                    placeholder="Nickname"
+                    className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
+                  />
+                </label>
+                <label className="block">
                   <span className="sr-only">Age</span>
                   <input
                     type="number"
@@ -180,6 +240,22 @@ export default function OnboardingPage() {
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {roleOptions.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setRole(option)}
+                      className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
+                        role === option
+                          ? "border-[#111111] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                          : "border-[color:var(--color-line)] bg-white text-[color:var(--color-muted)] hover:border-[#111111] hover:text-[color:var(--color-text)]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {error ? (
@@ -191,9 +267,10 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleAccountNext}
+                disabled={isCheckingNickname}
                 className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
               >
-                Finish creating account
+                {isCheckingNickname ? "Checking nickname..." : "Finish creating account"}
               </button>
 
               <p className="mt-5 text-center text-xs leading-6 text-[color:var(--color-muted)]">
