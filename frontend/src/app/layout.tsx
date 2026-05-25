@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth-provider";
 import { GlobalLoadingDelay } from "@/components/global-loading-delay";
+import { SettingsHelpPopup } from "@/components/settings-help-popup";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className="h-full antialiased"
     >
       <head>
@@ -64,6 +66,7 @@ export default function RootLayout({
         <AuthProvider>
           <GlobalLoadingDelay />
           {children}
+          <SettingsHelpPopup />
         </AuthProvider>
       </body>
     </html>

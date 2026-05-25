@@ -35,6 +35,36 @@
   --space-16: 4rem;
 }
 
+html[data-dsiq-theme="dark"] {
+  --background: #101211;
+  --foreground: #f4f4f0;
+  --color-background: #101211;
+  --color-surface: #171a18;
+  --color-surface-strong: #222622;
+  --color-text: #f4f4f0;
+  --color-muted: #b6bbb3;
+  --color-line: #333a35;
+  --color-brand-soft: rgba(16, 163, 127, 0.2);
+}
+
+html[data-dsiq-theme="light"] {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-dsiq-theme="system"] {
+    --background: #101211;
+    --foreground: #f4f4f0;
+    --color-background: #101211;
+    --color-surface: #171a18;
+    --color-surface-strong: #222622;
+    --color-text: #f4f4f0;
+    --color-muted: #b6bbb3;
+    --color-line: #333a35;
+    --color-brand-soft: rgba(16, 163, 127, 0.2);
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -54,6 +84,18 @@ body {
   background: var(--background);
   color: var(--color-text);
   font-family: var(--font-inter), sans-serif;
+}
+
+body > .skiptranslate,
+.dsiq-translate-widget,
+.goog-te-banner-frame,
+.goog-te-balloon-frame,
+#goog-gt-tt {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
 }
 
 button,

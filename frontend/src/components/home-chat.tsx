@@ -16,6 +16,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
+import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 
 const heroLines = [
   "your AI coach for skills, opportunities, and action",
@@ -121,6 +122,12 @@ export function HomeChat() {
     setIsDesktopDrawerOpen(false);
     setIsMobileDrawerOpen(false);
     setIsNewChatDialogOpen(true);
+  }
+
+  function openSettingsPanel() {
+    setIsDesktopDrawerOpen(false);
+    setIsMobileDrawerOpen(false);
+    openSettingsHelpPopup();
   }
 
   function startNewChat() {
@@ -260,14 +267,14 @@ export function HomeChat() {
                 </button>
               </div>
 
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 rounded-2xl border-t border-[color:var(--color-line)] px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
-                onClick={() => setIsDesktopDrawerOpen(false)}
+              <button
+                type="button"
+                className="flex items-center gap-3 rounded-2xl border-t border-[color:var(--color-line)] px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                onClick={openSettingsPanel}
               >
                 <Settings className="h-4 w-4" aria-hidden="true" />
                 Settings & Help
-              </Link>
+              </button>
             </div>
           ) : null}
         </aside>
@@ -482,13 +489,13 @@ export function HomeChat() {
               >
                 About DSIQ
               </Link>
-              <Link
-                href="/settings"
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
-                onClick={() => setIsMobileDrawerOpen(false)}
+              <button
+                type="button"
+                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                onClick={openSettingsPanel}
               >
                 Settings & Help
-              </Link>
+              </button>
             </div>
           </aside>
         </div>

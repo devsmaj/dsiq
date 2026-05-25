@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
+import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { PrivateFooter } from "@/components/private-footer";
 import { PrivateHeader } from "@/components/private-header";
 import { PrivateRoute } from "@/components/private-route";
 
 export default function SettingsPage() {
-  const [language, setLanguage] = useState("English");
   const [notifications, setNotifications] = useState({
     coach: true,
     missions: true,
@@ -91,22 +91,17 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
                 Language
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {["English", "French", "Arabic"].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setLanguage(option)}
-                    className={`rounded-full px-5 py-3 text-sm font-semibold transition ${
-                      language === option
-                        ? "bg-[color:var(--color-brand)] text-white"
-                        : "border border-[color:var(--color-line)] text-[color:var(--color-text)]"
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
+              <p className="mt-4 text-sm leading-7 text-[color:var(--color-muted)]">
+                Choose a language once and DSIQ will keep translating pages as
+                you move around the app.
+              </p>
+              <button
+                type="button"
+                onClick={openSettingsHelpPopup}
+                className="mt-6 rounded-full bg-[color:var(--color-brand)] px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(0,122,102,0.18)] transition hover:bg-[color:var(--color-brand-strong)]"
+              >
+                Open Language Settings
+              </button>
             </article>
           </section>
 
