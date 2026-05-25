@@ -18,6 +18,10 @@ const OPEN_SETTINGS_EVENT = "dsiq:open-settings-help";
 const LANGUAGE_STORAGE_KEY = "dsiq-language";
 const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
 
+// Set to false to disable Google Website Translator integration entirely.
+const ENABLE_GOOGLE_TRANSLATE = false;
+
+
 const languages = [
   { code: "auto", label: "Auto-detect" },
   { code: "en", label: "English (US)" },

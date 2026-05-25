@@ -204,6 +204,10 @@ export default function OnboardingPage() {
       setIsSubmitting(true);
       setError("");
 
+      // Always write onboarding completion locally for reliable post-redirect routing.
+      // Firebase save can be slow/fail, but local routing needs to work immediately.
+      saveLocalOnboardingAnswers(user.uid, answers);
+
       if (authMode === "firebase") {
         try {
           await saveFirebaseOnboardingAnswers({
@@ -211,11 +215,11 @@ export default function OnboardingPage() {
             answers,
           });
         } catch (saveError) {
-          console.warn("Firebase onboarding save failed; saving locally.", saveError);
-          saveLocalOnboardingAnswers(user.uid, answers);
+          console.warn(
+            "Firebase onboarding save failed; local onboarding save already completed.",
+            saveError,
+          );
         }
-      } else {
-        saveLocalOnboardingAnswers(user.uid, answers);
       }
 
       router.replace("/dsiq/chat");
