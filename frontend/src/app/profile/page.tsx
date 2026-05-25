@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Save } from "lucide-react";
+import { Camera, Check, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
@@ -220,7 +220,7 @@ export default function ProfilePage() {
               />
             </label>
 
-            <label className="block">
+            <label className="relative block">
               <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 Nickname
               </span>
@@ -230,27 +230,25 @@ export default function ProfilePage() {
                 onChange={(event) =>
                   setNickname(normalizeNickname(event.target.value))
                 }
-                className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+                className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 pr-12 text-sm outline-none transition focus:border-[#111111]"
               />
-              {nicknameStatus !== "idle" ? (
+              {nicknameStatus === "checking" ? (
                 <span
-                  className={`mt-2 block text-xs leading-5 ${
-                    nicknameStatus === "available"
-                      ? "text-[color:var(--color-brand-strong)]"
-                      : "text-[color:var(--color-muted)]"
-                  }`}
-                >
-                  {nicknameStatus === "checking" ? "Checking nickname..." : null}
-                  {nicknameStatus === "available"
-                    ? "Good, this nickname is available."
-                    : null}
-                  {nicknameStatus === "taken"
-                    ? "This nickname is already taken. Choose another one."
-                    : null}
-                  {nicknameStatus === "error"
-                    ? "We could not check this nickname yet."
-                    : null}
-                </span>
+                  className="absolute bottom-4 right-4 h-4 w-4 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent"
+                  aria-label="Checking nickname"
+                />
+              ) : null}
+              {nicknameStatus === "available" ? (
+                <Check
+                  className="absolute bottom-3.5 right-4 h-5 w-5 text-[color:var(--color-brand-strong)]"
+                  aria-label="Nickname available"
+                />
+              ) : null}
+              {nicknameStatus === "taken" ? (
+                <X
+                  className="absolute bottom-3.5 right-4 h-5 w-5 text-[color:var(--color-danger)]"
+                  aria-label="Nickname unavailable"
+                />
               ) : null}
             </label>
 
@@ -344,7 +342,11 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={
+              isSaving ||
+              nicknameStatus === "checking" ||
+              nicknameStatus === "taken"
+            }
             className="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save className="h-4 w-4" aria-hidden="true" />

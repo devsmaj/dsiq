@@ -12,6 +12,7 @@ import {
   Rocket,
   Sparkles,
   Store,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -256,7 +257,7 @@ export default function OnboardingPage() {
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
-                <label className="block">
+                <label className="relative block">
                   <span className="sr-only">Nickname</span>
                   <input
                     type="text"
@@ -265,31 +266,27 @@ export default function OnboardingPage() {
                       setNickname(normalizeNickname(event.target.value))
                     }
                     placeholder="Nickname"
-                    className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
+                    className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 pr-12 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
+                  {nicknameStatus === "checking" ? (
+                    <span
+                      className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent"
+                      aria-label="Checking nickname"
+                    />
+                  ) : null}
+                  {nicknameStatus === "available" ? (
+                    <Check
+                      className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--color-brand-strong)]"
+                      aria-label="Nickname available"
+                    />
+                  ) : null}
+                  {nicknameStatus === "taken" ? (
+                    <X
+                      className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--color-danger)]"
+                      aria-label="Nickname unavailable"
+                    />
+                  ) : null}
                 </label>
-                {nicknameStatus !== "idle" ? (
-                  <p
-                    className={`px-1 text-left text-xs leading-5 ${
-                      nicknameStatus === "available"
-                        ? "text-[color:var(--color-brand-strong)]"
-                        : "text-[color:var(--color-muted)]"
-                    }`}
-                  >
-                    {nicknameStatus === "checking"
-                      ? "Checking nickname..."
-                      : null}
-                    {nicknameStatus === "available"
-                      ? "Good, this nickname is available."
-                      : null}
-                    {nicknameStatus === "taken"
-                      ? "This nickname is already taken. Choose another one."
-                      : null}
-                    {nicknameStatus === "error"
-                      ? "We could not check this nickname yet."
-                      : null}
-                  </p>
-                ) : null}
                 <label className="block">
                   <span className="sr-only">Age</span>
                   <input
@@ -329,7 +326,11 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleAccountNext}
-                disabled={isCheckingNickname}
+                disabled={
+                  isCheckingNickname ||
+                  nicknameStatus === "checking" ||
+                  nicknameStatus === "taken"
+                }
                 className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isCheckingNickname ? <LoadingSpinner /> : "Finish creating account"}
