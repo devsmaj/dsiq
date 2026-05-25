@@ -3,19 +3,21 @@ export type GeminiChatMessage = {
   text: string;
 };
 
+const CHAT_API_URL = "https://dsiq.onrender.com/api/chat";
+
 export async function askGemini(messages: GeminiChatMessage[]) {
-  const endpoint =
-    process.env.NEXT_PUBLIC_CHAT_API_URL?.trim() || "/api/chat";
   const latestUserMessage = [...messages]
     .reverse()
     .find((message) => message.role === "user");
-  const response = await fetch(endpoint, {
+  const userMessage = latestUserMessage?.text?.trim() || "";
+
+  const response = await fetch(CHAT_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      message: latestUserMessage?.text || "",
+      message: userMessage,
       messages,
     }),
   });
