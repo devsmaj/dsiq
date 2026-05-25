@@ -352,7 +352,7 @@ export function PublicChat() {
             {!user ? (
               <Link
                 href="/login"
-                className="hidden text-sm font-medium transition hover:text-black sm:inline"
+                className="hidden h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black sm:inline-flex"
               >
                 Log in
               </Link>

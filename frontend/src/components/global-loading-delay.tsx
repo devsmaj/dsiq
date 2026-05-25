@@ -3,12 +3,44 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
+
 const LOADING_DELAY_MS = 5000;
+const CHAT_BYPASS_MAX_AGE_MS = 30000;
+
+function hasActiveHomeChatBypass() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const bypassStartedAt = Number(
+    window.sessionStorage.getItem(HOME_CHAT_LOADING_BYPASS_KEY),
+  );
+
+  return (
+    Number.isFinite(bypassStartedAt) &&
+    Date.now() - bypassStartedAt <= CHAT_BYPASS_MAX_AGE_MS
+  );
+}
 
 export function GlobalLoadingDelay() {
   const pathname = usePathname();
 
-  if (pathname === "/chat") {
+  return <RouteLoadingDelay key={pathname} pathname={pathname} />;
+}
+
+function RouteLoadingDelay({ pathname }: { pathname: string }) {
+  const [shouldBypassHomeChat] = useState(
+    () => pathname === "/chat" && hasActiveHomeChatBypass(),
+  );
+
+  useEffect(() => {
+    if (shouldBypassHomeChat) {
+      window.sessionStorage.removeItem(HOME_CHAT_LOADING_BYPASS_KEY);
+    }
+  }, [shouldBypassHomeChat]);
+
+  if (shouldBypassHomeChat) {
     return null;
   }
 

@@ -15,6 +15,8 @@ import {
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
+
 const heroLines = [
   "your AI coach for skills, opportunities, and action",
   "your coach for smarter growth and consistent action",
@@ -134,6 +136,10 @@ export function HomeChat() {
       return;
     }
 
+    window.sessionStorage.setItem(
+      HOME_CHAT_LOADING_BYPASS_KEY,
+      String(Date.now()),
+    );
     router.push(`/chat?guest=true&q=${encodeURIComponent(message)}`);
   }
 
