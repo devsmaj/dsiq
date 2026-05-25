@@ -19,6 +19,7 @@ import {
   Search,
   Send,
   Settings,
+  SquarePen,
   Target,
   TrendingUp,
   X,
@@ -31,7 +32,7 @@ import { getPostAuthPath } from "@/lib/auth-routing";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
-  { label: "New Chat", href: "/dsiq/chat", icon: Plus },
+  { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
   { label: "Search Chats", href: "/dsiq/chat", icon: Search },
   { label: "DSIQ Coach", href: "/coach", icon: Bot },
   { label: "Learning Roadmap", href: "/coach", icon: Compass },
@@ -40,7 +41,6 @@ const sidebarItems = [
   { label: "Opportunities", href: "/opportunities", icon: Rocket },
   { label: "Progress Tracker", href: "/progress", icon: TrendingUp },
   { label: "Saved Chats", href: "/dsiq/chat", icon: LayoutList },
-  { label: "Settings", href: "/settings", icon: Settings },
 ] as const;
 
 const collapsedItems = [
@@ -84,7 +84,6 @@ export default function DsiqChatPage() {
     user?.displayName ||
     user?.email?.split("@")[0] ||
     "Saleh";
-  const firstName = displayName.split(" ")[0] || "Saleh";
 
   useEffect(() => {
     async function routeIncompleteUsers() {
@@ -296,20 +295,14 @@ export default function DsiqChatPage() {
               type="button"
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="absolute left-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
+              className="fixed left-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
             <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:justify-center lg:py-10">
               <div className="mx-auto w-full max-w-[820px] text-center">
-                <h1 className="text-[32px] font-normal leading-[1.18] tracking-tight sm:text-[40px]">
-                  Welcome back, {firstName}.
-                  <span className="block">
-                    What do you want to work on today?
-                  </span>
-                </h1>
-                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
+                <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
                   DSIQ is ready to guide your skills, projects, missions, and
                   opportunities.
                 </p>
