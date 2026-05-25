@@ -1,4 +1,7 @@
 export type OnboardingAnswers = {
+  fullName?: string;
+  age?: string;
+  selectedGoals?: string[];
   goal: string;
   skills: string;
   time: string;
