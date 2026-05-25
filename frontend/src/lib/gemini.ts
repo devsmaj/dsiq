@@ -11,6 +11,7 @@ export async function askGemini(messages: GeminiChatMessage[]) {
     .find((message) => message.role === "user");
   const userMessage = latestUserMessage?.text?.trim() || "";
 
+  console.log("Calling Render backend", CHAT_API_URL);
   const response = await fetch(CHAT_API_URL, {
     method: "POST",
     headers: {
@@ -21,6 +22,7 @@ export async function askGemini(messages: GeminiChatMessage[]) {
       messages,
     }),
   });
+  console.log("Render backend response", response.status, response.ok);
 
   if (!response.ok) {
     const data = (await response.json().catch(() => null)) as {

@@ -73,12 +73,9 @@ async function createChatCompletion(request, response) {
         }),
     });
     if (!geminiResponse.ok) {
-        const errorMessage = geminiResponse.status === 429
-            ? "Gemini quota or rate limit was reached. Please try again later."
-            : "DSIQ could not reach Gemini right now. Please try again.";
         return response
             .status(geminiResponse.status === 429 ? 429 : 502)
-            .json({ error: errorMessage });
+            .json({ error: "DSIQ could not answer right now. Please try again." });
     }
     const data = (await geminiResponse.json());
     const text = readResponseText(data);

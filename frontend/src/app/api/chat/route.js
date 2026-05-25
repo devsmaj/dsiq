@@ -92,13 +92,8 @@ export async function POST(request) {
   );
 
   if (!response.ok) {
-    const errorMessage =
-      response.status === 429
-        ? "Gemini quota or rate limit was reached. Please try again later."
-        : "DSIQ could not reach Gemini right now. Please try again.";
-
     return NextResponse.json(
-      { error: errorMessage },
+      { error: "DSIQ could not answer right now. Please try again." },
       { status: response.status === 429 ? 429 : 502 },
     );
   }
