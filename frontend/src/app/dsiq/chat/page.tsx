@@ -11,6 +11,7 @@ import {
   FolderKanban,
   HelpCircle,
   LayoutList,
+  LogOut,
   Menu,
   Mic,
   Moon,
@@ -76,6 +77,7 @@ export default function DsiqChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   const displayName =
@@ -113,6 +115,7 @@ export default function DsiqChatPage() {
   }
 
   async function handleLogout() {
+    setIsLogoutConfirmOpen(false);
     await logout();
     router.replace("/login");
   }
@@ -233,10 +236,13 @@ export default function DsiqChatPage() {
               })}
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  setIsLogoutConfirmOpen(true);
+                }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <LogOut className="h-4 w-4" aria-hidden="true" />
                 Logout
               </button>
             </div>
@@ -374,6 +380,46 @@ export default function DsiqChatPage() {
             </div>
           </section>
         </div>
+
+        {isLogoutConfirmOpen ? (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-4">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="logout-confirm-title"
+              className="w-full max-w-sm rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
+            >
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]">
+                <LogOut className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h2
+                id="logout-confirm-title"
+                className="mt-4 text-lg font-semibold text-[color:var(--color-text)]"
+              >
+                Do you want to log out?
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+                Are you sure you want to log out?
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsLogoutConfirmOpen(false)}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-medium text-white transition hover:bg-black"
+                >
+                  Yes
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </main>
     </PrivateRoute>
   );

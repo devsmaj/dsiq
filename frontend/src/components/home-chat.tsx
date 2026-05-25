@@ -235,7 +235,7 @@ export function HomeChat() {
         <aside className="relative hidden w-[72px] bg-[color:var(--color-surface-strong)] px-4 py-7 md:block">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
             aria-label="Open menu"
             aria-expanded={isDesktopDrawerOpen}
             onClick={() => setIsDesktopDrawerOpen((value) => !value)}
@@ -286,7 +286,7 @@ export function HomeChat() {
                 type="button"
                 aria-label="Open menu"
                 aria-expanded={isMobileDrawerOpen}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] md:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] md:hidden"
                 onClick={() => setIsMobileDrawerOpen(true)}
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />

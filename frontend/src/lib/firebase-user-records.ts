@@ -32,7 +32,6 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
   }
 
   const userRef = doc(db, "users", input.uid);
-  const existingSnapshot = await getDoc(userRef);
 
   const baseFields = {
     uid: input.uid,
@@ -42,22 +41,17 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
     lastLoginAt: serverTimestamp(),
   };
 
-  if (!existingSnapshot.exists()) {
-    await setDoc(userRef, {
-      ...baseFields,
-      createdAt: serverTimestamp(),
-      onboardingCompleted: false,
-      authProvider: input.authProvider || "password",
-    });
-    return;
-  }
-
   await setDoc(
     userRef,
     {
       ...baseFields,
       authProvider: input.authProvider || "password",
-      ...(input.reason === "signup" ? { createdAt: serverTimestamp() } : {}),
+      ...(input.reason === "signup"
+        ? {
+            createdAt: serverTimestamp(),
+            onboardingCompleted: false,
+          }
+        : {}),
     },
     { merge: true },
   );

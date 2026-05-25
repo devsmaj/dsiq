@@ -49,6 +49,7 @@ const languages = [
   { code: "da", label: "Danish" },
   { code: "fi", label: "Finnish" },
   { code: "no", label: "Norwegian" },
+  { code: "ha", label: "Hausa" },
   { code: "sw", label: "Swahili" },
 ] as const;
 
