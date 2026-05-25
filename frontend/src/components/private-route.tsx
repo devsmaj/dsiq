@@ -16,7 +16,14 @@ export function PrivateRoute({ children }: { children: ReactNode }) {
     }
   }, [isLoading, pathname, router, user]);
 
+  // If this route is private, but the user is authenticated,
+  // render immediately (avoids any onboarding “loop” from guards).
+  if (!isLoading && user) {
+    return <>{children}</>;
+  }
+
   if (isLoading || !user) {
+
     return (
       <div className="mx-auto w-full max-w-3xl px-6 py-16 lg:px-8">
         <div className="rounded-[2rem] border border-[color:var(--color-line)] bg-white p-8 text-center shadow-[0_18px_50px_rgba(11,37,39,0.08)]">

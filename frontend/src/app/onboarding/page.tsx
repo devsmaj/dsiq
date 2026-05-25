@@ -86,10 +86,18 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const normalizedNickname = normalizeNickname(nickname);
-    if (!normalizedNickname || !user) {
+
+    if (!normalizedNickname) {
+      // Avoid setState in effect when we don't need validation.
+      return;
+    }
+
+    if (!user) {
+      // No signed-in user yet.
       setNicknameStatus("idle");
       return;
     }
+
 
     setNicknameStatus("checking");
     const timeout = window.setTimeout(async () => {
@@ -204,11 +212,22 @@ export default function OnboardingPage() {
       setIsSubmitting(true);
       setError("");
 
-      // Always write onboarding completion locally for reliable post-redirect routing.
-      // Firebase save can be slow/fail, but local routing needs to work immediately.
-      saveLocalOnboardingAnswers(user.uid, answers);
+      const saveSucceeded = (() => {
+        try {
+          // Save locally first for immediate redirect correctness.
+          saveLocalOnboardingAnswers(user.uid, answers);
+          return true;
+        } catch {
+          return false;
+        }
+      })();
+
+      if (!saveSucceeded) {
+        throw new Error("Unable to save onboarding answers locally.");
+      }
 
       if (authMode === "firebase") {
+        // Do not block redirect if Firebase fails, but still try to save.
         try {
           await saveFirebaseOnboardingAnswers({
             uid: user.uid,
@@ -216,13 +235,14 @@ export default function OnboardingPage() {
           });
         } catch (saveError) {
           console.warn(
-            "Firebase onboarding save failed; local onboarding save already completed.",
+            "Firebase onboarding save failed; proceeding with local onboarding completion.",
             saveError,
           );
         }
       }
 
       router.replace("/dsiq/chat");
+      return;
     } catch (nextError) {
       setError(
         nextError instanceof Error
@@ -230,6 +250,7 @@ export default function OnboardingPage() {
           : "Unable to save onboarding answers.",
       );
     } finally {
+      // If redirect happens, this will be ignored during navigation.
       setIsSubmitting(false);
     }
   }
@@ -480,9 +501,11 @@ export default function OnboardingPage() {
                 {isSubmitting ? <LoadingSpinner /> : "Continue"}
               </button>
 
-              <p className="mx-auto mt-5 max-w-sm text-xs leading-6 text-[color:var(--color-muted)]">
-                DSIQ can make mistakes. Don&apos;t share sensitive information.
-              </p>
+              {isSubmitting ? null : (
+                <p className="mx-auto mt-5 max-w-sm text-xs leading-6 text-[color:var(--color-muted)]">
+                  DSIQ can make mistakes. Don&apos;t share sensitive information.
+                </p>
+              )}
               </div>
             </div>
           ) : null}

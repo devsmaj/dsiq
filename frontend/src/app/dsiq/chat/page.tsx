@@ -120,7 +120,7 @@ export default function DsiqChatPage() {
     router.replace("/login");
   }
 
-  function SidebarContent({ mobile = false }: { mobile?: boolean }) {
+  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
 
