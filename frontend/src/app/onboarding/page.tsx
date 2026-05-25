@@ -437,7 +437,7 @@ export default function OnboardingPage() {
           ) : null}
 
           {step === "success" ? (
-            <div className="text-center">
+            <div>
               <button
                 type="button"
                 onClick={() => {
@@ -449,6 +449,7 @@ export default function OnboardingPage() {
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </button>
+              <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]">
                 <Check className="h-7 w-7" aria-hidden="true" />
               </div>
@@ -478,6 +479,7 @@ export default function OnboardingPage() {
               <p className="mx-auto mt-5 max-w-sm text-xs leading-6 text-[color:var(--color-muted)]">
                 DSIQ can make mistakes. Don&apos;t share sensitive information.
               </p>
+              </div>
             </div>
           ) : null}
         </section>
