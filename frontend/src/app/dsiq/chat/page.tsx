@@ -121,7 +121,7 @@ export default function DsiqChatPage() {
     user?.email?.split("@")[0] ||
     "Saleh";
   const profileImageUrl =
-    profile?.profileImageUrl || answers?.profileImageUrl || "";
+    profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
 
   useKeyboardOffset();
 

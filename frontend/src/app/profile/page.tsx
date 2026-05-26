@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Save, X } from "lucide-react";
+import { Camera, Check, ChevronDown, Save, X } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
@@ -63,6 +63,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isSaving, setIsSaving] = useState(false);
+  const [isGoalsOpen, setIsGoalsOpen] = useState(false);
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
 
   function getDefaultProfileImageUrl() {
@@ -87,6 +88,7 @@ export default function ProfilePage() {
     setRole(profile?.role || answers?.role || "Student");
     setProfileImageUrl(getDefaultProfileImageUrl());
     setSelectedGoals(profile?.selectedGoals || answers?.selectedGoals || []);
+    setIsGoalsOpen(false);
     setError("");
     setStatusMessage("");
   }
@@ -197,18 +199,22 @@ export default function ProfilePage() {
       setError("");
       setStatusMessage("");
 
-      const nicknameTaken =
-        authMode === "firebase"
-          ? await withTimeout(
-              isFirebaseNicknameTaken(user.uid, normalizedNickname),
-              undefined,
-              "Nickname check timed out.",
-            )
-          : isLocalNicknameTaken(user.uid, normalizedNickname);
+      try {
+        const nicknameTaken =
+          authMode === "firebase"
+            ? await withTimeout(
+                isFirebaseNicknameTaken(user.uid, normalizedNickname),
+                undefined,
+                "Nickname check timed out.",
+              )
+            : isLocalNicknameTaken(user.uid, normalizedNickname);
 
-      if (nicknameTaken) {
-        setError("This nickname is already taken. Choose another one.");
-        return;
+        if (nicknameTaken) {
+          setError("This nickname is already taken. Choose another one.");
+          return;
+        }
+      } catch (nicknameError) {
+        console.warn("Nickname check failed before profile save.", nicknameError);
       }
 
       const updates = {
@@ -223,11 +229,20 @@ export default function ProfilePage() {
       updateLocalUserProfile(user.uid, updates);
 
       if (authMode === "firebase") {
-        await withTimeout(
-          updateFirebaseUserProfile({ uid: user.uid, updates }),
-          undefined,
-          "Profile save timed out.",
-        );
+        try {
+          await withTimeout(
+            updateFirebaseUserProfile({ uid: user.uid, updates }),
+            undefined,
+            "Profile save timed out.",
+          );
+        } catch (syncError) {
+          console.warn("Firebase profile sync failed.", syncError);
+          setNickname(normalizedNickname);
+          setStatusMessage(
+            "Profile saved on this device. Cloud sync will try again later.",
+          );
+          return;
+        }
       }
 
       setNickname(normalizedNickname);
@@ -356,52 +371,69 @@ export default function ProfilePage() {
             </label>
           </div>
 
-          <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+          <label className="mt-6 block">
+            <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               Role
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {roleOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setRole(option)}
-                  className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
-                    role === option
-                      ? "border-[#111111] bg-[color:var(--color-surface-strong)]"
-                      : "border-[color:var(--color-line)] text-[color:var(--color-muted)] hover:border-[#111111] hover:text-[color:var(--color-text)]"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
+            </span>
+            <div className="relative">
+              <select
+                value={role}
+                onChange={(event) => setRole(event.target.value)}
+                className="h-[52px] w-full appearance-none rounded-2xl border border-[color:var(--color-line)] bg-white px-4 pr-12 text-sm font-medium text-[color:var(--color-text)] outline-none transition focus:border-[#111111]"
+              >
+                {roleOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-muted)]"
+                aria-hidden="true"
+              />
             </div>
-          </div>
+          </label>
 
           <div className="mt-6">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               Goals
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {goalOptions.map((goal) => {
-                const isSelected = selectedGoals.includes(goal);
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsGoalsOpen((value) => !value)}
+                className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <span className="min-w-0 truncate">
+                  {selectedGoals.length
+                    ? selectedGoals.join(", ")
+                    : "Select goals"}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </button>
+              {isGoalsOpen ? (
+                <div className="absolute left-0 right-0 top-14 z-20 max-h-72 overflow-y-auto rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                  {goalOptions.map((goal) => {
+                    const isSelected = selectedGoals.includes(goal);
 
-                return (
-                  <button
-                    key={goal}
-                    type="button"
-                    onClick={() => toggleGoal(goal)}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
-                      isSelected
-                        ? "border-[#111111] bg-[color:var(--color-surface-strong)]"
-                        : "border-[color:var(--color-line)] hover:border-[#111111]"
-                    }`}
-                  >
-                    {goal}
-                    {isSelected ? <Check className="h-4 w-4" /> : null}
-                  </button>
-                );
-              })}
+                    return (
+                      <button
+                        key={goal}
+                        type="button"
+                        onClick={() => toggleGoal(goal)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                          isSelected
+                            ? "bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                            : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)]"
+                        }`}
+                      >
+                        {goal}
+                        {isSelected ? <Check className="h-4 w-4" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           </div>
 
