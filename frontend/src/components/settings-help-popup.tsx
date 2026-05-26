@@ -4,7 +4,6 @@ import {
   Check,
   ChevronDown,
   Database,
-  HelpCircle,
   Monitor,
   Moon,
   Settings,
@@ -316,14 +315,6 @@ export function SettingsHelpPopup() {
               >
                 <Database className="h-4 w-4" aria-hidden="true" />
                 Data Controls
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePanel("data")}
-                className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition hover:bg-[color:var(--color-surface)]"
-              >
-                <HelpCircle className="h-4 w-4" aria-hidden="true" />
-                Help
               </button>
             </aside>
 

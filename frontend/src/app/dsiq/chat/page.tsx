@@ -15,7 +15,6 @@ import {
   LogOut,
   Menu,
   Mic,
-  Monitor,
   Plus,
   Search,
   Send,
@@ -443,14 +442,6 @@ export default function DsiqChatPage() {
               >
                 <Settings className="h-4 w-4" aria-hidden="true" />
                 Settings
-              </button>
-              <button
-                type="button"
-                onClick={openSettingsFromProfile}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-              >
-                <Monitor className="h-4 w-4" aria-hidden="true" />
-                Theme
               </button>
               <button
                 type="button"
