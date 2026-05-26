@@ -107,7 +107,11 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Local chat-history fallback works when Firebase is unavailable.
 - [x] Active private chats show top-right New Chat and more-actions controls.
 - [x] Chat actions support draft to email, export to docs, add to project, and share.
+- [x] Top-right chat actions include Read aloud / Stop reading.
 - [x] AI responses include copy action with copied check feedback.
+- [x] Saved chat messages include stable message IDs and timestamps.
+- [x] Each saved chat message has a three-dot menu with delete confirmation.
+- [x] Deleted saved chat messages are hidden with a deletion timestamp.
 - [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
 - [x] Projects opens a real projects panel with top-right X close.
 - [x] Users can create projects from the Projects panel.

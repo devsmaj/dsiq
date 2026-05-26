@@ -23,6 +23,8 @@ import {
   Send,
   Settings,
   SquarePen,
+  Trash2,
+  Volume2,
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -33,9 +35,11 @@ import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
 import {
   createPrivateChat,
+  deletePrivateChatMessage,
   listPrivateChats,
   loadPrivateChatMessages,
   savePrivateChatMessage,
+  type PrivateChatMessage,
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
@@ -111,6 +115,18 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function createClientMessageId() {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `message-${window.crypto.randomUUID()}`;
+  }
+
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function toGeminiMessages(messages: PrivateChatMessage[]): GeminiChatMessage[] {
+  return messages.map(({ role, text }) => ({ role, text }));
+}
+
 export default function DsiqChatPage() {
   const router = useRouter();
   const { authMode, logout } = useAuth();
@@ -125,6 +141,7 @@ export default function DsiqChatPage() {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isReadingAloud, setIsReadingAloud] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [isProjectsLoading, setIsProjectsLoading] = useState(false);
@@ -134,10 +151,16 @@ export default function DsiqChatPage() {
   const [projectDraftNames, setProjectDraftNames] = useState<
     Record<string, string>
   >({});
-  const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
+  const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
   const [projects, setProjects] = useState<DsiqProject[]>([]);
+  const [activeMessageMenuId, setActiveMessageMenuId] = useState<string | null>(
+    null,
+  );
+  const [confirmingDeleteMessageId, setConfirmingDeleteMessageId] = useState<
+    string | null
+  >(null);
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(
     null,
   );
@@ -191,6 +214,12 @@ export default function DsiqChatPage() {
       block: "end",
     });
   }, [messages, isSending, error]);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     async function loadChats() {
@@ -285,10 +314,14 @@ export default function DsiqChatPage() {
     setError("");
     setActionStatus("");
     setIsChatActionsOpen(false);
+    setActiveMessageMenuId(null);
+    setConfirmingDeleteMessageId(null);
     setPrompt("");
     setIsSending(true);
 
-    const userMessage: GeminiChatMessage = {
+    const userMessage: PrivateChatMessage = {
+      createdAtMs: Date.now(),
+      id: createClientMessageId(),
       role: "user",
       text: message,
     };
@@ -305,8 +338,10 @@ export default function DsiqChatPage() {
       });
       void refreshPrivateChats();
 
-      const response = await askGemini(nextMessages);
-      const modelMessage: GeminiChatMessage = {
+      const response = await askGemini(toGeminiMessages(nextMessages));
+      const modelMessage: PrivateChatMessage = {
+        createdAtMs: Date.now(),
+        id: createClientMessageId(),
         role: "model",
         text: response,
       };
@@ -333,12 +368,15 @@ export default function DsiqChatPage() {
   }
 
   function startNewChat() {
+    stopReadAloud();
     setCurrentChatId(null);
     setMessages([]);
     setPrompt("");
     setError("");
     setActionStatus("");
     setIsChatActionsOpen(false);
+    setActiveMessageMenuId(null);
+    setConfirmingDeleteMessageId(null);
     setIsSearchPanelOpen(false);
     setIsProjectsPanelOpen(false);
     setIsUploadPanelOpen(false);
@@ -353,9 +391,12 @@ export default function DsiqChatPage() {
     }
 
     try {
+      stopReadAloud();
       setError("");
       setActionStatus("");
       setIsChatActionsOpen(false);
+      setActiveMessageMenuId(null);
+      setConfirmingDeleteMessageId(null);
       setIsSearchPanelOpen(false);
       setIsProjectsPanelOpen(false);
       setIsChatsLoading(true);
@@ -375,6 +416,8 @@ export default function DsiqChatPage() {
   function openSearchPanel(mobile = false) {
     setIsSearchPanelOpen(true);
     setChatSearchQuery("");
+    setActiveMessageMenuId(null);
+    setConfirmingDeleteMessageId(null);
     if (mobile) {
       setIsMobileSidebarOpen(false);
     }
@@ -385,6 +428,8 @@ export default function DsiqChatPage() {
     setIsProjectsPanelOpen(true);
     setActionStatus("");
     setIsChatActionsOpen(false);
+    setActiveMessageMenuId(null);
+    setConfirmingDeleteMessageId(null);
     if (mobile) {
       setIsMobileSidebarOpen(false);
     }
@@ -484,6 +529,81 @@ export default function DsiqChatPage() {
       }, 1400);
     } catch {
       setActionStatus("Copy is not available in this browser.");
+    }
+  }
+
+  function stopReadAloud(status = "") {
+    window.speechSynthesis?.cancel();
+    setIsReadingAloud(false);
+    if (status) {
+      setActionStatus(status);
+    }
+  }
+
+  function readAloud() {
+    setIsChatActionsOpen(false);
+
+    if (isReadingAloud) {
+      stopReadAloud("Reading stopped.");
+      return;
+    }
+
+    const messageToRead =
+      [...messages].reverse().find((message) => message.role === "model") ||
+      messages[messages.length - 1];
+    const text = messageToRead?.text.trim();
+
+    if (!text) {
+      setActionStatus("There is no message to read yet.");
+      return;
+    }
+
+    if (
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
+      setActionStatus("Read aloud is not available in this browser.");
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = navigator.language || "en-US";
+    utterance.onend = () => setIsReadingAloud(false);
+    utterance.onerror = () => {
+      setIsReadingAloud(false);
+      setActionStatus("Read aloud stopped.");
+    };
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    setIsReadingAloud(true);
+    setActionStatus("Reading aloud.");
+  }
+
+  async function deleteChatMessage(messageId: string) {
+    if (!user || !currentChatId) {
+      setActionStatus("Open a saved chat before deleting a message.");
+      return;
+    }
+
+    const previousMessages = messages;
+    setMessages((current) =>
+      current.filter((message) => message.id !== messageId),
+    );
+    setActiveMessageMenuId(null);
+    setConfirmingDeleteMessageId(null);
+
+    try {
+      await deletePrivateChatMessage({
+        chatId: currentChatId,
+        messageId,
+        uid: user.uid,
+      });
+      await refreshPrivateChats();
+      setActionStatus("Message deleted.");
+    } catch {
+      setMessages(previousMessages);
+      setActionStatus("We could not delete that message right now.");
     }
   }
 
@@ -1159,6 +1279,14 @@ export default function DsiqChatPage() {
                     <div className="absolute right-0 top-12 z-40 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
                       <button
                         type="button"
+                        onClick={readAloud}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <Volume2 className="h-4 w-4" aria-hidden="true" />
+                        {isReadingAloud ? "Stop reading" : "Read aloud"}
+                      </button>
+                      <button
+                        type="button"
                         onClick={draftToEmail}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                       >
@@ -1206,14 +1334,72 @@ export default function DsiqChatPage() {
                   <div className="mx-auto mt-8 flex max-h-64 w-full max-w-[760px] flex-col gap-4 overflow-y-auto text-left">
                     {messages.map((message, index) => (
                       <article
-                        key={`${message.role}-${index}`}
-                        className={`max-w-[82%] text-sm leading-7 text-[color:var(--color-text)] ${
+                        key={message.id}
+                        className={`group relative max-w-[82%] pr-10 text-sm leading-7 text-[color:var(--color-text)] ${
                           message.role === "user"
                             ? "ml-auto text-right"
                             : "mr-auto text-left"
                         }`}
                       >
-                        {message.text}
+                        <button
+                          type="button"
+                          aria-label="Message actions"
+                          aria-expanded={activeMessageMenuId === message.id}
+                          onClick={() => {
+                            setConfirmingDeleteMessageId(null);
+                            setActiveMessageMenuId((current) =>
+                              current === message.id ? null : message.id,
+                            );
+                          }}
+                          className="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--color-muted)] opacity-100 transition hover:bg-white hover:text-[color:var(--color-text)] sm:opacity-0 sm:group-hover:opacity-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                        </button>
+
+                        {activeMessageMenuId === message.id ? (
+                          <div className="absolute right-0 top-9 z-30 w-44 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                            {confirmingDeleteMessageId === message.id ? (
+                              <div className="space-y-2 px-1 py-1">
+                                <p className="px-2 text-xs font-medium text-[color:var(--color-text)]">
+                                  Delete this message?
+                                </p>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setConfirmingDeleteMessageId(null)
+                                    }
+                                    className="h-8 flex-1 rounded-full border border-[color:var(--color-line)] text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void deleteChatMessage(message.id)
+                                    }
+                                    className="h-8 flex-1 rounded-full bg-[#111111] text-xs font-semibold text-white transition hover:bg-black"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setConfirmingDeleteMessageId(message.id)
+                                }
+                                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                Delete message
+                              </button>
+                            )}
+                          </div>
+                        ) : null}
+
+                        <p className="whitespace-pre-wrap">{message.text}</p>
                         {message.role === "model" ? (
                           <button
                             type="button"

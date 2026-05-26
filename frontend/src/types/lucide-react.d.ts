@@ -50,5 +50,7 @@ declare module "lucide-react" {
   export const SquarePen: LucideIcon;
   export const Store: LucideIcon;
   export const Sun: LucideIcon;
+  export const Trash2: LucideIcon;
+  export const Volume2: LucideIcon;
   export const X: LucideIcon;
 }

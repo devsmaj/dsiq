@@ -30,8 +30,9 @@ It helps users answer practical questions like:
 - Private chat has a collapsible sidebar with New Chat, Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
 - Private chat auto-saves conversations and shows recent chats in the expanded sidebar.
 - Private chat history uses Firestore when available and local storage as a fallback.
-- Active private chats include top-right New Chat and more-actions controls for email draft, markdown export, project handoff, and share/copy.
+- Active private chats include top-right New Chat and more-actions controls for read aloud, email draft, markdown export, project handoff, and share/copy.
 - AI responses include one-click copy feedback.
+- Saved chat messages keep stable IDs/timestamps and include per-message delete with a deletion timestamp.
 - Search Chats opens a searchable saved-chat panel with a top-right close button.
 - Projects opens a panel where users can create projects, rename project names anytime, save the name, and add the current chat to a project.
 - Project data uses Firestore when available and local storage as a fallback.
