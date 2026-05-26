@@ -23,6 +23,7 @@ import {
   Send,
   Settings,
   SquarePen,
+  Target,
   Trash2,
   Volume2,
   X,
@@ -63,7 +64,7 @@ const sidebarItems = [
     href: "/dsiq/chat?panel=roadmap",
     icon: GraduationCap,
   },
-  { label: "Library", href: "/dsiq/chat?panel=library", icon: BookOpen },
+  { label: "Focus Mode", href: "/dsiq/chat?panel=focus", icon: Target },
   { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 
@@ -923,6 +924,7 @@ export default function DsiqChatPage() {
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
+    const recentChats = mobile ? privateChats.slice(0, 3) : privateChats;
 
     return (
       <aside
@@ -979,7 +981,7 @@ export default function DsiqChatPage() {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
-            const isLibrary = item.label === "Library";
+            const isAiTeacher = item.label === "AI Teacher";
             const isSavedChats = item.label === "Saved Chats";
 
             if (isNewChat) {
@@ -1021,23 +1023,6 @@ export default function DsiqChatPage() {
               );
             }
 
-            if (isLibrary) {
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  title={expanded ? undefined : item.label}
-                  onClick={() => openLibraryPanel(mobile)}
-                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
-                    expanded ? "gap-3 px-3" : "justify-center px-0"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  {expanded ? <span>{item.label}</span> : null}
-                </button>
-              );
-            }
-
             if (isSavedChats) {
               return (
                 <button
@@ -1065,8 +1050,12 @@ export default function DsiqChatPage() {
                     setIsMobileSidebarOpen(false);
                   }
                 }}
-                className={`flex min-h-11 items-center rounded-2xl text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                className={`flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
                   expanded ? "gap-3 px-3" : "justify-center px-0"
+                } ${
+                  isAiTeacher
+                    ? "border border-[#111111]/10 bg-white font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.04)]"
+                    : "font-medium"
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -1076,8 +1065,16 @@ export default function DsiqChatPage() {
           })}
 
           {expanded ? (
-            <div className="mt-5 border-t border-[color:var(--color-line)] pt-4">
-              <div className="mb-2 flex items-center justify-between px-3">
+            <div
+              className={`border-t border-[color:var(--color-line)] ${
+                mobile ? "mt-3 pt-3" : "mt-5 pt-4"
+              }`}
+            >
+              <div
+                className={`flex items-center justify-between ${
+                  mobile ? "mb-1 px-2" : "mb-2 px-3"
+                }`}
+              >
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                   Recent
                 </p>
@@ -1086,19 +1083,21 @@ export default function DsiqChatPage() {
                 ) : null}
               </div>
 
-              {privateChats.length ? (
-                <div className="flex flex-col gap-1">
-                  {privateChats.map((chat) => (
+              {recentChats.length ? (
+                <div className={`flex flex-col ${mobile ? "gap-0.5" : "gap-1"}`}>
+                  {recentChats.map((chat) => (
                     <div
                       key={chat.id}
-                      className={`group relative rounded-2xl pr-10 transition hover:bg-white ${
+                      className={`group relative rounded-2xl transition hover:bg-white ${
                         currentChatId === chat.id ? "bg-white" : ""
-                      }`}
+                      } ${mobile ? "pr-8" : "pr-10"}`}
                     >
                       <button
                         type="button"
                         onClick={() => void openPrivateChat(chat.id, mobile)}
-                        className="block w-full px-3 py-2.5 text-left"
+                        className={`block w-full text-left ${
+                          mobile ? "px-2 py-2" : "px-3 py-2.5"
+                        }`}
                       >
                         <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
                           {chat.title}
@@ -1119,7 +1118,9 @@ export default function DsiqChatPage() {
                             current === chat.id ? null : chat.id,
                           );
                         }}
-                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--color-muted)] opacity-100 transition hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)]"
+                        className={`absolute right-1.5 flex items-center justify-center rounded-full text-[color:var(--color-muted)] opacity-100 transition hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)] ${
+                          mobile ? "top-1.5 h-7 w-7" : "top-2 h-8 w-8"
+                        }`}
                       >
                         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                       </button>

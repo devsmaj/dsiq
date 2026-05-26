@@ -78,7 +78,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Search Chats
   - [x] AI Teacher
   - [x] Learning Roadmap
-  - [x] Library
+  - [x] Focus Mode
   - [x] Saved Chats
 - [x] Collapsed sidebar shows icons only:
   - [x] DSIQ logo
@@ -86,7 +86,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Search Chats
   - [x] AI Teacher
   - [x] Learning Roadmap
-  - [x] Library
+  - [x] Focus Mode
   - [x] Profile avatar at bottom
 - [x] Bottom profile area shows avatar, user name, and Free.
 - [x] Profile popup includes user name and Free Plan.
@@ -105,6 +105,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Private user/model messages save to chat history.
 - [x] Recent private chats appear in the expanded sidebar.
 - [x] Recent sidebar chat rows include a three-dot menu with Delete confirmation.
+- [x] Mobile sidebar Recent section shows fewer chats with tighter spacing.
 - [x] Clicking a recent private chat reloads its conversation.
 - [x] Local chat-history fallback works when Firebase is unavailable.
 - [x] Active private chats show top-right New Chat and more-actions controls.
@@ -124,6 +125,8 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Users can add the current chat to a Library folder.
 - [x] Library folders save to Firestore with local storage fallback.
 - [x] AI Teacher sidebar link opens `/dsiq/mentor`.
+- [x] AI Teacher is slightly highlighted in the private sidebar.
+- [x] Focus Mode replaces Library in the private sidebar.
 - [ ] Build real screen/panel for Learning Roadmap.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.

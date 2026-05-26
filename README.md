@@ -28,7 +28,8 @@ It helps users answer practical questions like:
 - Private workspace lives at `/dsiq/chat`.
 - Private AI Teacher lives at `/dsiq/mentor`.
 - `/dashboard` redirects to `/dsiq/chat`.
-- Private chat has a collapsible sidebar with New Chat, Search Chats, AI Teacher, Learning Roadmap, Library, and Saved Chats.
+- Private chat has a collapsible sidebar with New Chat, Search Chats, AI Teacher, Learning Roadmap, Focus Mode, and Saved Chats.
+- AI Teacher is visually emphasized in the private sidebar as the main student feature.
 - AI Teacher is a private student-focused teacher page that uses onboarding/profile goals for welcome text, focus guidance, mentor chat, Smart Focus, and insight cards.
 - Private chat auto-saves conversations and shows recent chats in the expanded sidebar.
 - Private chat history uses Firestore when available and local storage as a fallback.

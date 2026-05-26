@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  BookOpen,
   Bot,
   CalendarCheck,
   Check,
@@ -37,7 +36,7 @@ const sidebarItems = [
     href: "/dsiq/chat?panel=roadmap",
     icon: GraduationCap,
   },
-  { label: "Library", href: "/dsiq/chat?panel=library", icon: BookOpen },
+  { label: "Focus Mode", href: "/dsiq/chat?panel=focus", icon: Target },
   { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 
@@ -246,6 +245,7 @@ export default function DsiqMentorPage() {
           {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href === "/dsiq/mentor";
+            const isAiTeacher = item.label === "AI Teacher";
 
             return (
               <Link
@@ -257,8 +257,12 @@ export default function DsiqMentorPage() {
                     setIsMobileSidebarOpen(false);
                   }
                 }}
-                className={`flex min-h-11 items-center rounded-2xl text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                className={`flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
                   expanded ? "gap-3 px-3" : "justify-center px-0"
+                } ${
+                  isAiTeacher
+                    ? "border border-[#111111]/10 bg-white font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.04)]"
+                    : "font-medium"
                 } ${isActive ? "bg-white" : ""}`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
