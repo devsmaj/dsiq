@@ -88,9 +88,11 @@ export default function LoginPage() {
   const router = useRouter();
   const {
     authMode,
+    isLoading: isAuthLoading,
     loginOrSignupWithEmail,
     loginWithApple,
     loginWithGoogle,
+    user,
   } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,6 +114,18 @@ export default function LoginPage() {
 
     return () => window.clearTimeout(timeout);
   }, [loadingAction]);
+
+  useEffect(() => {
+    async function routeSignedInUserAwayFromLogin() {
+      if (isAuthLoading || !user) {
+        return;
+      }
+
+      router.replace(await getLoginDestination(user, authMode));
+    }
+
+    void routeSignedInUserAwayFromLogin();
+  }, [authMode, isAuthLoading, router, user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
