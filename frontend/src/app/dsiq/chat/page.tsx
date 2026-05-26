@@ -29,6 +29,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
+import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
@@ -111,12 +112,15 @@ export default function DsiqChatPage() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
+  const [error, setError] = useState("");
   const promptInputRef = useRef<HTMLInputElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const latestMessageRef = useRef<HTMLDivElement | null>(null);
   const displayName =
     profile?.fullName ||
     answers?.fullName ||
@@ -141,20 +145,54 @@ export default function DsiqChatPage() {
     void routeIncompleteUsers();
   }, [authMode, router, user]);
 
-  function submitPrompt(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    latestMessageRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, isSending, error]);
+
+  async function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const message = prompt.trim();
-    if (!message) {
+    if (!message || isSending) {
       return;
     }
 
-    setMessages((current) => [...current, message]);
+    setError("");
     setPrompt("");
+    setIsSending(true);
+
+    const userMessage: GeminiChatMessage = {
+      role: "user",
+      text: message,
+    };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+
+    try {
+      const response = await askGemini(nextMessages);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "model",
+          text: response,
+        },
+      ]);
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "DSIQ could not answer right now. Please try again.",
+      );
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function appendAttachmentNames(files: FileList | null) {
-    if (!files?.length) {
+    if (!files?.length || isSending) {
       return;
     }
 
@@ -174,6 +212,10 @@ export default function DsiqChatPage() {
   }
 
   function handleVoiceInput() {
+    if (isSending) {
+      return;
+    }
+
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -469,16 +511,37 @@ export default function DsiqChatPage() {
                 </p>
 
                 {messages.length ? (
-                  <div className="mx-auto mt-8 flex max-h-64 w-full max-w-[760px] flex-col gap-3 overflow-y-auto text-left">
+                  <div className="mx-auto mt-8 flex max-h-64 w-full max-w-[760px] flex-col gap-4 overflow-y-auto text-left">
                     {messages.map((message, index) => (
-                      <div
-                        key={`${message}-${index}`}
-                        className="ml-auto max-w-[82%] rounded-[1.35rem] bg-[#111111] px-4 py-3 text-sm leading-6 text-white shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+                      <article
+                        key={`${message.role}-${index}`}
+                        className={`max-w-[82%] text-sm leading-7 text-[color:var(--color-text)] ${
+                          message.role === "user"
+                            ? "ml-auto text-right"
+                            : "mr-auto text-left"
+                        }`}
                       >
-                        {message}
-                      </div>
+                        {message.text}
+                      </article>
                     ))}
+                    {isSending ? (
+                      <div className="mr-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[color:var(--color-muted)]">
+                        <span className="typing-dot" />
+                        <span className="typing-dot [animation-delay:120ms]" />
+                        <span className="typing-dot [animation-delay:240ms]" />
+                        <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
+                          DSIQ thinking
+                        </span>
+                      </div>
+                    ) : null}
+                    <div ref={latestMessageRef} />
                   </div>
+                ) : null}
+
+                {error ? (
+                  <p className="mx-auto mt-5 max-w-[760px] rounded-[1rem] border border-red-500/30 bg-red-500/10 px-4 py-3 text-left text-sm text-red-700">
+                    {error}
+                  </p>
                 ) : null}
 
                 <form
@@ -492,6 +555,7 @@ export default function DsiqChatPage() {
                         onClick={() => setIsUploadPanelOpen((value) => !value)}
                         aria-label="Add attachment"
                         aria-expanded={isUploadPanelOpen}
+                        disabled={isSending}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
                       >
                         <Plus className="h-5 w-5" aria-hidden="true" />
@@ -537,14 +601,16 @@ export default function DsiqChatPage() {
                       type="text"
                       value={prompt}
                       onChange={(event) => setPrompt(event.target.value)}
+                      disabled={isSending}
                       placeholder="Ask DSIQ"
-                      className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
+                      className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
                     />
                     <button
                       type="button"
                       onClick={handleVoiceInput}
+                      disabled={isSending}
                       aria-label={isListening ? "Stop voice input" : "Start voice input"}
-                      className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition ${
+                      className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         isListening
                           ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
                           : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
@@ -564,7 +630,7 @@ export default function DsiqChatPage() {
                     <button
                       type="submit"
                       aria-label="Send"
-                      disabled={!prompt.trim()}
+                      disabled={isSending || !prompt.trim()}
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Send className="h-4 w-4" aria-hidden="true" />
@@ -578,7 +644,8 @@ export default function DsiqChatPage() {
                       key={suggestion}
                       type="button"
                       onClick={() => setPrompt(suggestion)}
-                      className="rounded-full border border-[color:var(--color-line)] bg-white px-4 py-2.5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)]"
+                      disabled={isSending}
+                      className="rounded-full border border-[color:var(--color-line)] bg-white px-4 py-2.5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {suggestion}
                     </button>

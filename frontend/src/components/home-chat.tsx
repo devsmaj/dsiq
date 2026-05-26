@@ -132,7 +132,8 @@ export function HomeChat() {
 
   function startNewChat() {
     setIsNewChatDialogOpen(false);
-    router.push("/chat");
+    window.sessionStorage.removeItem("dsiq.guest.chat");
+    router.push("/chat?guest=true");
   }
 
   function handlePromptSubmit(event: FormEvent<HTMLFormElement>) {

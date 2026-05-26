@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
 import { getPostAuthPath } from "@/lib/auth-routing";
@@ -9,10 +9,12 @@ import { getPostAuthPath } from "@/lib/auth-routing";
 export function SignedInChatRedirect() {
   const { user, isLoading, authMode } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isGuestChat = searchParams.get("guest") === "true";
 
   useEffect(() => {
     async function routeSignedInCompletedUsers() {
-      if (isLoading || !user) {
+      if (isLoading || !user || isGuestChat) {
         return;
       }
 
@@ -23,7 +25,7 @@ export function SignedInChatRedirect() {
     }
 
     void routeSignedInCompletedUsers();
-  }, [authMode, isLoading, router, user]);
+  }, [authMode, isGuestChat, isLoading, router, user]);
 
   return null;
 }
