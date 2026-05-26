@@ -32,6 +32,9 @@ It helps users answer practical questions like:
 - Private chat history uses Firestore when available and local storage as a fallback.
 - Active private chats include top-right New Chat and more-actions controls for email draft, markdown export, project handoff, and share/copy.
 - AI responses include one-click copy feedback.
+- Search Chats opens a searchable saved-chat panel with a top-right close button.
+- Projects opens a panel where users can create projects, rename project names anytime, save the name, and add the current chat to a project.
+- Project data uses Firestore when available and local storage as a fallback.
 - Profile popup includes Profile, Settings, Help, and Logout.
 - Settings is a shared appearance/language/data-controls panel used from public and private UI.
 - Profile editing supports role dropdown, goals dropdown, image URL, local image upload, cancel, local save, and Firebase sync when available.

@@ -108,7 +108,13 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Active private chats show top-right New Chat and more-actions controls.
 - [x] Chat actions support draft to email, export to docs, add to project, and share.
 - [x] AI responses include copy action with copied check feedback.
-- [ ] Build real screens/panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
+- [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
+- [x] Projects opens a real projects panel with top-right X close.
+- [x] Users can create projects from the Projects panel.
+- [x] Users can edit a project name anytime and save it.
+- [x] Users can add the current chat to a project.
+- [x] Projects save to Firestore with local storage fallback.
+- [ ] Build real screens/panels for AI Mentor, Learning Roadmap, and Saved Chats.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.
 
@@ -224,6 +230,8 @@ This TODO tracks the current DSIQ web app as built in this repository.
 ## Immediate Next Steps
 
 - [ ] Repair local frontend dependencies so ESLint can run.
-- [ ] Build the real private sidebar panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
+- [x] Build the real private Search Chats panel.
+- [x] Build the real private Projects panel.
+- [ ] Build the real private sidebar panels for AI Mentor, Learning Roadmap, and Saved Chats.
 - [x] Persist and reload private chat history.
 - [ ] Add production Open Graph image.

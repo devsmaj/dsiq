@@ -39,6 +39,13 @@ import {
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import {
+  addChatToProject,
+  createProject,
+  listProjects,
+  updateProjectName,
+  type DsiqProject,
+} from "@/lib/project-store";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -116,14 +123,21 @@ export default function DsiqChatPage() {
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
+  const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [newProjectName, setNewProjectName] = useState("");
+  const [projectDraftNames, setProjectDraftNames] = useState<
+    Record<string, string>
+  >({});
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
+  const [projects, setProjects] = useState<DsiqProject[]>([]);
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(
     null,
   );
@@ -198,6 +212,33 @@ export default function DsiqChatPage() {
     void loadChats();
   }, [user]);
 
+  useEffect(() => {
+    async function loadUserProjects() {
+      if (!user) {
+        setProjects([]);
+        setProjectDraftNames({});
+        return;
+      }
+
+      try {
+        setIsProjectsLoading(true);
+        const nextProjects = await listProjects(user.uid);
+        setProjects(nextProjects);
+        setProjectDraftNames(
+          Object.fromEntries(
+            nextProjects.map((project) => [project.id, project.name]),
+          ),
+        );
+      } catch (loadError) {
+        console.warn("Projects loading failed.", loadError);
+      } finally {
+        setIsProjectsLoading(false);
+      }
+    }
+
+    void loadUserProjects();
+  }, [user]);
+
   async function refreshPrivateChats() {
     if (!user) {
       return;
@@ -207,6 +248,24 @@ export default function DsiqChatPage() {
       setPrivateChats(await listPrivateChats(user.uid));
     } catch (loadError) {
       console.warn("Private chats refresh failed.", loadError);
+    }
+  }
+
+  async function refreshProjects() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const nextProjects = await listProjects(user.uid);
+      setProjects(nextProjects);
+      setProjectDraftNames(
+        Object.fromEntries(
+          nextProjects.map((project) => [project.id, project.name]),
+        ),
+      );
+    } catch (loadError) {
+      console.warn("Projects refresh failed.", loadError);
     }
   }
 
@@ -281,6 +340,7 @@ export default function DsiqChatPage() {
     setActionStatus("");
     setIsChatActionsOpen(false);
     setIsSearchPanelOpen(false);
+    setIsProjectsPanelOpen(false);
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
@@ -297,6 +357,7 @@ export default function DsiqChatPage() {
       setActionStatus("");
       setIsChatActionsOpen(false);
       setIsSearchPanelOpen(false);
+      setIsProjectsPanelOpen(false);
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
       setMessages(await loadPrivateChatMessages(user.uid, chatId));
@@ -318,6 +379,87 @@ export default function DsiqChatPage() {
       setIsMobileSidebarOpen(false);
     }
     void refreshPrivateChats();
+  }
+
+  function openProjectsPanel(mobile = false) {
+    setIsProjectsPanelOpen(true);
+    setActionStatus("");
+    setIsChatActionsOpen(false);
+    if (mobile) {
+      setIsMobileSidebarOpen(false);
+    }
+    void refreshProjects();
+  }
+
+  async function handleCreateProject() {
+    if (!user) {
+      setActionStatus("Sign in again to create a project.");
+      return;
+    }
+
+    try {
+      setIsProjectsLoading(true);
+      const projectId = await createProject(
+        user.uid,
+        newProjectName || "Untitled project",
+      );
+      setNewProjectName("");
+
+      if (currentChatId) {
+        await addChatToProject({
+          chatId: currentChatId,
+          projectId,
+          uid: user.uid,
+        });
+        setActionStatus("Project created and current chat added.");
+      } else {
+        setActionStatus("Project created.");
+      }
+
+      await refreshProjects();
+    } finally {
+      setIsProjectsLoading(false);
+    }
+  }
+
+  async function handleSaveProjectName(projectId: string) {
+    if (!user) {
+      setActionStatus("Sign in again to save the project.");
+      return;
+    }
+
+    try {
+      setIsProjectsLoading(true);
+      await updateProjectName({
+        name: projectDraftNames[projectId] || "Untitled project",
+        projectId,
+        uid: user.uid,
+      });
+      setActionStatus("Project name saved.");
+      await refreshProjects();
+    } finally {
+      setIsProjectsLoading(false);
+    }
+  }
+
+  async function handleAddCurrentChatToProject(projectId: string) {
+    if (!user || !currentChatId) {
+      setActionStatus("Start or open a chat before adding it to a project.");
+      return;
+    }
+
+    try {
+      setIsProjectsLoading(true);
+      await addChatToProject({
+        chatId: currentChatId,
+        projectId,
+        uid: user.uid,
+      });
+      setActionStatus("Chat added to project.");
+      await refreshProjects();
+    } finally {
+      setIsProjectsLoading(false);
+    }
   }
 
   function getChatText() {
@@ -370,13 +512,8 @@ export default function DsiqChatPage() {
   }
 
   function addToProject() {
-    if (currentChatId) {
-      window.sessionStorage.setItem("dsiq.pending-project-chat", currentChatId);
-    }
-
     setIsChatActionsOpen(false);
-    setActionStatus("Chat is ready to add to a project.");
-    router.push("/dsiq/chat?panel=projects");
+    openProjectsPanel();
   }
 
   async function shareChat() {
@@ -575,6 +712,7 @@ export default function DsiqChatPage() {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
+            const isProjects = item.label === "Projects";
 
             if (isNewChat) {
               return (
@@ -605,6 +743,23 @@ export default function DsiqChatPage() {
                   type="button"
                   title={expanded ? undefined : item.label}
                   onClick={() => openSearchPanel(mobile)}
+                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                </button>
+              );
+            }
+
+            if (isProjects) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  title={expanded ? undefined : item.label}
+                  onClick={() => openProjectsPanel(mobile)}
                   className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
@@ -846,6 +1001,122 @@ export default function DsiqChatPage() {
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
                       No chats found.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {isProjectsPanelOpen ? (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="projects-title"
+                className="relative w-full max-w-xl rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
+              >
+                <button
+                  type="button"
+                  aria-label="Close projects"
+                  onClick={() => setIsProjectsPanelOpen(false)}
+                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <div className="pr-10">
+                  <h2 id="projects-title" className="text-base font-semibold">
+                    Projects
+                  </h2>
+                  <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                    Create projects, rename them anytime, and save chats into
+                    them.
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(event) => setNewProjectName(event.target.value)}
+                    placeholder="New project name"
+                    className="h-11 rounded-2xl border border-[color:var(--color-line)] px-4 text-sm outline-none transition focus:border-[#111111]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateProject()}
+                    disabled={isProjectsLoading}
+                    className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    New Project
+                  </button>
+                </div>
+
+                <div className="mt-4 max-h-[360px] overflow-y-auto">
+                  {projects.length ? (
+                    <div className="flex flex-col gap-3">
+                      {projects.map((project) => {
+                        const hasCurrentChat = Boolean(
+                          currentChatId && project.chatIds.includes(currentChatId),
+                        );
+
+                        return (
+                          <article
+                            key={project.id}
+                            className="rounded-2xl border border-[color:var(--color-line)] p-3"
+                          >
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                              <input
+                                type="text"
+                                value={projectDraftNames[project.id] ?? project.name}
+                                onChange={(event) =>
+                                  setProjectDraftNames((current) => ({
+                                    ...current,
+                                    [project.id]: event.target.value,
+                                  }))
+                                }
+                                className="h-10 rounded-xl border border-[color:var(--color-line)] px-3 text-sm font-medium outline-none transition focus:border-[#111111]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleSaveProjectName(project.id)
+                                }
+                                disabled={isProjectsLoading}
+                                className="inline-flex h-10 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Save
+                              </button>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs text-[color:var(--color-muted)]">
+                                {project.chatIds.length} saved chat
+                                {project.chatIds.length === 1 ? "" : "s"}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleAddCurrentChatToProject(project.id)
+                                }
+                                disabled={
+                                  isProjectsLoading ||
+                                  !currentChatId ||
+                                  hasCurrentChat
+                                }
+                                className="inline-flex h-9 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] px-4 text-xs font-semibold transition hover:bg-[color:var(--color-line)] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {hasCurrentChat
+                                  ? "Chat added"
+                                  : "Add current chat"}
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
+                      No projects yet. Create one to organize your saved chats.
                     </p>
                   )}
                 </div>
