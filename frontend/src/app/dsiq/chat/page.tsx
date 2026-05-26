@@ -54,14 +54,6 @@ const collapsedItems = [
   sidebarItems[4],
 ] as const;
 
-const suggestedPrompts = [
-  "Build my roadmap",
-  "Improve my portfolio",
-  "Help me learn programming",
-  "Explain my code",
-  "Give me a study plan",
-];
-
 type SpeechRecognitionResultLike = {
   0?: {
     transcript?: string;
@@ -511,7 +503,7 @@ export default function DsiqChatPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:justify-center lg:py-10">
+            <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-5 py-10 sm:px-8">
               <div className="mx-auto w-full max-w-[820px] text-center">
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
                   DSIQ is ready to guide your skills, projects, missions, and
@@ -646,19 +638,6 @@ export default function DsiqChatPage() {
                   </div>
                 </form>
 
-                <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-                  {suggestedPrompts.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => setPrompt(suggestion)}
-                      disabled={isSending}
-                      className="rounded-full border border-[color:var(--color-line)] bg-white px-4 py-2.5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           </section>
