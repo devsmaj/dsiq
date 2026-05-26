@@ -8,8 +8,10 @@ import {
   ChevronRight,
   CircleUserRound,
   Compass,
+  FileText,
   FolderKanban,
   HelpCircle,
+  ImageIcon,
   LayoutList,
   LogOut,
   Menu,
@@ -23,7 +25,7 @@ import {
   SquarePen,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
@@ -56,6 +58,36 @@ const suggestedPrompts = [
   "Give me a study plan",
 ];
 
+type SpeechRecognitionResultLike = {
+  0?: {
+    transcript?: string;
+  };
+};
+
+type SpeechRecognitionEventLike = {
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechWindow = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+  };
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -74,8 +106,14 @@ export default function DsiqChatPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
+  const promptInputRef = useRef<HTMLInputElement | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const displayName =
     profile?.fullName ||
     answers?.fullName ||
@@ -108,6 +146,81 @@ export default function DsiqChatPage() {
 
     setMessages((current) => [...current, message]);
     setPrompt("");
+  }
+
+  function appendAttachmentNames(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    const names = Array.from(files)
+      .map((file) => file.name)
+      .join(", ");
+
+    setPrompt((current) =>
+      current.trim()
+        ? `${current.trim()} Attached: ${names}`
+        : `Attached: ${names}`,
+    );
+    setIsUploadPanelOpen(false);
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+    });
+  }
+
+  function handleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const speechWindow = window as SpeechWindow;
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setPrompt((current) =>
+        current.trim()
+          ? `${current.trim()} Voice input is not supported in this browser.`
+          : "Voice input is not supported in this browser.",
+      );
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const spokenText = transcript.trim();
+      if (!spokenText) {
+        return;
+      }
+
+      setPrompt((current) =>
+        current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
+      );
+      window.requestAnimationFrame(() => {
+        promptInputRef.current?.focus();
+      });
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    setIsListening(true);
+    recognition.start();
   }
 
   async function handleLogout() {
@@ -327,34 +440,87 @@ export default function DsiqChatPage() {
                   onSubmit={submitPrompt}
                   className="mx-auto mt-8 rounded-[30px] bg-white px-5 py-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
                 >
-                  <input
-                    type="text"
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    placeholder="Ask DSIQ anything..."
-                    className="h-9 w-full bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
-                  />
-                  <div className="mt-4 flex items-center gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setIsUploadPanelOpen((value) => !value)}
+                        aria-label="Add attachment"
+                        aria-expanded={isUploadPanelOpen}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <Plus className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                      {isUploadPanelOpen ? (
+                        <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                          <button
+                            type="button"
+                            onClick={() => photoInputRef.current?.click()}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                            Upload photos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            <FileText className="h-4 w-4" aria-hidden="true" />
+                            Upload files
+                          </button>
+                        </div>
+                      ) : null}
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => appendAttachmentNames(event.target.files)}
+                      />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => appendAttachmentNames(event.target.files)}
+                      />
+                    </div>
+                    <input
+                      ref={promptInputRef}
+                      type="text"
+                      value={prompt}
+                      onChange={(event) => setPrompt(event.target.value)}
+                      placeholder="Ask DSIQ"
+                      className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
+                    />
                     <button
                       type="button"
-                      aria-label="Add"
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
+                      onClick={handleVoiceInput}
+                      aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                      className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition ${
+                        isListening
+                          ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
+                          : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
+                      }`}
                     >
-                      <Plus className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                    <div className="flex-1" />
-                    <button
-                      type="button"
-                      aria-label="Use microphone"
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
-                    >
-                      <Mic className="h-4 w-4" aria-hidden="true" />
+                      {isListening ? (
+                        <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
+                          <span className="recording-wave" />
+                          <span className="recording-wave [animation-delay:110ms]" />
+                          <span className="recording-wave [animation-delay:220ms]" />
+                          <span className="recording-wave [animation-delay:330ms]" />
+                        </span>
+                      ) : (
+                        <Mic className="h-4 w-4" aria-hidden="true" />
+                      )}
                     </button>
                     <button
                       type="submit"
                       aria-label="Send"
                       disabled={!prompt.trim()}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Send className="h-4 w-4" aria-hidden="true" />
                     </button>
