@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, Check, Save, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
 import { withTimeout } from "@/lib/async-timeout";
@@ -39,6 +39,8 @@ const goalOptions = [
 
 type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
+const MAX_PROFILE_IMAGE_BYTES = 500 * 1024;
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -61,8 +63,18 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isSaving, setIsSaving] = useState(false);
+  const profileImageInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  function getDefaultProfileImageUrl() {
+    return (
+      profile?.profileImageUrl ||
+      answers?.profileImageUrl ||
+      user?.photoURL ||
+      ""
+    );
+  }
+
+  function resetFormToSavedProfile() {
     setFullName(
       profile?.fullName ||
         answers?.fullName ||
@@ -73,8 +85,16 @@ export default function ProfilePage() {
     setNickname(profile?.nickname || answers?.nickname || "");
     setAge(profile?.age || answers?.age || "");
     setRole(profile?.role || answers?.role || "Student");
-    setProfileImageUrl(profile?.profileImageUrl || answers?.profileImageUrl || "");
+    setProfileImageUrl(getDefaultProfileImageUrl());
     setSelectedGoals(profile?.selectedGoals || answers?.selectedGoals || []);
+    setError("");
+    setStatusMessage("");
+  }
+
+  useEffect(() => {
+    resetFormToSavedProfile();
+    // resetFormToSavedProfile intentionally reads current profile/auth state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers, profile, user]);
 
   useEffect(() => {
@@ -111,6 +131,38 @@ export default function ProfilePage() {
         ? current.filter((item) => item !== goal)
         : [...current, goal],
     );
+  }
+
+  function handleProfileImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_IMAGE_BYTES) {
+      setError("Choose an image smaller than 500 KB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setProfileImageUrl(reader.result);
+        setError("");
+        setStatusMessage("");
+      }
+    };
+    reader.onerror = () => {
+      setError("We could not read that image. Please try another one.");
+    };
+    reader.readAsDataURL(file);
   }
 
   async function handleSave() {
@@ -206,9 +258,21 @@ export default function ProfilePage() {
                   {getInitials(avatarName) || "D"}
                 </div>
               )}
-              <span className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_24px_rgba(0,0,0,0.10)]">
+              <button
+                type="button"
+                aria-label="Upload profile picture"
+                onClick={() => profileImageInputRef.current?.click()}
+                className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_24px_rgba(0,0,0,0.10)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
                 <Camera className="h-4 w-4" aria-hidden="true" />
-              </span>
+              </button>
+              <input
+                ref={profileImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleProfileImageUpload}
+              />
             </div>
 
             <h1 className="mt-5 text-2xl font-semibold tracking-tight">
@@ -352,19 +416,29 @@ export default function ProfilePage() {
             </p>
           ) : null}
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={
-              isSaving ||
-              nicknameStatus === "checking" ||
-              nicknameStatus === "taken"
-            }
-            className="mt-6 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" aria-hidden="true" />
-            {isSaving ? "Saving..." : "Save profile"}
-          </button>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={resetFormToSavedProfile}
+              disabled={isSaving}
+              className="inline-flex h-[52px] w-full items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={
+                isSaving ||
+                nicknameStatus === "checking" ||
+                nicknameStatus === "taken"
+              }
+              className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {isSaving ? "Saving..." : "Save profile"}
+            </button>
+          </div>
         </section>
       </main>
     </PrivateRoute>

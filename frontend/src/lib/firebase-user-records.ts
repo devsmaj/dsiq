@@ -17,6 +17,7 @@ type SyncFirebaseUserInput = {
   uid: string;
   email: string | null;
   displayName: string | null;
+  photoURL?: string | null;
   reason: "signup" | "login";
   authProvider?: "password" | "google" | "apple";
 };
@@ -38,6 +39,7 @@ export type FirebaseUserProfile = {
   onboardingAnswers?: OnboardingAnswers;
   displayName?: string | null;
   email?: string | null;
+  photoURL?: string | null;
 };
 
 export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
@@ -51,6 +53,7 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
     uid: input.uid,
     email: input.email,
     displayName: input.displayName,
+    photoURL: input.photoURL,
     updatedAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
   };

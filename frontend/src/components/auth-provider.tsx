@@ -40,6 +40,7 @@ type AppUser = {
   uid: string;
   email: string | null;
   displayName: string | null;
+  photoURL?: string | null;
 };
 
 type AuthContextValue = {
@@ -92,11 +93,13 @@ function mapFirebaseUser(user: {
   uid: string;
   email: string | null;
   displayName: string | null;
+  photoURL?: string | null;
 }): AppUser {
   return {
     uid: user.uid,
     email: user.email,
     displayName: user.displayName,
+    photoURL: user.photoURL,
   };
 }
 
@@ -174,6 +177,7 @@ async function signInWithSocialProvider(
     uid: credential.user.uid,
     email: credential.user.email,
     displayName: credential.user.displayName,
+    photoURL: credential.user.photoURL,
     reason: "login",
     authProvider,
   });
@@ -275,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: `local-${email.toLowerCase()}`,
             email,
             displayName: storedUser?.displayName || email.split("@")[0],
+            photoURL: storedUser?.photoURL || null,
           };
 
           writeLocalUser(nextUser);
@@ -295,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: credential.user.uid,
           email: credential.user.email,
           displayName: credential.user.displayName,
+          photoURL: credential.user.photoURL,
           reason: "login",
           authProvider: "password",
         });
@@ -318,6 +324,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: `local-${normalizedEmail}`,
             email: normalizedEmail,
             displayName: normalizedEmail.split("@")[0],
+            photoURL: null,
           };
 
           if (!storedPassword) {
@@ -348,6 +355,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: credential.user.uid,
             email: credential.user.email,
             displayName: credential.user.displayName,
+            photoURL: credential.user.photoURL,
             reason: "login",
             authProvider: "password",
           });
@@ -390,6 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: credential.user.uid,
             email: credential.user.email,
             displayName: credential.user.displayName,
+            photoURL: credential.user.photoURL,
             reason: "signup",
             authProvider: "password",
           });
@@ -445,6 +454,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: `local-${email.toLowerCase()}`,
             email,
             displayName: fullName.trim() || email.split("@")[0],
+            photoURL: null,
           };
 
           window.localStorage.setItem(
@@ -474,6 +484,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: credential.user.uid,
           email: credential.user.email,
           displayName: fullName.trim() || credential.user.displayName,
+          photoURL: credential.user.photoURL,
           reason: "signup",
           authProvider: "password",
         });
@@ -514,6 +525,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: "local-demo-user",
           email: "demo@dsiq.local",
           displayName: "Demo User",
+          photoURL: null,
         };
 
         writeLocalUser(nextUser);

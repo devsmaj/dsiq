@@ -11,6 +11,7 @@ import {
   saveFirebaseChatMessage,
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const GUEST_CHAT_KEY = "dsiq.guest.chat";
 const LOGGED_IN_CHAT_KEY = "dsiq.current.public-chat-id";
@@ -87,6 +88,8 @@ function readGuestMessages() {
 }
 
 export function PublicChat() {
+  useKeyboardOffset();
+
   const searchParams = useSearchParams();
   const initialQuestion = searchParams.get("q")?.trim() || "";
   const shouldUseGuestChat = searchParams.get("guest") === "true";
@@ -442,6 +445,10 @@ export function PublicChat() {
         <form
           onSubmit={handleSubmit}
           className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+          style={{
+            marginBottom:
+              "calc(env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px))",
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">

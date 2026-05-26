@@ -29,6 +29,7 @@ import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
@@ -122,6 +123,8 @@ export default function DsiqChatPage() {
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || "";
 
+  useKeyboardOffset();
+
   useEffect(() => {
     async function routeIncompleteUsers() {
       if (!user || isProfileLoading || profileError) {
@@ -143,32 +146,6 @@ export default function DsiqChatPage() {
       block: "end",
     });
   }, [messages, isSending, error]);
-
-  useEffect(() => {
-    function updateKeyboardOffset() {
-      const viewport = window.visualViewport;
-      const keyboardOffset = viewport
-        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
-        : 0;
-
-      document.documentElement.style.setProperty(
-        "--dsiq-keyboard-offset",
-        `${keyboardOffset}px`,
-      );
-    }
-
-    updateKeyboardOffset();
-    window.addEventListener("resize", updateKeyboardOffset);
-    window.visualViewport?.addEventListener("resize", updateKeyboardOffset);
-    window.visualViewport?.addEventListener("scroll", updateKeyboardOffset);
-
-    return () => {
-      window.removeEventListener("resize", updateKeyboardOffset);
-      window.visualViewport?.removeEventListener("resize", updateKeyboardOffset);
-      window.visualViewport?.removeEventListener("scroll", updateKeyboardOffset);
-      document.documentElement.style.removeProperty("--dsiq-keyboard-offset");
-    };
-  }, []);
 
   async function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
