@@ -3,7 +3,10 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
+import {
+  HOME_CHAT_LOADING_BYPASS_KEY,
+  ONBOARDING_CHAT_LOADING_BYPASS_KEY,
+} from "@/lib/chat-loading-bypass";
 
 const LOADING_DELAY_MS = 3000;
 const CHAT_BYPASS_MAX_AGE_MS = 30000;
@@ -23,6 +26,21 @@ function hasActiveHomeChatBypass() {
   );
 }
 
+function hasActiveOnboardingChatBypass() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const bypassStartedAt = Number(
+    window.sessionStorage.getItem(ONBOARDING_CHAT_LOADING_BYPASS_KEY),
+  );
+
+  return (
+    Number.isFinite(bypassStartedAt) &&
+    Date.now() - bypassStartedAt <= CHAT_BYPASS_MAX_AGE_MS
+  );
+}
+
 export function GlobalLoadingDelay() {
   const pathname = usePathname();
 
@@ -33,14 +51,20 @@ function RouteLoadingDelay({ pathname }: { pathname: string }) {
   const [shouldBypassHomeChat] = useState(
     () => pathname === "/chat" && hasActiveHomeChatBypass(),
   );
+  const [shouldBypassOnboardingChat] = useState(
+    () => pathname === "/dsiq/chat" && hasActiveOnboardingChatBypass(),
+  );
 
   useEffect(() => {
     if (shouldBypassHomeChat) {
       window.sessionStorage.removeItem(HOME_CHAT_LOADING_BYPASS_KEY);
     }
-  }, [shouldBypassHomeChat]);
+    if (shouldBypassOnboardingChat) {
+      window.sessionStorage.removeItem(ONBOARDING_CHAT_LOADING_BYPASS_KEY);
+    }
+  }, [shouldBypassHomeChat, shouldBypassOnboardingChat]);
 
-  if (shouldBypassHomeChat) {
+  if (shouldBypassHomeChat || shouldBypassOnboardingChat) {
     return null;
   }
 

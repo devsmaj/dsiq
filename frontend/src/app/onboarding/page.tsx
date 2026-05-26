@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
+import { ONBOARDING_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
 import {
   isFirebaseNicknameTaken,
   saveFirebaseOnboardingAnswers,
@@ -235,6 +236,10 @@ export default function OnboardingPage() {
         });
       }
 
+      window.sessionStorage.setItem(
+        ONBOARDING_CHAT_LOADING_BYPASS_KEY,
+        String(Date.now()),
+      );
       router.replace("/dsiq/chat");
       return;
 
