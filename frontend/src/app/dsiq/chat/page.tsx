@@ -3,25 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Bot,
   ChevronLeft,
   ChevronRight,
   CircleUserRound,
-  Compass,
   FileText,
-  FolderKanban,
-  HelpCircle,
   ImageIcon,
-  LayoutList,
   LogOut,
   Menu,
   Mic,
-  Moon,
   Plus,
-  Rocket,
   Search,
   Send,
-  Settings,
   SquarePen,
   X,
 } from "lucide-react";
@@ -35,10 +27,7 @@ import { useUserProfile } from "@/lib/use-user-profile";
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
   { label: "Search Chats", href: "/dsiq/chat", icon: Search },
-  { label: "AI Mentor", href: "/coach", icon: Bot },
-  { label: "Learning Roadmap", href: "/coach", icon: Compass },
-  { label: "Projects", href: "/dsiq/chat", icon: FolderKanban },
-  { label: "Saved Chats", href: "/dsiq/chat", icon: LayoutList },
+  { label: "Profile", href: "/profile", icon: CircleUserRound },
 ] as const;
 
 
@@ -46,8 +35,6 @@ const collapsedItems = [
   sidebarItems[0],
   sidebarItems[1],
   sidebarItems[2],
-  sidebarItems[4],
-  sidebarItems[5],
 ] as const;
 
 const suggestedPrompts = [
@@ -321,9 +308,6 @@ export default function DsiqChatPage() {
               </div>
               {[
                 { label: "Profile", href: "/profile", icon: CircleUserRound },
-                { label: "Settings", href: "/settings", icon: Settings },
-                { label: "Theme", href: "/settings", icon: Moon },
-                { label: "Help", href: "/coach", icon: HelpCircle },
               ].map((item) => {
                 const Icon = item.icon;
 

@@ -9,11 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { DsiqLogo } from "@/components/dsiq-logo";
 
 const privateNavItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/coach", label: "Coach" },
-  { href: "/missions", label: "Missions" },
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/progress", label: "Progress" },
+  { href: "/dsiq/chat", label: "Chat" },
   { href: "/profile", label: "Profile" },
 ];
 
@@ -38,7 +34,7 @@ export function PrivateHeader() {
     <header className="sticky top-0 z-30 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
       <div className="mx-auto w-full max-w-7xl px-6 py-4 lg:px-8">
         <div className="flex items-center justify-between">
-          <DsiqLogo href="/dashboard" />
+          <DsiqLogo href="/dsiq/chat" />
 
           <nav className="hidden items-center gap-7 lg:flex">
             {privateNavItems.map((item) => (

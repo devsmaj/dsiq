@@ -30,14 +30,10 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Private Pages
 
-- [x] `/dashboard`
+- [x] `/dashboard` redirects to `/dsiq/chat`
+- [x] `/dsiq/chat`
 - [x] `/onboarding`
-- [x] `/coach`
-- [x] `/missions`
-- [x] `/opportunities`
-- [x] `/progress`
 - [x] `/profile`
-- [x] `/settings`
 
 ### Private Pages For Later
 
@@ -66,7 +62,7 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 ### Private Header
 
 - [x] Add DSIQ logo
-- [x] Add nav links: Dashboard, Coach, Missions, Opportunities, Progress, Profile
+- [x] Add nav links: Chat, Profile
 - [x] Add `Logout`
 - [x] Add mobile layout with logo and menu icon
 
@@ -161,38 +157,6 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 - [x] Interest question
 - [x] Generate AI path button
 
-### Coach `/coach`
-
-- [x] AI chat
-- [x] Coach messages
-- [x] Action advice
-- [x] Save recommendation
-
-### Missions `/missions`
-
-- [x] Weekly missions
-- [x] Task checklist
-- [x] Completed tasks
-- [x] Missed tasks
-- [x] Generate next missions
-
-### Opportunities `/opportunities`
-
-- [x] Freelance ideas
-- [x] Business ideas
-- [x] Learning paths
-- [x] Scholarships
-- [x] Remote jobs
-- [x] Hackathons
-
-### Progress `/progress`
-
-- [x] Progress score
-- [x] Completed missions
-- [x] Consistency streak
-- [x] Goal/action match
-- [x] AI warning or encouragement
-
 ### Profile `/profile`
 
 - [x] Name
@@ -202,14 +166,6 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 - [x] Budget
 - [x] Time available
 - [x] Edit profile
-
-### Settings `/settings`
-
-- [x] Account
-- [x] Language
-- [x] Notification preferences
-- [x] Delete account
-- [x] Logout
 
 ## Best Build Order
 
@@ -227,13 +183,6 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 
 ### Phase 3
 
-- [x] 7. AI coach
-- [x] 8. Missions
-- [x] 9. Progress
-- [x] 10. Opportunities
-
-### Phase 4
-
 - [x] 11. Pricing
 - [x] 12. About/contact
 
@@ -246,7 +195,7 @@ This TODO is organized to help build the DSIQ website/app one step at a time.
 - [x] Add mobile nav behavior
 - [ ] Add placeholder content for each page before polish
 - [x] Connect onboarding data to dashboard state
-- [x] Connect coach, missions, progress, and opportunities to shared user data
+- [x] Connect onboarding and profile to shared user data
 - [x] Add loading, empty, and error states
 - [x] Add basic SEO for public pages
 - [ ] Add analytics later if needed
