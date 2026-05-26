@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
+import { getPostAuthPath } from "@/lib/auth-routing";
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -55,6 +56,7 @@ function getAuthErrorMessage(error: unknown) {
 export default function LoginPage() {
   const router = useRouter();
   const {
+    authMode,
     loginOrSignupWithEmail,
     loginWithApple,
     loginWithGoogle,
@@ -74,8 +76,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("email");
-      await loginOrSignupWithEmail({ email, password });
-      router.replace("/onboarding");
+      const nextUser = await loginOrSignupWithEmail({ email, password });
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -88,8 +90,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("google");
-      await loginWithGoogle();
-      router.replace("/onboarding");
+      const nextUser = await loginWithGoogle();
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -102,8 +104,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("apple");
-      await loginWithApple();
-      router.replace("/onboarding");
+      const nextUser = await loginWithApple();
+      router.replace(await getPostAuthPath(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
