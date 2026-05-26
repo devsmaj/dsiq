@@ -23,6 +23,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  type User,
 } from "firebase/auth";
 
 import { auth, hasFirebaseConfig } from "@/lib/firebase";
@@ -224,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (nextUser: User | null) => {
       setUser(nextUser ? mapFirebaseUser(nextUser) : null);
       setIsLoading(false);
     });
