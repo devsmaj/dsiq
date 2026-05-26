@@ -50,7 +50,8 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] New Chat confirmation popup.
 - [x] New Chat popup has top-right X close button.
 - [x] Public New Chat stays in public guest chat instead of redirecting to private chat.
-- [x] Settings & Help popup opens from the public menu.
+- [x] Settings popup opens from the public menu.
+- [x] Public home input lifts above the mobile keyboard.
 
 ## Public Chat `/chat`
 
@@ -63,6 +64,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Error state when AI server fails.
 - [x] New Chat clears the current public/guest chat.
 - [x] Attachment and voice controls.
+- [x] Public chat input stays above the mobile keyboard.
 
 ## Private Chat `/dsiq/chat`
 
@@ -87,14 +89,16 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Profile avatar at bottom
 - [x] Bottom profile area shows avatar, user name, and Free.
 - [x] Profile popup includes user name and Free Plan.
-- [x] Profile popup actions: Profile, Settings, Theme, Help, Logout.
+- [x] Profile popup actions: Profile, Settings, Help, Logout.
 - [x] Profile popup has top-right X close button.
 - [x] Private chat input sends messages to DSIQ AI.
 - [x] Private chat displays DSIQ responses.
 - [x] Private chat has typing/thinking state.
 - [x] Private chat has error state.
 - [x] Private chat user message text has no black bubble/border.
-- [x] Suggested prompt chips.
+- [x] Private chat input sits centered on desktop start state.
+- [x] Private chat input stays above the mobile keyboard.
+- [x] Removed suggested prompt chips under private chat input.
 - [x] Attachment and voice controls.
 - [ ] Build real screens/panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
 - [ ] Save private chat history to Firestore/local store.
@@ -107,11 +111,17 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Nickname field with availability check.
 - [x] Age field.
 - [x] Role selection.
+- [x] Role uses dropdown control.
 - [x] Profile image URL field.
+- [x] Camera button uploads profile image from device.
+- [x] Google/Firebase photo is used when no saved profile image exists.
 - [x] Goals selection.
+- [x] Goals use dropdown-style multi-select.
+- [x] Cancel button restores last saved profile values.
 - [x] Save profile updates locally.
 - [x] Save profile updates to Firebase when Firebase auth is active.
-- [x] Sidebar profile avatar uses saved profile image when available.
+- [x] Profile still saves locally if cloud sync fails.
+- [x] Sidebar profile avatar uses saved profile image or auth provider photo.
 
 ## Onboarding
 
@@ -122,15 +132,14 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Saves onboarding answers.
 - [x] Routes completed users to `/dsiq/chat`.
 
-## Settings & Help
+## Settings
 
-- [x] Global settings/help popup.
+- [x] Global settings popup.
 - [x] Appearance selector: System, Dark, Light.
 - [x] Language selector UI.
 - [x] Data controls panel.
-- [x] Help entry.
-- [x] Public menu opens Settings & Help.
-- [x] Private profile popup opens Settings, Theme, and Help.
+- [x] Public menu opens Settings.
+- [x] Private profile popup opens Settings.
 
 ## Auth
 
@@ -141,6 +150,9 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Local auth fallback.
 - [x] Private route guard.
 - [x] Post-auth routing based on onboarding completion.
+- [x] Login respects safe `next` paths after private-route redirects.
+- [x] Signed-in users who land on `/login` are redirected back into the app.
+- [x] Browser Back is left to normal browser behavior.
 - [x] Logout from private workspace.
 
 ## AI / Backend
@@ -166,6 +178,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Shared card/surface styles.
 - [x] Mobile responsive layouts.
 - [x] Touch-friendly controls.
+- [x] Shared mobile keyboard offset hook for chat inputs.
 - [x] Loading and empty states.
 - [x] Error states.
 - [ ] Continue polishing spacing consistency across public content pages.
