@@ -97,7 +97,8 @@ function getInitials(name: string) {
 export default function DsiqChatPage() {
   const router = useRouter();
   const { authMode, logout } = useAuth();
-  const { answers, profile, user } = useUserProfile();
+  const { answers, isProfileLoading, profile, profileError, user } =
+    useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -124,7 +125,7 @@ export default function DsiqChatPage() {
 
   useEffect(() => {
     async function routeIncompleteUsers() {
-      if (!user) {
+      if (!user || isProfileLoading || profileError) {
         return;
       }
 
@@ -135,7 +136,7 @@ export default function DsiqChatPage() {
     }
 
     void routeIncompleteUsers();
-  }, [authMode, router, user]);
+  }, [authMode, isProfileLoading, profileError, router, user]);
 
   useEffect(() => {
     latestMessageRef.current?.scrollIntoView({

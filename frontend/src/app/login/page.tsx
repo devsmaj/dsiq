@@ -54,6 +54,36 @@ function getAuthErrorMessage(error: unknown) {
   return "We could not log you in. Please try again.";
 }
 
+function getSafeNextPath() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const nextPath = new URLSearchParams(window.location.search).get("next") || "";
+
+  if (
+    !nextPath.startsWith("/") ||
+    nextPath.startsWith("//") ||
+    nextPath.startsWith("/login") ||
+    nextPath.startsWith("/signup") ||
+    nextPath.startsWith("/forgot-password")
+  ) {
+    return "";
+  }
+
+  return nextPath;
+}
+
+async function getLoginDestination(
+  user: { uid: string },
+  authMode: "firebase" | "local",
+) {
+  const postAuthPath = await getPostAuthPath(user, authMode);
+  const nextPath = getSafeNextPath();
+
+  return postAuthPath === "/dsiq/chat" && nextPath ? nextPath : postAuthPath;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const {
@@ -90,7 +120,7 @@ export default function LoginPage() {
     try {
       setLoadingAction("email");
       const nextUser = await loginOrSignupWithEmail({ email, password });
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      router.replace(await getLoginDestination(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -104,7 +134,7 @@ export default function LoginPage() {
     try {
       setLoadingAction("google");
       const nextUser = await loginWithGoogle();
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      router.replace(await getLoginDestination(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -118,7 +148,7 @@ export default function LoginPage() {
     try {
       setLoadingAction("apple");
       const nextUser = await loginWithApple();
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      router.replace(await getLoginDestination(nextUser, authMode));
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
