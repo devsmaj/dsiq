@@ -7,6 +7,7 @@ import {
   getFirebaseUserProfile,
   type FirebaseUserProfile,
 } from "@/lib/firebase-user-records";
+import { withTimeout } from "@/lib/async-timeout";
 import { readLocalUserProfile, type StoredUserProfile } from "@/lib/user-profile-store";
 
 type ProfileState = StoredUserProfile | FirebaseUserProfile | null;
@@ -31,7 +32,11 @@ export function useUserProfile() {
 
       try {
         if (authMode === "firebase" && !user.uid.startsWith("local-")) {
-          const nextProfile = await getFirebaseUserProfile(user.uid);
+          const nextProfile = await withTimeout(
+            getFirebaseUserProfile(user.uid),
+            undefined,
+            "Firebase profile loading timed out.",
+          );
           setProfile(nextProfile);
         } else {
           setProfile(readLocalUserProfile(user.uid));

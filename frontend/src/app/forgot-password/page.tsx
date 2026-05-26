@@ -6,6 +6,7 @@ import { sendPasswordResetEmail } from "firebase/auth";
 
 import { AuthShell } from "@/components/auth-shell";
 import { auth } from "@/lib/firebase";
+import { withTimeout } from "@/lib/async-timeout";
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -39,7 +40,11 @@ export default function ForgotPasswordPage() {
 
     try {
       setIsLoading(true);
-      await sendPasswordResetEmail(auth, email);
+      await withTimeout(
+        sendPasswordResetEmail(auth, email),
+        undefined,
+        "Password reset request timed out.",
+      );
       setMessage("Reset link sent. Check your email for the next step.");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));

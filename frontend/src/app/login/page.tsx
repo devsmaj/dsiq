@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
+import { UI_LOADING_TIMEOUT_MS } from "@/lib/async-timeout";
 import { getPostAuthPath } from "@/lib/auth-routing";
 
 function getAuthErrorMessage(error: unknown) {
@@ -69,6 +70,18 @@ export default function LoginPage() {
     "apple" | "demo" | "email" | "google" | null
   >(null);
   const isLoading = loadingAction !== null;
+
+  useEffect(() => {
+    if (!loadingAction) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setLoadingAction(null);
+    }, UI_LOADING_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [loadingAction]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

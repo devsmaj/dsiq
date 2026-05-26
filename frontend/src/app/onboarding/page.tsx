@@ -24,6 +24,7 @@ import {
   isFirebaseNicknameTaken,
   saveFirebaseOnboardingAnswers,
 } from "@/lib/firebase-user-records";
+import { withTimeout } from "@/lib/async-timeout";
 import {
   isLocalNicknameTaken,
   normalizeNickname,
@@ -88,7 +89,11 @@ export default function OnboardingPage() {
       try {
         const nicknameTaken =
           authMode === "firebase"
-            ? await isFirebaseNicknameTaken(user.uid, normalizedNickname)
+            ? await withTimeout(
+                isFirebaseNicknameTaken(user.uid, normalizedNickname),
+                undefined,
+                "Nickname check timed out.",
+              )
             : isLocalNicknameTaken(user.uid, normalizedNickname);
 
         setNicknameStatus(nicknameTaken ? "taken" : "available");
@@ -132,7 +137,11 @@ export default function OnboardingPage() {
       setIsCheckingNickname(true);
       const nicknameTaken =
         authMode === "firebase"
-          ? await isFirebaseNicknameTaken(user.uid, nickname)
+          ? await withTimeout(
+              isFirebaseNicknameTaken(user.uid, nickname),
+              undefined,
+              "Nickname check timed out.",
+            )
           : isLocalNicknameTaken(user.uid, nickname);
 
       if (nicknameTaken) {
@@ -211,18 +220,19 @@ export default function OnboardingPage() {
       }
 
       if (authMode === "firebase") {
-        // Do not block redirect if Firebase fails, but still try to save.
-        try {
-          await saveFirebaseOnboardingAnswers({
+        void withTimeout(
+          saveFirebaseOnboardingAnswers({
             uid: user.uid,
             answers,
-          });
-        } catch (saveError) {
+          }),
+          undefined,
+          "Firebase onboarding save timed out.",
+        ).catch((saveError) => {
           console.warn(
             "Firebase onboarding save failed; proceeding with local onboarding completion.",
             saveError,
           );
-        }
+        });
       }
 
       router.replace("/dsiq/chat");

@@ -4,7 +4,7 @@ export type GeminiChatMessage = {
 };
 
 const CHAT_API_URL = "https://dsiq.onrender.com/api/chat";
-const CHAT_TIMEOUT_MS = 30_000;
+const CHAT_TIMEOUT_MS = 3000;
 
 export async function askGemini(messages: GeminiChatMessage[]) {
   const latestUserMessage = [...messages]

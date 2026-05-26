@@ -4,6 +4,7 @@ import { Camera, Check, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
+import { withTimeout } from "@/lib/async-timeout";
 import {
   isFirebaseNicknameTaken,
   updateFirebaseUserProfile,
@@ -88,7 +89,11 @@ export default function ProfilePage() {
       try {
         const nicknameTaken =
           authMode === "firebase"
-            ? await isFirebaseNicknameTaken(user.uid, normalizedNickname)
+            ? await withTimeout(
+                isFirebaseNicknameTaken(user.uid, normalizedNickname),
+                undefined,
+                "Nickname check timed out.",
+              )
             : isLocalNicknameTaken(user.uid, normalizedNickname);
 
         setNicknameStatus(nicknameTaken ? "taken" : "available");
@@ -142,7 +147,11 @@ export default function ProfilePage() {
 
       const nicknameTaken =
         authMode === "firebase"
-          ? await isFirebaseNicknameTaken(user.uid, normalizedNickname)
+          ? await withTimeout(
+              isFirebaseNicknameTaken(user.uid, normalizedNickname),
+              undefined,
+              "Nickname check timed out.",
+            )
           : isLocalNicknameTaken(user.uid, normalizedNickname);
 
       if (nicknameTaken) {
@@ -160,7 +169,11 @@ export default function ProfilePage() {
       };
 
       if (authMode === "firebase") {
-        await updateFirebaseUserProfile({ uid: user.uid, updates });
+        await withTimeout(
+          updateFirebaseUserProfile({ uid: user.uid, updates }),
+          undefined,
+          "Profile save timed out.",
+        );
       } else {
         updateLocalUserProfile(user.uid, updates);
       }

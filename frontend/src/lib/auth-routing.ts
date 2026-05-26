@@ -2,12 +2,11 @@
 
 import { getFirebaseUserProfile } from "@/lib/firebase-user-records";
 import { readLocalUserProfile } from "@/lib/user-profile-store";
+import { UI_LOADING_TIMEOUT_MS, withTimeout } from "@/lib/async-timeout";
 
 type RouteUser = {
   uid: string;
 };
-
-const FIREBASE_PROFILE_READ_TIMEOUT_MS = 3000;
 
 export async function getPostAuthPath(
   user: RouteUser,
@@ -24,7 +23,7 @@ export async function getPostAuthPath(
       authMode === "firebase" && !user.uid.startsWith("local-")
         ? await withTimeout(
             getFirebaseUserProfile(user.uid),
-            FIREBASE_PROFILE_READ_TIMEOUT_MS,
+            UI_LOADING_TIMEOUT_MS,
             "Firebase profile routing lookup timed out.",
           )
         : localProfile;
@@ -35,22 +34,4 @@ export async function getPostAuthPath(
     console.warn("DSIQ profile routing failed; sending user to onboarding.", error);
     return "/onboarding";
   }
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
-  return new Promise<T>((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      reject(new Error(message));
-    }, timeoutMs);
-
-    promise
-      .then((value) => {
-        window.clearTimeout(timeout);
-        resolve(value);
-      })
-      .catch((error) => {
-        window.clearTimeout(timeout);
-        reject(error);
-      });
-  });
 }

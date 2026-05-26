@@ -28,6 +28,10 @@ import {
 
 import { auth, hasFirebaseConfig } from "@/lib/firebase";
 import {
+  UI_LOADING_TIMEOUT_MS,
+  withTimeout,
+} from "@/lib/async-timeout";
+import {
   deleteFirebaseUserRecord,
   syncFirebaseUserRecord,
 } from "@/lib/firebase-user-records";
@@ -67,8 +71,6 @@ type AuthContextValue = {
 
 const LOCAL_USER_KEY = "dsiq.local.user";
 const LOCAL_PASSWORD_PREFIX = "dsiq.local.password:";
-const FIREBASE_PROFILE_SYNC_TIMEOUT_MS = 3000;
-const FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS = 5000;
 const appleProvider = new OAuthProvider("apple.com");
 const googleProvider = new GoogleAuthProvider();
 
@@ -185,30 +187,12 @@ async function syncFirebaseUserRecordSafely(
   try {
     await withTimeout(
       syncFirebaseUserRecord(input),
-      FIREBASE_PROFILE_SYNC_TIMEOUT_MS,
+      UI_LOADING_TIMEOUT_MS,
       "Firebase user profile sync timed out.",
     );
   } catch (error) {
     console.warn("Firebase user profile sync failed.", error);
   }
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
-  return new Promise<T>((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      reject(new Error(message));
-    }, timeoutMs);
-
-    promise
-      .then((value) => {
-        window.clearTimeout(timeout);
-        resolve(value);
-      })
-      .catch((error) => {
-        window.clearTimeout(timeout);
-        reject(error);
-      });
-  });
 }
 
 function getAuthCode(error: unknown) {
@@ -246,15 +230,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!auth) {
+      setIsLoading(false);
       return;
     }
 
+    const loadingTimeout = window.setTimeout(() => {
+      setIsLoading(false);
+    }, UI_LOADING_TIMEOUT_MS);
+
     const unsubscribe = onAuthStateChanged(auth, (nextUser: User | null) => {
+      window.clearTimeout(loadingTimeout);
       setUser(nextUser ? mapFirebaseUser(nextUser) : null);
       setIsLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      window.clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, [authMode]);
 
   const value = useMemo<AuthContextValue>(
@@ -370,7 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ) {
             const methods = await withTimeout(
               fetchSignInMethodsForEmail(auth, normalizedEmail),
-              FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS,
+              UI_LOADING_TIMEOUT_MS,
               "Firebase sign-in method lookup timed out.",
             );
             const socialMessage = getSocialAccountMessage(methods);
@@ -409,7 +402,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (createCode.includes("email-already-in-use")) {
             const methods = await withTimeout(
               fetchSignInMethodsForEmail(auth, normalizedEmail),
-              FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS,
+              UI_LOADING_TIMEOUT_MS,
               "Firebase sign-in method lookup timed out.",
             );
             const socialMessage = getSocialAccountMessage(methods);
@@ -470,7 +463,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const credential = await createUserWithEmailAndPassword(auth, email, password);
 
         if (fullName.trim()) {
-          await updateProfile(credential.user, { displayName: fullName.trim() });
+          await withTimeout(
+            updateProfile(credential.user, { displayName: fullName.trim() }),
+            undefined,
+            "Firebase profile update timed out.",
+          );
         }
 
         await syncFirebaseUserRecordSafely({
@@ -505,7 +502,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error("Firebase Auth is not available.");
         }
 
-        await sendPasswordResetEmail(auth, email);
+        await withTimeout(
+          sendPasswordResetEmail(auth, email),
+          undefined,
+          "Password reset request timed out.",
+        );
         return "Password reset instructions have been sent to your email.";
       },
       tryDemo: async () => {
@@ -530,7 +531,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        await signOut(auth);
+        await withTimeout(
+          signOut(auth),
+          undefined,
+          "Sign out timed out.",
+        );
         setUser(null);
       },
       deleteAccount: async () => {
@@ -546,8 +551,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-          await deleteFirebaseUserRecord(auth.currentUser.uid);
-          await deleteUser(auth.currentUser);
+          await withTimeout(
+            deleteFirebaseUserRecord(auth.currentUser.uid),
+            undefined,
+            "Firebase account record deletion timed out.",
+          );
+          await withTimeout(
+            deleteUser(auth.currentUser),
+            undefined,
+            "Firebase account deletion timed out.",
+          );
           setUser(null);
         } catch (error) {
           if (

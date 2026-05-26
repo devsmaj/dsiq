@@ -177,16 +177,20 @@ export function PublicChat() {
       return;
     }
 
-    const chatId = await getLoggedInChatId();
-    if (!chatId) {
-      return;
-    }
+    try {
+      const chatId = await getLoggedInChatId();
+      if (!chatId) {
+        return;
+      }
 
-    await saveFirebaseChatMessage({
-      chatId,
-      message,
-      uid: user.uid,
-    });
+      await saveFirebaseChatMessage({
+        chatId,
+        message,
+        uid: user.uid,
+      });
+    } catch (saveError) {
+      console.warn("Public chat message save failed.", saveError);
+    }
   }
 
   async function sendMessage(text: string) {
