@@ -306,20 +306,12 @@ export function HomeChat() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/login"
-                className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
-              >
-                Log in
-              </Link>
+              <Link href="/login">Log in</Link>
             </nav>
 
-            <Link
-              href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black lg:hidden"
-            >
-              Log in
-            </Link>
+            <div className="lg:hidden">
+              <Link href="/login">Log in</Link>
+            </div>
           </header>
 
           <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
