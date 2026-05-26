@@ -7,6 +7,7 @@ import {
   Menu,
   Mic,
   Plus,
+  Search,
   Send,
   Settings,
   SquarePen,
@@ -130,6 +131,14 @@ export function HomeChat() {
     openSettingsHelpPopup();
   }
 
+  function openSearchChats() {
+    setIsDesktopDrawerOpen(false);
+    setIsMobileDrawerOpen(false);
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+    });
+  }
+
   function startNewChat() {
     setIsNewChatDialogOpen(false);
     window.sessionStorage.removeItem("dsiq.guest.chat");
@@ -244,6 +253,36 @@ export function HomeChat() {
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              aria-label="New Chat"
+              title="New Chat"
+              onClick={openNewChatDialog}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+            >
+              <SquarePen className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="Search Chats"
+              title="Search Chats"
+              onClick={openSearchChats}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+            >
+              <Search className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="Settings"
+              title="Settings"
+              onClick={openSettingsPanel}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+            >
+              <Settings className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+
           {isDesktopDrawerOpen ? (
             <div className="absolute left-4 top-20 z-40 flex h-[calc(100vh-8rem)] w-72 flex-col justify-between rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
               <div>
@@ -265,6 +304,14 @@ export function HomeChat() {
                 >
                   <SquarePen className="h-4 w-4" aria-hidden="true" />
                   New Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={openSearchChats}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <Search className="h-4 w-4" aria-hidden="true" />
+                  Search Chats
                 </button>
               </div>
 
@@ -481,6 +528,14 @@ export function HomeChat() {
               >
                 <SquarePen className="h-4 w-4" aria-hidden="true" />
                 New Chat
+              </button>
+              <button
+                type="button"
+                onClick={openSearchChats}
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                Search Chats
               </button>
             </div>
 
