@@ -67,6 +67,8 @@ type AuthContextValue = {
 
 const LOCAL_USER_KEY = "dsiq.local.user";
 const LOCAL_PASSWORD_PREFIX = "dsiq.local.password:";
+const FIREBASE_PROFILE_SYNC_TIMEOUT_MS = 3000;
+const FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS = 5000;
 const appleProvider = new OAuthProvider("apple.com");
 const googleProvider = new GoogleAuthProvider();
 
@@ -181,10 +183,32 @@ async function syncFirebaseUserRecordSafely(
   input: Parameters<typeof syncFirebaseUserRecord>[0],
 ) {
   try {
-    await syncFirebaseUserRecord(input);
+    await withTimeout(
+      syncFirebaseUserRecord(input),
+      FIREBASE_PROFILE_SYNC_TIMEOUT_MS,
+      "Firebase user profile sync timed out.",
+    );
   } catch (error) {
     console.warn("Firebase user profile sync failed.", error);
   }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(new Error(message));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      });
+  });
 }
 
 function getAuthCode(error: unknown) {
@@ -344,7 +368,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             signInCode.includes("wrong-password") ||
             signInCode.includes("invalid-credential")
           ) {
-            const methods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+            const methods = await withTimeout(
+              fetchSignInMethodsForEmail(auth, normalizedEmail),
+              FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS,
+              "Firebase sign-in method lookup timed out.",
+            );
             const socialMessage = getSocialAccountMessage(methods);
 
             if (socialMessage) {
@@ -379,7 +407,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const createCode = getAuthCode(createError);
 
           if (createCode.includes("email-already-in-use")) {
-            const methods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+            const methods = await withTimeout(
+              fetchSignInMethodsForEmail(auth, normalizedEmail),
+              FIREBASE_SIGN_IN_METHODS_TIMEOUT_MS,
+              "Firebase sign-in method lookup timed out.",
+            );
             const socialMessage = getSocialAccountMessage(methods);
 
             if (socialMessage) {
