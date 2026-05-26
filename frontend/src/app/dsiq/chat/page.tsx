@@ -49,10 +49,10 @@ const collapsedItems = [
 
 const suggestedPrompts = [
   "Build my roadmap",
-  "Create weekly mission",
-  "Find opportunities",
   "Improve my portfolio",
   "Help me learn programming",
+  "Explain my code",
+  "Give me a study plan",
 ];
 
 function getInitials(name: string) {
