@@ -388,6 +388,14 @@ export default function DsiqChatPage() {
         <div className="relative border-t border-[color:var(--color-line)] pt-3">
           {isProfileMenuOpen ? (
             <div className="absolute bottom-16 left-0 z-50 w-64 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+              <button
+                type="button"
+                aria-label="Close profile menu"
+                onClick={() => setIsProfileMenuOpen(false)}
+                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
               <div className="px-3 py-3">
                 <p className="text-sm font-semibold text-[color:var(--color-text)]">
                   {displayName}
