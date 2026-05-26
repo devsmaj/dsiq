@@ -24,7 +24,6 @@ import {
   isFirebaseNicknameTaken,
   saveFirebaseOnboardingAnswers,
 } from "@/lib/firebase-user-records";
-import { getPostAuthPath } from "@/lib/auth-routing";
 import {
   isLocalNicknameTaken,
   normalizeNickname,
@@ -68,22 +67,6 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { authMode, user } = useAuth();
-
-  useEffect(() => {
-    async function routeCompletedUsers() {
-      if (!user) {
-        return;
-      }
-
-      const postAuthPath = await getPostAuthPath(user, authMode);
-      if (postAuthPath === "/dsiq/chat") {
-        router.replace("/dsiq/chat");
-      }
-
-    }
-
-    void routeCompletedUsers();
-  }, [authMode, router, user]);
 
   useEffect(() => {
     const normalizedNickname = normalizeNickname(nickname);
