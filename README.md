@@ -26,8 +26,10 @@ It helps users answer practical questions like:
 - Public home page uses a chat-first landing experience.
 - Public `/chat` supports guest chat with temporary session storage.
 - Private workspace lives at `/dsiq/chat`.
+- Private AI Mentor lives at `/dsiq/mentor`.
 - `/dashboard` redirects to `/dsiq/chat`.
 - Private chat has a collapsible sidebar with New Chat, Search Chats, AI Mentor, Learning Roadmap, Library, and Saved Chats.
+- AI Mentor is a private student-focused teacher page that uses onboarding/profile goals for welcome text, focus guidance, mentor chat, Smart Focus, and insight cards.
 - Private chat auto-saves conversations and shows recent chats in the expanded sidebar.
 - Private chat history uses Firestore when available and local storage as a fallback.
 - Active private chats include top-right New Chat and more-actions controls for read aloud, email draft, markdown export, Library handoff, and share/copy.
