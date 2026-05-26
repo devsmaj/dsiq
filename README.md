@@ -34,6 +34,7 @@ It helps users answer practical questions like:
 - AI responses include one-click copy feedback.
 - Saved chat messages keep stable IDs/timestamps and include per-message delete with a deletion timestamp.
 - Search Chats opens a searchable saved-chat panel with a top-right close button.
+- Saved Chats opens a management panel with rename, export, add to project, delete, bulk delete, and bulk add to project.
 - Projects opens a panel where users can create projects, rename project names anytime, save the name, and add the current chat to a project.
 - Project data uses Firestore when available and local storage as a fallback.
 - Profile popup includes Profile, Settings, Help, and Logout.

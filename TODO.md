@@ -113,12 +113,17 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Each saved chat message has a three-dot menu with delete confirmation.
 - [x] Deleted saved chat messages are hidden with a deletion timestamp.
 - [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
+- [x] Saved Chats opens a real management panel with top-right X close.
+- [x] Saved Chats supports single-chat rename, export, add to project, and delete.
+- [x] Saved Chats supports multi-select bulk delete.
+- [x] Saved Chats supports multi-select bulk add to project.
+- [x] Deleted saved chats are hidden with a deletion timestamp.
 - [x] Projects opens a real projects panel with top-right X close.
 - [x] Users can create projects from the Projects panel.
 - [x] Users can edit a project name anytime and save it.
 - [x] Users can add the current chat to a project.
 - [x] Projects save to Firestore with local storage fallback.
-- [ ] Build real screens/panels for AI Mentor, Learning Roadmap, and Saved Chats.
+- [ ] Build real screens/panels for AI Mentor and Learning Roadmap.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.
 
@@ -236,6 +241,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [ ] Repair local frontend dependencies so ESLint can run.
 - [x] Build the real private Search Chats panel.
 - [x] Build the real private Projects panel.
-- [ ] Build the real private sidebar panels for AI Mentor, Learning Roadmap, and Saved Chats.
+- [x] Build the real private Saved Chats panel.
+- [ ] Build the real private sidebar panels for AI Mentor and Learning Roadmap.
 - [x] Persist and reload private chat history.
 - [ ] Add production Open Graph image.

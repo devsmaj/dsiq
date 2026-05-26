@@ -26,6 +26,7 @@ export type PrivateChatMessage = GeminiChatMessage & {
 
 type LocalPrivateChat = PrivateChatSummary & {
   createdAtMs: number;
+  deletedAtMs?: number;
   messages: PrivateChatMessage[];
   source: "private-chat";
 };
@@ -169,6 +170,40 @@ function deleteLocalPrivateChatMessage(
         updatedAtMs: now,
       };
     }),
+  );
+}
+
+function updateLocalPrivateChatTitle(uid: string, chatId: string, title: string) {
+  const now = Date.now();
+
+  writeLocalPrivateChats(
+    uid,
+    readLocalPrivateChats(uid).map((chat) =>
+      chat.id === chatId
+        ? {
+            ...chat,
+            title,
+            updatedAtMs: now,
+          }
+        : chat,
+    ),
+  );
+}
+
+function deleteLocalPrivateChat(uid: string, chatId: string) {
+  const now = Date.now();
+
+  writeLocalPrivateChats(
+    uid,
+    readLocalPrivateChats(uid).map((chat) =>
+      chat.id === chatId
+        ? {
+            ...chat,
+            deletedAtMs: chat.deletedAtMs || now,
+            updatedAtMs: now,
+          }
+        : chat,
+    ),
   );
 }
 
@@ -328,6 +363,7 @@ export async function savePrivateChatMessage(input: {
 export async function listPrivateChats(uid: string) {
   if (!db) {
     return readLocalPrivateChats(uid)
+      .filter((chat) => !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
       .map(({ id, title, updatedAtMs, lastMessage }) => ({
@@ -358,10 +394,12 @@ export async function listPrivateChats(uid: string) {
             typeof data.updatedAtMs === "number" ? data.updatedAtMs : 0,
           lastMessage:
             typeof data.lastMessage === "string" ? data.lastMessage : undefined,
+          deletedAtMs:
+            typeof data.deletedAtMs === "number" ? data.deletedAtMs : undefined,
           source: data.source,
         };
       })
-      .filter((chat) => chat.source === "private-chat")
+      .filter((chat) => chat.source === "private-chat" && !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
       .map(({ id, title, updatedAtMs, lastMessage }) => ({
@@ -373,6 +411,7 @@ export async function listPrivateChats(uid: string) {
   } catch (error) {
     console.warn("Firebase private chats loading failed; using local chats.", error);
     return readLocalPrivateChats(uid)
+      .filter((chat) => !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
       .map(({ id, title, updatedAtMs, lastMessage }) => ({
@@ -381,6 +420,73 @@ export async function listPrivateChats(uid: string) {
         updatedAtMs,
         lastMessage,
       }));
+  }
+}
+
+export async function updatePrivateChatTitle(input: {
+  chatId: string;
+  title: string;
+  uid: string;
+}) {
+  const title = input.title.trim() || "New chat";
+  const now = Date.now();
+
+  if (!db) {
+    updateLocalPrivateChatTitle(input.uid, input.chatId, title);
+    return;
+  }
+
+  try {
+    await withTimeout(
+      setDoc(
+        doc(db, "users", input.uid, "chats", input.chatId),
+        {
+          title,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      "Private chat title update timed out.",
+    );
+    updateLocalPrivateChatTitle(input.uid, input.chatId, title);
+  } catch (error) {
+    console.warn("Firebase private chat title update failed; using local chat.", error);
+    updateLocalPrivateChatTitle(input.uid, input.chatId, title);
+  }
+}
+
+export async function deletePrivateChat(input: {
+  chatId: string;
+  uid: string;
+}) {
+  const now = Date.now();
+
+  if (!db) {
+    deleteLocalPrivateChat(input.uid, input.chatId);
+    return;
+  }
+
+  try {
+    await withTimeout(
+      setDoc(
+        doc(db, "users", input.uid, "chats", input.chatId),
+        {
+          deletedAt: serverTimestamp(),
+          deletedAtMs: now,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      "Private chat delete timed out.",
+    );
+    deleteLocalPrivateChat(input.uid, input.chatId);
+  } catch (error) {
+    console.warn("Firebase private chat delete failed; using local chat.", error);
+    deleteLocalPrivateChat(input.uid, input.chatId);
   }
 }
 

@@ -35,10 +35,12 @@ import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
 import {
   createPrivateChat,
+  deletePrivateChat,
   deletePrivateChatMessage,
   listPrivateChats,
   loadPrivateChatMessages,
   savePrivateChatMessage,
+  updatePrivateChatTitle,
   type PrivateChatMessage,
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
@@ -127,6 +129,17 @@ function toGeminiMessages(messages: PrivateChatMessage[]): GeminiChatMessage[] {
   return messages.map(({ role, text }) => ({ role, text }));
 }
 
+function formatChatUpdatedAt(updatedAtMs: number) {
+  if (!updatedAtMs) {
+    return "Saved";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(updatedAtMs));
+}
+
 export default function DsiqChatPage() {
   const router = useRouter();
   const { authMode, logout } = useAuth();
@@ -140,6 +153,7 @@ export default function DsiqChatPage() {
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
+  const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isReadingAloud, setIsReadingAloud] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -151,12 +165,29 @@ export default function DsiqChatPage() {
   const [projectDraftNames, setProjectDraftNames] = useState<
     Record<string, string>
   >({});
+  const [savedChatDraftTitles, setSavedChatDraftTitles] = useState<
+    Record<string, string>
+  >({});
   const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
   const [projects, setProjects] = useState<DsiqProject[]>([]);
   const [activeMessageMenuId, setActiveMessageMenuId] = useState<string | null>(
     null,
+  );
+  const [activeSavedChatMenuId, setActiveSavedChatMenuId] = useState<
+    string | null
+  >(null);
+  const [renamingSavedChatId, setRenamingSavedChatId] = useState<string | null>(
+    null,
+  );
+  const [selectedSavedChatIds, setSelectedSavedChatIds] = useState<string[]>(
+    [],
+  );
+  const [isSavedSelectMode, setIsSavedSelectMode] = useState(false);
+  const [deleteSavedChatIds, setDeleteSavedChatIds] = useState<string[]>([]);
+  const [projectPickerChatIds, setProjectPickerChatIds] = useState<string[]>(
+    [],
   );
   const [confirmingDeleteMessageId, setConfirmingDeleteMessageId] = useState<
     string | null
@@ -190,7 +221,6 @@ export default function DsiqChatPage() {
       chat.lastMessage?.toLowerCase().includes(query)
     );
   });
-
   useKeyboardOffset();
 
   useEffect(() => {
@@ -230,7 +260,11 @@ export default function DsiqChatPage() {
 
       try {
         setIsChatsLoading(true);
-        setPrivateChats(await listPrivateChats(user.uid));
+        const nextChats = await listPrivateChats(user.uid);
+        setPrivateChats(nextChats);
+        setSavedChatDraftTitles(
+          Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
+        );
       } catch (loadError) {
         console.warn("Private chats loading failed.", loadError);
       } finally {
@@ -274,7 +308,11 @@ export default function DsiqChatPage() {
     }
 
     try {
-      setPrivateChats(await listPrivateChats(user.uid));
+      const nextChats = await listPrivateChats(user.uid);
+      setPrivateChats(nextChats);
+      setSavedChatDraftTitles(
+        Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
+      );
     } catch (loadError) {
       console.warn("Private chats refresh failed.", loadError);
     }
@@ -379,6 +417,7 @@ export default function DsiqChatPage() {
     setConfirmingDeleteMessageId(null);
     setIsSearchPanelOpen(false);
     setIsProjectsPanelOpen(false);
+    closeSavedChatsPanel();
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
@@ -399,6 +438,7 @@ export default function DsiqChatPage() {
       setConfirmingDeleteMessageId(null);
       setIsSearchPanelOpen(false);
       setIsProjectsPanelOpen(false);
+      closeSavedChatsPanel();
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
       setMessages(await loadPrivateChatMessages(user.uid, chatId));
@@ -415,6 +455,8 @@ export default function DsiqChatPage() {
 
   function openSearchPanel(mobile = false) {
     setIsSearchPanelOpen(true);
+    setIsSavedChatsPanelOpen(false);
+    setIsProjectsPanelOpen(false);
     setChatSearchQuery("");
     setActiveMessageMenuId(null);
     setConfirmingDeleteMessageId(null);
@@ -426,6 +468,7 @@ export default function DsiqChatPage() {
 
   function openProjectsPanel(mobile = false) {
     setIsProjectsPanelOpen(true);
+    setIsSavedChatsPanelOpen(false);
     setActionStatus("");
     setIsChatActionsOpen(false);
     setActiveMessageMenuId(null);
@@ -434,6 +477,145 @@ export default function DsiqChatPage() {
       setIsMobileSidebarOpen(false);
     }
     void refreshProjects();
+  }
+
+  function openSavedChatsPanel(mobile = false) {
+    setIsSavedChatsPanelOpen(true);
+    setIsSearchPanelOpen(false);
+    setIsProjectsPanelOpen(false);
+    setActionStatus("");
+    setActiveSavedChatMenuId(null);
+    setRenamingSavedChatId(null);
+    setProjectPickerChatIds([]);
+    setDeleteSavedChatIds([]);
+    if (mobile) {
+      setIsMobileSidebarOpen(false);
+    }
+    void refreshPrivateChats();
+  }
+
+  function closeSavedChatsPanel() {
+    setIsSavedChatsPanelOpen(false);
+    setIsSavedSelectMode(false);
+    setSelectedSavedChatIds([]);
+    setActiveSavedChatMenuId(null);
+    setRenamingSavedChatId(null);
+    setProjectPickerChatIds([]);
+    setDeleteSavedChatIds([]);
+  }
+
+  function toggleSavedChatSelection(chatId: string) {
+    setSelectedSavedChatIds((current) =>
+      current.includes(chatId)
+        ? current.filter((id) => id !== chatId)
+        : [...current, chatId],
+    );
+  }
+
+  async function handleSaveSavedChatTitle(chatId: string) {
+    if (!user) {
+      setActionStatus("Sign in again to rename this chat.");
+      return;
+    }
+
+    await updatePrivateChatTitle({
+      chatId,
+      title: savedChatDraftTitles[chatId] || "New chat",
+      uid: user.uid,
+    });
+    setRenamingSavedChatId(null);
+    setActiveSavedChatMenuId(null);
+    setActionStatus("Chat name saved.");
+    await refreshPrivateChats();
+  }
+
+  async function exportSavedChat(chat: PrivateChatSummary) {
+    if (!user) {
+      setActionStatus("Sign in again to export this chat.");
+      return;
+    }
+
+    const chatMessages = await loadPrivateChatMessages(user.uid, chat.id);
+    const content = `# ${chat.title}\n\n${chatMessages
+      .map((message) => {
+        const label = message.role === "user" ? "You" : "DSIQ";
+        return `${label}: ${message.text}`;
+      })
+      .join("\n\n")}`;
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${chat.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setActiveSavedChatMenuId(null);
+    setActionStatus("Saved chat exported.");
+  }
+
+  async function handleDeleteSavedChats(chatIds: string[]) {
+    if (!user || !chatIds.length) {
+      return;
+    }
+
+    await Promise.all(
+      chatIds.map((chatId) =>
+        deletePrivateChat({
+          chatId,
+          uid: user.uid,
+        }),
+      ),
+    );
+
+    if (currentChatId && chatIds.includes(currentChatId)) {
+      stopReadAloud();
+      setCurrentChatId(null);
+      setMessages([]);
+      setPrompt("");
+      setError("");
+    }
+
+    setDeleteSavedChatIds([]);
+    setSelectedSavedChatIds((current) =>
+      current.filter((chatId) => !chatIds.includes(chatId)),
+    );
+    setActiveSavedChatMenuId(null);
+    await refreshPrivateChats();
+    setActionStatus(
+      chatIds.length === 1 ? "Saved chat deleted." : "Saved chats deleted.",
+    );
+  }
+
+  function openSavedChatProjectPicker(chatIds: string[]) {
+    setProjectPickerChatIds(chatIds);
+    setActiveSavedChatMenuId(null);
+    void refreshProjects();
+  }
+
+  async function handleAddSavedChatsToProject(projectId: string) {
+    if (!user || !projectPickerChatIds.length) {
+      return;
+    }
+
+    await Promise.all(
+      projectPickerChatIds.map((chatId) =>
+        addChatToProject({
+          chatId,
+          projectId,
+          uid: user.uid,
+        }),
+      ),
+    );
+    setProjectPickerChatIds([]);
+    setSelectedSavedChatIds([]);
+    setIsSavedSelectMode(false);
+    await refreshProjects();
+    setActionStatus(
+      projectPickerChatIds.length === 1
+        ? "Chat added to project."
+        : "Chats added to project.",
+    );
   }
 
   async function handleCreateProject() {
@@ -833,6 +1015,7 @@ export default function DsiqChatPage() {
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
             const isProjects = item.label === "Projects";
+            const isSavedChats = item.label === "Saved Chats";
 
             if (isNewChat) {
               return (
@@ -880,6 +1063,23 @@ export default function DsiqChatPage() {
                   type="button"
                   title={expanded ? undefined : item.label}
                   onClick={() => openProjectsPanel(mobile)}
+                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                </button>
+              );
+            }
+
+            if (isSavedChats) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  title={expanded ? undefined : item.label}
+                  onClick={() => openSavedChatsPanel(mobile)}
                   className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
@@ -1121,6 +1321,320 @@ export default function DsiqChatPage() {
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
                       No chats found.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {isSavedChatsPanelOpen ? (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="saved-chats-title"
+                className="relative w-full max-w-2xl rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
+              >
+                <button
+                  type="button"
+                  aria-label="Close saved chats"
+                  onClick={closeSavedChatsPanel}
+                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+
+                <div className="flex items-start justify-between gap-4 pr-10">
+                  <div>
+                    <h2
+                      id="saved-chats-title"
+                      className="text-base font-semibold"
+                    >
+                      Saved Chats
+                    </h2>
+                    <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+                      Open, rename, export, delete, or add saved chats to a
+                      project.
+                    </p>
+                  </div>
+                  {privateChats.length ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSavedSelectMode((current) => !current);
+                        setSelectedSavedChatIds([]);
+                        setActiveSavedChatMenuId(null);
+                        setRenamingSavedChatId(null);
+                      }}
+                      className="mt-8 inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] sm:mt-0"
+                    >
+                      {isSavedSelectMode ? "Done" : "Select"}
+                    </button>
+                  ) : null}
+                </div>
+
+                {isSavedSelectMode ? (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[color:var(--color-surface-strong)] px-3 py-3">
+                    <span className="text-xs font-semibold text-[color:var(--color-muted)]">
+                      {selectedSavedChatIds.length} selected
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={!selectedSavedChatIds.length}
+                        onClick={() =>
+                          openSavedChatProjectPicker(selectedSavedChatIds)
+                        }
+                        className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Add to project
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedSavedChatIds.length}
+                        onClick={() => setDeleteSavedChatIds(selectedSavedChatIds)}
+                        className="inline-flex h-9 items-center justify-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {projectPickerChatIds.length ? (
+                  <div className="mt-4 rounded-2xl border border-[color:var(--color-line)] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">Add to project</p>
+                      <button
+                        type="button"
+                        aria-label="Close project picker"
+                        onClick={() => setProjectPickerChatIds([])}
+                        className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                    {projects.length ? (
+                      <div className="mt-2 grid gap-2">
+                        {projects.map((project) => (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() =>
+                              void handleAddSavedChatsToProject(project.id)
+                            }
+                            className="flex min-h-10 items-center justify-between rounded-xl bg-[color:var(--color-surface-strong)] px-3 text-left text-sm font-medium transition hover:bg-[color:var(--color-line)]"
+                          >
+                            <span className="truncate">{project.name}</span>
+                            <span className="ml-3 shrink-0 text-xs text-[color:var(--color-muted)]">
+                              {project.chatIds.length} chats
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 rounded-xl bg-[color:var(--color-surface-strong)] px-3 py-3 text-sm text-[color:var(--color-muted)]">
+                        Create a project first, then add saved chats to it.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {deleteSavedChatIds.length ? (
+                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3">
+                    <p className="text-sm font-semibold text-red-700">
+                      Delete {deleteSavedChatIds.length === 1 ? "this chat" : "selected chats"}?
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-red-700/80">
+                      Deleted chats will be hidden from your saved list.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeleteSavedChatIds([])}
+                        className="h-9 flex-1 rounded-full border border-red-200 bg-white text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void handleDeleteSavedChats(deleteSavedChatIds)
+                        }
+                        className="h-9 flex-1 rounded-full bg-red-600 text-xs font-semibold text-white transition hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-4 max-h-[430px] overflow-y-auto">
+                  {privateChats.length ? (
+                    <div className="flex flex-col gap-2">
+                      {privateChats.map((chat) => {
+                        const isSelected = selectedSavedChatIds.includes(chat.id);
+                        const isRenaming = renamingSavedChatId === chat.id;
+
+                        return (
+                          <article
+                            key={chat.id}
+                            className={`relative rounded-2xl border border-[color:var(--color-line)] p-3 ${
+                              isSelected ? "bg-[color:var(--color-brand-soft)]" : ""
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {isSavedSelectMode ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSavedChatSelection(chat.id)}
+                                  className="mt-1 h-4 w-4 accent-[#111111]"
+                                  aria-label={`Select ${chat.title}`}
+                                />
+                              ) : null}
+
+                              <div className="min-w-0 flex-1">
+                                {isRenaming ? (
+                                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                                    <input
+                                      type="text"
+                                      value={
+                                        savedChatDraftTitles[chat.id] ??
+                                        chat.title
+                                      }
+                                      onChange={(event) =>
+                                        setSavedChatDraftTitles((current) => ({
+                                          ...current,
+                                          [chat.id]: event.target.value,
+                                        }))
+                                      }
+                                      className="h-10 rounded-xl border border-[color:var(--color-line)] px-3 text-sm font-medium outline-none transition focus:border-[#111111]"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void handleSaveSavedChatTitle(chat.id)
+                                      }
+                                      className="h-10 rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRenamingSavedChatId(null);
+                                        setSavedChatDraftTitles((current) => ({
+                                          ...current,
+                                          [chat.id]: chat.title,
+                                        }));
+                                      }}
+                                      className="h-10 rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (isSavedSelectMode) {
+                                        toggleSavedChatSelection(chat.id);
+                                      } else {
+                                        void openPrivateChat(chat.id);
+                                      }
+                                    }}
+                                    className="block w-full text-left"
+                                  >
+                                    <span className="block truncate text-sm font-semibold">
+                                      {chat.title}
+                                    </span>
+                                    {chat.lastMessage ? (
+                                      <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
+                                        {chat.lastMessage}
+                                      </span>
+                                    ) : null}
+                                    <span className="mt-2 block text-xs text-[color:var(--color-muted)]">
+                                      {formatChatUpdatedAt(chat.updatedAtMs)}
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {!isSavedSelectMode ? (
+                                <button
+                                  type="button"
+                                  aria-label="Saved chat actions"
+                                  aria-expanded={activeSavedChatMenuId === chat.id}
+                                  onClick={() =>
+                                    setActiveSavedChatMenuId((current) =>
+                                      current === chat.id ? null : chat.id,
+                                    )
+                                  }
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--color-muted)] transition hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)]"
+                                >
+                                  <MoreHorizontal
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              ) : null}
+                            </div>
+
+                            {activeSavedChatMenuId === chat.id ? (
+                              <div className="absolute right-3 top-12 z-30 w-48 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRenamingSavedChatId(chat.id);
+                                    setActiveSavedChatMenuId(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                                >
+                                  <SquarePen className="h-4 w-4" aria-hidden="true" />
+                                  Rename chat
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openSavedChatProjectPicker([chat.id])}
+                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                                >
+                                  <FolderKanban
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                  Add to project
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void exportSavedChat(chat)}
+                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                                >
+                                  <FileText className="h-4 w-4" aria-hidden="true" />
+                                  Export
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteSavedChatIds([chat.id]);
+                                    setActiveSavedChatMenuId(null);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                  Delete chat
+                                </button>
+                              </div>
+                            ) : null}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
+                      No saved chats yet. Send a message and DSIQ will save the
+                      chat here.
                     </p>
                   )}
                 </div>
