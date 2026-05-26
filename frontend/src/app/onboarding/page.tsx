@@ -76,9 +76,10 @@ export default function OnboardingPage() {
       }
 
       const postAuthPath = await getPostAuthPath(user, authMode);
-      if (postAuthPath === "/chat") {
-        router.replace("/chat");
+      if (postAuthPath === "/dsiq/chat") {
+        router.replace("/dsiq/chat");
       }
+
     }
 
     void routeCompletedUsers();
@@ -241,8 +242,10 @@ export default function OnboardingPage() {
         }
       }
 
-      router.replace("/chat");
+      router.replace("/dsiq/chat");
       return;
+
+
     } catch (nextError) {
       setError(
         nextError instanceof Error
