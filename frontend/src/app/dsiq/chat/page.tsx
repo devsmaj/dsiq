@@ -144,6 +144,32 @@ export default function DsiqChatPage() {
     });
   }, [messages, isSending, error]);
 
+  useEffect(() => {
+    function updateKeyboardOffset() {
+      const viewport = window.visualViewport;
+      const keyboardOffset = viewport
+        ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+        : 0;
+
+      document.documentElement.style.setProperty(
+        "--dsiq-keyboard-offset",
+        `${keyboardOffset}px`,
+      );
+    }
+
+    updateKeyboardOffset();
+    window.addEventListener("resize", updateKeyboardOffset);
+    window.visualViewport?.addEventListener("resize", updateKeyboardOffset);
+    window.visualViewport?.addEventListener("scroll", updateKeyboardOffset);
+
+    return () => {
+      window.removeEventListener("resize", updateKeyboardOffset);
+      window.visualViewport?.removeEventListener("resize", updateKeyboardOffset);
+      window.visualViewport?.removeEventListener("scroll", updateKeyboardOffset);
+      document.documentElement.style.removeProperty("--dsiq-keyboard-offset");
+    };
+  }, []);
+
   async function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -503,8 +529,8 @@ export default function DsiqChatPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-5 py-10 sm:px-8">
-              <div className="mx-auto w-full max-w-[820px] text-center">
+            <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:pt-10">
+              <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-center">
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
                   DSIQ is ready to guide your skills, projects, missions, and
                   opportunities.
@@ -543,10 +569,18 @@ export default function DsiqChatPage() {
                     {error}
                   </p>
                 ) : null}
+              </div>
 
+              <div
+                className="sticky z-30 mx-auto w-full max-w-[820px] lg:static lg:-mt-32"
+                style={{
+                  bottom:
+                    "calc(1rem + env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px))",
+                }}
+              >
                 <form
                   onSubmit={submitPrompt}
-                  className="mx-auto mt-8 rounded-[30px] bg-white px-5 py-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+                  className="rounded-[30px] bg-white px-5 py-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
@@ -637,7 +671,6 @@ export default function DsiqChatPage() {
                     </button>
                   </div>
                 </form>
-
               </div>
             </div>
           </section>
