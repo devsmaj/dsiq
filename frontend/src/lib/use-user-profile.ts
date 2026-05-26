@@ -30,19 +30,36 @@ export function useUserProfile() {
       setIsProfileLoading(true);
       setProfileError(null);
 
+      const localProfile = readLocalUserProfile(user.uid);
+      setProfile(localProfile);
+
       try {
         if (authMode === "firebase" && !user.uid.startsWith("local-")) {
-          const nextProfile = await withTimeout(
+          const firebaseProfile = await withTimeout(
             getFirebaseUserProfile(user.uid),
             undefined,
             "Firebase profile loading timed out.",
           );
-          setProfile(nextProfile);
+
+          setProfile(
+            firebaseProfile
+              ? {
+                  ...localProfile,
+                  ...firebaseProfile,
+                  onboardingAnswers:
+                    firebaseProfile.onboardingAnswers ||
+                    localProfile?.onboardingAnswers,
+                  onboardingCompleted:
+                    firebaseProfile.onboardingCompleted ||
+                    localProfile?.onboardingCompleted,
+                }
+              : localProfile,
+          );
         } else {
-          setProfile(readLocalUserProfile(user.uid));
+          setProfile(localProfile);
         }
       } catch {
-        setProfile(null);
+        setProfile(localProfile);
         setProfileError(
           "We could not load your saved profile right now. Please refresh or try again in a moment.",
         );

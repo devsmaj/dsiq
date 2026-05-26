@@ -168,14 +168,14 @@ export default function ProfilePage() {
         selectedGoals,
       };
 
+      updateLocalUserProfile(user.uid, updates);
+
       if (authMode === "firebase") {
         await withTimeout(
           updateFirebaseUserProfile({ uid: user.uid, updates }),
           undefined,
           "Profile save timed out.",
         );
-      } else {
-        updateLocalUserProfile(user.uid, updates);
       }
 
       setNickname(normalizedNickname);
