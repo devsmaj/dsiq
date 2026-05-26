@@ -30,7 +30,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 ## Private Routes
 
 - [x] `/dsiq/chat` Private DSIQ chat workspace.
-- [x] `/dsiq/mentor` Private AI Mentor page.
+- [x] `/dsiq/mentor` Private AI Teacher page.
 - [x] `/dashboard` Redirects to `/dsiq/chat`.
 - [x] `/onboarding` User setup flow.
 - [x] `/profile` Editable user profile.
@@ -76,7 +76,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Expanded sidebar items:
   - [x] New Chat
   - [x] Search Chats
-  - [x] AI Mentor
+  - [x] AI Teacher
   - [x] Learning Roadmap
   - [x] Library
   - [x] Saved Chats
@@ -84,7 +84,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] DSIQ logo
   - [x] New Chat
   - [x] Search Chats
-  - [x] AI Mentor
+  - [x] AI Teacher
   - [x] Learning Roadmap
   - [x] Library
   - [x] Profile avatar at bottom
@@ -123,15 +123,15 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Users can edit a folder name anytime and save it.
 - [x] Users can add the current chat to a Library folder.
 - [x] Library folders save to Firestore with local storage fallback.
-- [x] AI Mentor sidebar link opens `/dsiq/mentor`.
+- [x] AI Teacher sidebar link opens `/dsiq/mentor`.
 - [ ] Build real screen/panel for Learning Roadmap.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.
 
-## AI Mentor `/dsiq/mentor`
+## AI Teacher `/dsiq/mentor`
 
 - [x] PrivateRoute protection.
-- [x] Uses the private sidebar style with AI Mentor active.
+- [x] Uses the private sidebar style with AI Teacher active.
 - [x] Uses onboarding/profile data for name, role, goals, age, focus, and time when available.
 - [x] Falls back to generic student-focused text when onboarding data is missing.
 - [x] Mentor welcome card.
@@ -256,7 +256,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Build the real private Search Chats panel.
 - [x] Build the real private Library panel.
 - [x] Build the real private Saved Chats panel.
-- [x] Build the real private AI Mentor page.
+- [x] Build the real private AI Teacher page.
 - [ ] Build the real private sidebar panel for Learning Roadmap.
 - [x] Persist and reload private chat history.
 - [ ] Add production Open Graph image.
