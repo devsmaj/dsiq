@@ -103,6 +103,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Private chats auto-create from the first sent message.
 - [x] Private user/model messages save to chat history.
 - [x] Recent private chats appear in the expanded sidebar.
+- [x] Recent sidebar chat rows include a three-dot menu with Delete.
 - [x] Clicking a recent private chat reloads its conversation.
 - [x] Local chat-history fallback works when Firebase is unavailable.
 - [x] Active private chats show top-right New Chat and more-actions controls.
@@ -110,8 +111,6 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Top-right chat actions include Read aloud / Stop reading.
 - [x] AI responses include copy action with copied check feedback.
 - [x] Saved chat messages include stable message IDs and timestamps.
-- [x] Each saved chat message has a three-dot menu with delete confirmation.
-- [x] Deleted saved chat messages are hidden with a deletion timestamp.
 - [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
 - [x] Saved Chats opens a real management panel with top-right X close.
 - [x] Saved Chats supports single-chat rename, export, add to project, and delete.
