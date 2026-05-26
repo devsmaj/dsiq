@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
@@ -8,7 +8,6 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
-import { getPostAuthPath } from "@/lib/auth-routing";
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -56,12 +55,9 @@ function getAuthErrorMessage(error: unknown) {
 export default function LoginPage() {
   const router = useRouter();
   const {
-    authMode,
-    isLoading: isSessionLoading,
     loginOrSignupWithEmail,
     loginWithApple,
     loginWithGoogle,
-    user,
   } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,26 +68,14 @@ export default function LoginPage() {
   >(null);
   const isLoading = loadingAction !== null;
 
-  useEffect(() => {
-    async function routeExistingSession() {
-      if (isSessionLoading || !user) {
-        return;
-      }
-
-      router.replace(await getPostAuthPath(user, authMode));
-    }
-
-    void routeExistingSession();
-  }, [authMode, isSessionLoading, router, user]);
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
     try {
       setLoadingAction("email");
-      const nextUser = await loginOrSignupWithEmail({ email, password });
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      await loginOrSignupWithEmail({ email, password });
+      router.replace("/onboarding");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -104,8 +88,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("google");
-      const nextUser = await loginWithGoogle();
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      await loginWithGoogle();
+      router.replace("/onboarding");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -118,8 +102,8 @@ export default function LoginPage() {
 
     try {
       setLoadingAction("apple");
-      const nextUser = await loginWithApple();
-      router.replace(await getPostAuthPath(nextUser, authMode));
+      await loginWithApple();
+      router.replace("/onboarding");
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
