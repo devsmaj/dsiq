@@ -115,10 +115,12 @@ export default function DsiqChatPage() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
@@ -140,6 +142,17 @@ export default function DsiqChatPage() {
     "Saleh";
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
+  const filteredPrivateChats = privateChats.filter((chat) => {
+    const query = chatSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return true;
+    }
+
+    return (
+      chat.title.toLowerCase().includes(query) ||
+      chat.lastMessage?.toLowerCase().includes(query)
+    );
+  });
 
   useKeyboardOffset();
 
@@ -267,6 +280,7 @@ export default function DsiqChatPage() {
     setError("");
     setActionStatus("");
     setIsChatActionsOpen(false);
+    setIsSearchPanelOpen(false);
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
@@ -282,6 +296,7 @@ export default function DsiqChatPage() {
       setError("");
       setActionStatus("");
       setIsChatActionsOpen(false);
+      setIsSearchPanelOpen(false);
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
       setMessages(await loadPrivateChatMessages(user.uid, chatId));
@@ -294,6 +309,15 @@ export default function DsiqChatPage() {
     } finally {
       setIsChatsLoading(false);
     }
+  }
+
+  function openSearchPanel(mobile = false) {
+    setIsSearchPanelOpen(true);
+    setChatSearchQuery("");
+    if (mobile) {
+      setIsMobileSidebarOpen(false);
+    }
+    void refreshPrivateChats();
   }
 
   function getChatText() {
@@ -550,6 +574,7 @@ export default function DsiqChatPage() {
           {visibleItems.map((item) => {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";
+            const isSearchChats = item.label === "Search Chats";
 
             if (isNewChat) {
               return (
@@ -563,6 +588,23 @@ export default function DsiqChatPage() {
                       setIsMobileSidebarOpen(false);
                     }
                   }}
+                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                </button>
+              );
+            }
+
+            if (isSearchChats) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  title={expanded ? undefined : item.label}
+                  onClick={() => openSearchPanel(mobile)}
                   className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
@@ -740,6 +782,74 @@ export default function DsiqChatPage() {
               <div className="absolute inset-y-0 left-0">
                 <SidebarContent mobile />
               </div>
+            </div>
+          ) : null}
+
+          {isSearchPanelOpen ? (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="chat-search-title"
+                className="relative w-full max-w-md rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
+              >
+                <button
+                  type="button"
+                  aria-label="Close search chats"
+                  onClick={() => setIsSearchPanelOpen(false)}
+                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <h2
+                  id="chat-search-title"
+                  className="pr-10 text-base font-semibold"
+                >
+                  Search Chats
+                </h2>
+                <div className="mt-4 flex h-12 items-center gap-3 rounded-2xl border border-[color:var(--color-line)] px-4">
+                  <Search className="h-4 w-4 text-[color:var(--color-muted)]" />
+                  <input
+                    type="text"
+                    value={chatSearchQuery}
+                    onChange={(event) => setChatSearchQuery(event.target.value)}
+                    placeholder="Search chats"
+                    autoFocus
+                    className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[color:var(--color-muted)]"
+                  />
+                </div>
+
+                <div className="mt-4 max-h-80 overflow-y-auto">
+                  {filteredPrivateChats.length ? (
+                    <div className="flex flex-col gap-1">
+                      {filteredPrivateChats.map((chat) => (
+                        <button
+                          key={chat.id}
+                          type="button"
+                          onClick={() => {
+                            setIsSearchPanelOpen(false);
+                            void openPrivateChat(chat.id);
+                          }}
+                          className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                        >
+                          <span className="block truncate text-sm font-semibold">
+                            {chat.title}
+                          </span>
+                          {chat.lastMessage ? (
+                            <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
+                              {chat.lastMessage}
+                            </span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
+                      No chats found.
+                    </p>
+                  )}
+                </div>
+              </section>
             </div>
           ) : null}
 
