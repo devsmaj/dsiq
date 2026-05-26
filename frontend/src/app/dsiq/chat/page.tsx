@@ -3,17 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Bot,
   ChevronLeft,
   ChevronRight,
   CircleUserRound,
   FileText,
+  FolderKanban,
+  GraduationCap,
+  HelpCircle,
   ImageIcon,
   LogOut,
   Menu,
   Mic,
+  Monitor,
   Plus,
   Search,
   Send,
+  Settings,
   SquarePen,
   X,
 } from "lucide-react";
@@ -21,13 +27,21 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
+import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
-  { label: "Search Chats", href: "/dsiq/chat", icon: Search },
-  { label: "Profile", href: "/profile", icon: CircleUserRound },
+  { label: "Search Chats", href: "/dsiq/chat?panel=search", icon: Search },
+  { label: "AI Mentor", href: "/dsiq/chat?panel=mentor", icon: Bot },
+  {
+    label: "Learning Roadmap",
+    href: "/dsiq/chat?panel=roadmap",
+    icon: GraduationCap,
+  },
+  { label: "Projects", href: "/dsiq/chat?panel=projects", icon: FolderKanban },
+  { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 
 
@@ -35,6 +49,8 @@ const collapsedItems = [
   sidebarItems[0],
   sidebarItems[1],
   sidebarItems[2],
+  sidebarItems[3],
+  sidebarItems[4],
 ] as const;
 
 const suggestedPrompts = [
@@ -107,6 +123,8 @@ export default function DsiqChatPage() {
     user?.displayName ||
     user?.email?.split("@")[0] ||
     "Saleh";
+  const profileImageUrl =
+    profile?.profileImageUrl || answers?.profileImageUrl || "";
 
   useEffect(() => {
     async function routeIncompleteUsers() {
@@ -216,6 +234,36 @@ export default function DsiqChatPage() {
     router.replace("/login");
   }
 
+  function openSettingsFromProfile() {
+    setIsProfileMenuOpen(false);
+    if (isMobileSidebarOpen) {
+      setIsMobileSidebarOpen(false);
+    }
+    openSettingsHelpPopup();
+  }
+
+  const ProfileAvatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
+    const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-xs";
+
+    if (profileImageUrl) {
+      return (
+        <img
+          src={profileImageUrl}
+          alt=""
+          className={`${sizeClass} shrink-0 rounded-full object-cover`}
+        />
+      );
+    }
+
+    return (
+      <span
+        className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full bg-[#111111] font-semibold text-white`}
+      >
+        {getInitials(displayName) || "S"}
+      </span>
+    );
+  };
+
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
@@ -306,28 +354,43 @@ export default function DsiqChatPage() {
                   Free Plan
                 </p>
               </div>
-              {[
-                { label: "Profile", href: "/profile", icon: CircleUserRound },
-              ].map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      if (mobile) {
-                        setIsMobileSidebarOpen(false);
-                      }
-                    }}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {item.label}
-                  </Link>
-                );
-              })}
+              <Link
+                href="/profile"
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  if (mobile) {
+                    setIsMobileSidebarOpen(false);
+                  }
+                }}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <CircleUserRound className="h-4 w-4" aria-hidden="true" />
+                Profile
+              </Link>
+              <button
+                type="button"
+                onClick={openSettingsFromProfile}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <Settings className="h-4 w-4" aria-hidden="true" />
+                Settings
+              </button>
+              <button
+                type="button"
+                onClick={openSettingsFromProfile}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <Monitor className="h-4 w-4" aria-hidden="true" />
+                Theme
+              </button>
+              <button
+                type="button"
+                onClick={openSettingsFromProfile}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <HelpCircle className="h-4 w-4" aria-hidden="true" />
+                Help
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -349,9 +412,7 @@ export default function DsiqChatPage() {
               expanded ? "gap-3 px-3 py-3" : "justify-center px-0 py-3"
             }`}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#111111] text-xs font-semibold text-white">
-              {getInitials(displayName) || "S"}
-            </span>
+            <ProfileAvatar />
             {expanded ? (
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-[color:var(--color-text)]">
