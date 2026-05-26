@@ -100,9 +100,14 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Private chat input stays above the mobile keyboard.
 - [x] Removed suggested prompt chips under private chat input.
 - [x] Attachment and voice controls.
+- [x] Private chats auto-create from the first sent message.
+- [x] Private user/model messages save to chat history.
+- [x] Recent private chats appear in the expanded sidebar.
+- [x] Clicking a recent private chat reloads its conversation.
+- [x] Local chat-history fallback works when Firebase is unavailable.
 - [ ] Build real screens/panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
-- [ ] Save private chat history to Firestore/local store.
-- [ ] Load saved private chats from sidebar.
+- [x] Save private chat history to Firestore/local store.
+- [x] Load saved private chats from sidebar.
 
 ## Profile
 
@@ -217,5 +222,5 @@ This TODO tracks the current DSIQ web app as built in this repository.
 
 - [ ] Repair local frontend dependencies so ESLint can run.
 - [ ] Build the real private sidebar panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
-- [ ] Persist and reload private chat history.
+- [x] Persist and reload private chat history.
 - [ ] Add production Open Graph image.

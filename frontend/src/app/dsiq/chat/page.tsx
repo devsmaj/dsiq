@@ -28,6 +28,13 @@ import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
+import {
+  createPrivateChat,
+  listPrivateChats,
+  loadPrivateChatMessages,
+  savePrivateChatMessage,
+  type PrivateChatSummary,
+} from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -106,8 +113,11 @@ export default function DsiqChatPage() {
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
   const [error, setError] = useState("");
   const promptInputRef = useRef<HTMLInputElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
@@ -147,11 +157,48 @@ export default function DsiqChatPage() {
     });
   }, [messages, isSending, error]);
 
+  useEffect(() => {
+    async function loadChats() {
+      if (!user) {
+        setPrivateChats([]);
+        return;
+      }
+
+      try {
+        setIsChatsLoading(true);
+        setPrivateChats(await listPrivateChats(user.uid));
+      } catch (loadError) {
+        console.warn("Private chats loading failed.", loadError);
+      } finally {
+        setIsChatsLoading(false);
+      }
+    }
+
+    void loadChats();
+  }, [user]);
+
+  async function refreshPrivateChats() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      setPrivateChats(await listPrivateChats(user.uid));
+    } catch (loadError) {
+      console.warn("Private chats refresh failed.", loadError);
+    }
+  }
+
   async function submitPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const message = prompt.trim();
     if (!message || isSending) {
+      return;
+    }
+
+    if (!user) {
+      setError("Sign in again to save and continue your chat.");
       return;
     }
 
@@ -167,14 +214,31 @@ export default function DsiqChatPage() {
     setMessages(nextMessages);
 
     try {
+      const chatId = currentChatId || (await createPrivateChat(user.uid, message));
+      setCurrentChatId(chatId);
+      await savePrivateChatMessage({
+        chatId,
+        message: userMessage,
+        uid: user.uid,
+      });
+      void refreshPrivateChats();
+
       const response = await askGemini(nextMessages);
+      const modelMessage: GeminiChatMessage = {
+        role: "model",
+        text: response,
+      };
+
       setMessages((current) => [
         ...current,
-        {
-          role: "model",
-          text: response,
-        },
+        modelMessage,
       ]);
+      await savePrivateChatMessage({
+        chatId,
+        message: modelMessage,
+        uid: user.uid,
+      });
+      void refreshPrivateChats();
     } catch (submissionError) {
       setError(
         submissionError instanceof Error
@@ -183,6 +247,38 @@ export default function DsiqChatPage() {
       );
     } finally {
       setIsSending(false);
+    }
+  }
+
+  function startNewChat() {
+    setCurrentChatId(null);
+    setMessages([]);
+    setPrompt("");
+    setError("");
+    setIsUploadPanelOpen(false);
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+    });
+  }
+
+  async function openPrivateChat(chatId: string, mobile = false) {
+    if (!user || isSending) {
+      return;
+    }
+
+    try {
+      setError("");
+      setIsChatsLoading(true);
+      setCurrentChatId(chatId);
+      setMessages(await loadPrivateChatMessages(user.uid, chatId));
+      if (mobile) {
+        setIsMobileSidebarOpen(false);
+      }
+    } catch (loadError) {
+      console.warn("Private chat opening failed.", loadError);
+      setError("We could not open that saved chat right now.");
+    } finally {
+      setIsChatsLoading(false);
     }
   }
 
@@ -355,9 +451,32 @@ export default function DsiqChatPage() {
           )}
         </div>
 
-        <nav className="mt-7 flex flex-1 flex-col gap-1">
+        <nav className="mt-7 flex flex-1 flex-col gap-1 overflow-y-auto">
           {visibleItems.map((item) => {
             const Icon = item.icon;
+            const isNewChat = item.label === "New Chat";
+
+            if (isNewChat) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  title={expanded ? undefined : item.label}
+                  onClick={() => {
+                    startNewChat();
+                    if (mobile) {
+                      setIsMobileSidebarOpen(false);
+                    }
+                  }}
+                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                </button>
+              );
+            }
 
             return (
               <Link
@@ -378,6 +497,47 @@ export default function DsiqChatPage() {
               </Link>
             );
           })}
+
+          {expanded ? (
+            <div className="mt-5 border-t border-[color:var(--color-line)] pt-4">
+              <div className="mb-2 flex items-center justify-between px-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                  Recent
+                </p>
+                {isChatsLoading ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent" />
+                ) : null}
+              </div>
+
+              {privateChats.length ? (
+                <div className="flex flex-col gap-1">
+                  {privateChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      type="button"
+                      onClick={() => void openPrivateChat(chat.id, mobile)}
+                      className={`rounded-2xl px-3 py-2.5 text-left transition hover:bg-white ${
+                        currentChatId === chat.id ? "bg-white" : ""
+                      }`}
+                    >
+                      <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
+                        {chat.title}
+                      </span>
+                      {chat.lastMessage ? (
+                        <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
+                          {chat.lastMessage}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-3 text-xs leading-5 text-[color:var(--color-muted)]">
+                  Your saved chats will appear here.
+                </p>
+              )}
+            </div>
+          ) : null}
         </nav>
 
         <div className="relative border-t border-[color:var(--color-line)] pt-3">
