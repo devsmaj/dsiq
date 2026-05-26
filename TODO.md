@@ -105,6 +105,9 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Recent private chats appear in the expanded sidebar.
 - [x] Clicking a recent private chat reloads its conversation.
 - [x] Local chat-history fallback works when Firebase is unavailable.
+- [x] Active private chats show top-right New Chat and more-actions controls.
+- [x] Chat actions support draft to email, export to docs, add to project, and share.
+- [x] AI responses include copy action with copied check feedback.
 - [ ] Build real screens/panels for Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.

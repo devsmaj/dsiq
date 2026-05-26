@@ -30,6 +30,8 @@ It helps users answer practical questions like:
 - Private chat has a collapsible sidebar with New Chat, Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
 - Private chat auto-saves conversations and shows recent chats in the expanded sidebar.
 - Private chat history uses Firestore when available and local storage as a fallback.
+- Active private chats include top-right New Chat and more-actions controls for email draft, markdown export, project handoff, and share/copy.
+- AI responses include one-click copy feedback.
 - Profile popup includes Profile, Settings, Help, and Logout.
 - Settings is a shared appearance/language/data-controls panel used from public and private UI.
 - Profile editing supports role dropdown, goals dropdown, image URL, local image upload, cancel, local save, and Firebase sync when available.

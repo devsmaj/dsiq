@@ -23,6 +23,7 @@ declare module "lucide-react" {
   export const CircleUserRound: LucideIcon;
   export const Code2: LucideIcon;
   export const Compass: LucideIcon;
+  export const Copy: LucideIcon;
   export const Database: LucideIcon;
   export const Eye: LucideIcon;
   export const EyeOff: LucideIcon;

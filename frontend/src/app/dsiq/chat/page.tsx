@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleUserRound,
+  Check,
+  Copy,
   FileText,
   FolderKanban,
   GraduationCap,
@@ -15,6 +17,7 @@ import {
   LogOut,
   Menu,
   Mic,
+  MoreHorizontal,
   Plus,
   Search,
   Send,
@@ -111,6 +114,7 @@ export default function DsiqChatPage() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
+  const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
@@ -118,7 +122,11 @@ export default function DsiqChatPage() {
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
+  const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(
+    null,
+  );
   const [error, setError] = useState("");
+  const [actionStatus, setActionStatus] = useState("");
   const promptInputRef = useRef<HTMLInputElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -203,6 +211,8 @@ export default function DsiqChatPage() {
     }
 
     setError("");
+    setActionStatus("");
+    setIsChatActionsOpen(false);
     setPrompt("");
     setIsSending(true);
 
@@ -255,6 +265,8 @@ export default function DsiqChatPage() {
     setMessages([]);
     setPrompt("");
     setError("");
+    setActionStatus("");
+    setIsChatActionsOpen(false);
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
@@ -268,6 +280,8 @@ export default function DsiqChatPage() {
 
     try {
       setError("");
+      setActionStatus("");
+      setIsChatActionsOpen(false);
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
       setMessages(await loadPrivateChatMessages(user.uid, chatId));
@@ -279,6 +293,87 @@ export default function DsiqChatPage() {
       setError("We could not open that saved chat right now.");
     } finally {
       setIsChatsLoading(false);
+    }
+  }
+
+  function getChatText() {
+    return messages
+      .map((message) => {
+        const label = message.role === "user" ? "You" : "DSIQ";
+        return `${label}: ${message.text}`;
+      })
+      .join("\n\n");
+  }
+
+  async function copyText(text: string) {
+    await navigator.clipboard.writeText(text);
+  }
+
+  async function copyModelMessage(index: number, text: string) {
+    try {
+      await copyText(text);
+      setCopiedMessageIndex(index);
+      window.setTimeout(() => {
+        setCopiedMessageIndex((current) => (current === index ? null : current));
+      }, 1400);
+    } catch {
+      setActionStatus("Copy is not available in this browser.");
+    }
+  }
+
+  function draftToEmail() {
+    const body = encodeURIComponent(getChatText());
+    const subject = encodeURIComponent("DSIQ chat draft");
+    setIsChatActionsOpen(false);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+
+  function exportToDocs() {
+    const title =
+      privateChats.find((chat) => chat.id === currentChatId)?.title ||
+      "DSIQ chat";
+    const content = `# ${title}\n\n${getChatText()}`;
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsChatActionsOpen(false);
+    setActionStatus("Chat exported.");
+  }
+
+  function addToProject() {
+    if (currentChatId) {
+      window.sessionStorage.setItem("dsiq.pending-project-chat", currentChatId);
+    }
+
+    setIsChatActionsOpen(false);
+    setActionStatus("Chat is ready to add to a project.");
+    router.push("/dsiq/chat?panel=projects");
+  }
+
+  async function shareChat() {
+    const text = getChatText();
+    const shareData = {
+      title: "DSIQ chat",
+      text,
+    };
+
+    try {
+      if ("share" in navigator) {
+        await navigator.share(shareData);
+        setActionStatus("Share sheet opened.");
+      } else {
+        await copyText(text);
+        setActionStatus("Chat copied for sharing.");
+      }
+    } catch {
+      setActionStatus("Share was cancelled.");
+    } finally {
+      setIsChatActionsOpen(false);
     }
   }
 
@@ -658,6 +753,67 @@ export default function DsiqChatPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
+            {messages.length ? (
+              <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 lg:right-8 lg:top-6">
+                <button
+                  type="button"
+                  aria-label="New chat"
+                  onClick={startNewChat}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <SquarePen className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label="More chat actions"
+                    aria-expanded={isChatActionsOpen}
+                    onClick={() => setIsChatActionsOpen((value) => !value)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+                  </button>
+
+                  {isChatActionsOpen ? (
+                    <div className="absolute right-0 top-12 z-40 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+                      <button
+                        type="button"
+                        onClick={draftToEmail}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <FileText className="h-4 w-4" aria-hidden="true" />
+                        Draft to email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportToDocs}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <FileText className="h-4 w-4" aria-hidden="true" />
+                        Export to docs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addToProject}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <FolderKanban className="h-4 w-4" aria-hidden="true" />
+                        Add to project
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void shareChat()}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <Send className="h-4 w-4" aria-hidden="true" />
+                        Share
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
             <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:pt-10">
               <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-center">
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
@@ -677,6 +833,20 @@ export default function DsiqChatPage() {
                         }`}
                       >
                         {message.text}
+                        {message.role === "model" ? (
+                          <button
+                            type="button"
+                            onClick={() => void copyModelMessage(index, message.text)}
+                            className="mt-2 flex h-8 items-center gap-2 rounded-full px-2 text-xs font-medium text-[color:var(--color-muted)] transition hover:bg-white hover:text-[color:var(--color-text)]"
+                          >
+                            {copiedMessageIndex === index ? (
+                              <Check className="h-4 w-4 text-[color:var(--color-brand-strong)]" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                            {copiedMessageIndex === index ? "Copied" : "Copy"}
+                          </button>
+                        ) : null}
                       </article>
                     ))}
                     {isSending ? (
@@ -696,6 +866,12 @@ export default function DsiqChatPage() {
                 {error ? (
                   <p className="mx-auto mt-5 max-w-[760px] rounded-[1rem] border border-red-500/30 bg-red-500/10 px-4 py-3 text-left text-sm text-red-700">
                     {error}
+                  </p>
+                ) : null}
+
+                {actionStatus ? (
+                  <p className="mx-auto mt-5 max-w-[760px] rounded-[1rem] bg-[color:var(--color-brand-soft)] px-4 py-3 text-left text-sm text-[color:var(--color-text)]">
+                    {actionStatus}
                   </p>
                 ) : null}
               </div>
