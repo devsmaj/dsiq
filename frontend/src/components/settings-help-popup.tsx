@@ -281,7 +281,7 @@ export function SettingsHelpPopup() {
           >
             <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-3 md:border-b-0 md:border-r">
               <div className="mb-2 flex items-center justify-between md:hidden">
-                <p className="text-sm font-semibold">Settings & Help</p>
+                <p className="text-sm font-semibold">Settings</p>
                 <button
                   type="button"
                   aria-label="Close settings"

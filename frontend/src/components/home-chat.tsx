@@ -321,7 +321,7 @@ export function HomeChat() {
                 onClick={openSettingsPanel}
               >
                 <Settings className="h-4 w-4" aria-hidden="true" />
-                Settings & Help
+                Settings
               </button>
             </div>
           ) : null}
@@ -552,7 +552,7 @@ export function HomeChat() {
                 className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
                 onClick={openSettingsPanel}
               >
-                Settings & Help
+                Settings
               </button>
             </div>
           </aside>
