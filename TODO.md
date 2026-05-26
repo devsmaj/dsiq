@@ -77,7 +77,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Search Chats
   - [x] AI Mentor
   - [x] Learning Roadmap
-  - [x] Projects
+  - [x] Library
   - [x] Saved Chats
 - [x] Collapsed sidebar shows icons only:
   - [x] DSIQ logo
@@ -85,7 +85,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Search Chats
   - [x] AI Mentor
   - [x] Learning Roadmap
-  - [x] Projects
+  - [x] Library
   - [x] Profile avatar at bottom
 - [x] Bottom profile area shows avatar, user name, and Free.
 - [x] Profile popup includes user name and Free Plan.
@@ -103,25 +103,25 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Private chats auto-create from the first sent message.
 - [x] Private user/model messages save to chat history.
 - [x] Recent private chats appear in the expanded sidebar.
-- [x] Recent sidebar chat rows include a three-dot menu with Delete.
+- [x] Recent sidebar chat rows include a three-dot menu with Delete confirmation.
 - [x] Clicking a recent private chat reloads its conversation.
 - [x] Local chat-history fallback works when Firebase is unavailable.
 - [x] Active private chats show top-right New Chat and more-actions controls.
-- [x] Chat actions support draft to email, export to docs, add to project, and share.
+- [x] Chat actions support draft to email, export to docs, add to Library, and share.
 - [x] Top-right chat actions include Read aloud / Stop reading.
 - [x] AI responses include copy action with copied check feedback.
 - [x] Saved chat messages include stable message IDs and timestamps.
 - [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
 - [x] Saved Chats opens a real management panel with top-right X close.
-- [x] Saved Chats supports single-chat rename, export, add to project, and delete.
+- [x] Saved Chats supports single-chat rename, export, add to Library, and delete.
 - [x] Saved Chats supports multi-select bulk delete.
-- [x] Saved Chats supports multi-select bulk add to project.
+- [x] Saved Chats supports multi-select bulk add to Library.
 - [x] Deleted saved chats are hidden with a deletion timestamp.
-- [x] Projects opens a real projects panel with top-right X close.
-- [x] Users can create projects from the Projects panel.
-- [x] Users can edit a project name anytime and save it.
-- [x] Users can add the current chat to a project.
-- [x] Projects save to Firestore with local storage fallback.
+- [x] Library opens a real folder panel with top-right X close.
+- [x] Users can create folders from the Library panel.
+- [x] Users can edit a folder name anytime and save it.
+- [x] Users can add the current chat to a Library folder.
+- [x] Library folders save to Firestore with local storage fallback.
 - [ ] Build real screens/panels for AI Mentor and Learning Roadmap.
 - [x] Save private chat history to Firestore/local store.
 - [x] Load saved private chats from sidebar.
@@ -239,7 +239,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 
 - [ ] Repair local frontend dependencies so ESLint can run.
 - [x] Build the real private Search Chats panel.
-- [x] Build the real private Projects panel.
+- [x] Build the real private Library panel.
 - [x] Build the real private Saved Chats panel.
 - [ ] Build the real private sidebar panels for AI Mentor and Learning Roadmap.
 - [x] Persist and reload private chat history.

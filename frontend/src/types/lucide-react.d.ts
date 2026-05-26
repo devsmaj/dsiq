@@ -13,6 +13,7 @@ declare module "lucide-react" {
 
   export const ArrowLeft: LucideIcon;
   export const Bot: LucideIcon;
+  export const BookOpen: LucideIcon;
   export const BriefcaseBusiness: LucideIcon;
   export const CalendarCheck: LucideIcon;
   export const Camera: LucideIcon;
@@ -28,7 +29,6 @@ declare module "lucide-react" {
   export const Eye: LucideIcon;
   export const EyeOff: LucideIcon;
   export const FileText: LucideIcon;
-  export const FolderKanban: LucideIcon;
   export const GraduationCap: LucideIcon;
   export const HelpCircle: LucideIcon;
   export const ImageIcon: LucideIcon;

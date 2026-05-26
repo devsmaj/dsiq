@@ -10,7 +10,7 @@ import {
   Check,
   Copy,
   FileText,
-  FolderKanban,
+  BookOpen,
   GraduationCap,
   HelpCircle,
   ImageIcon,
@@ -45,12 +45,12 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
 import {
-  addChatToProject,
-  createProject,
-  listProjects,
-  updateProjectName,
-  type DsiqProject,
-} from "@/lib/project-store";
+  addChatToLibraryFolder,
+  createLibraryFolder,
+  listLibraryFolders,
+  updateLibraryFolderName,
+  type DsiqLibraryFolder,
+} from "@/lib/library-store";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -63,7 +63,7 @@ const sidebarItems = [
     href: "/dsiq/chat?panel=roadmap",
     icon: GraduationCap,
   },
-  { label: "Projects", href: "/dsiq/chat?panel=projects", icon: FolderKanban },
+  { label: "Library", href: "/dsiq/chat?panel=library", icon: BookOpen },
   { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 
@@ -151,17 +151,17 @@ export default function DsiqChatPage() {
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
-  const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
+  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
   const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isReadingAloud, setIsReadingAloud] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
-  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
-  const [newProjectName, setNewProjectName] = useState("");
-  const [projectDraftNames, setProjectDraftNames] = useState<
+  const [newLibraryFolderName, setNewLibraryFolderName] = useState("");
+  const [libraryFolderDraftNames, setLibraryFolderDraftNames] = useState<
     Record<string, string>
   >({});
   const [savedChatDraftTitles, setSavedChatDraftTitles] = useState<
@@ -170,7 +170,7 @@ export default function DsiqChatPage() {
   const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
-  const [projects, setProjects] = useState<DsiqProject[]>([]);
+  const [libraryFolders, setLibraryFolders] = useState<DsiqLibraryFolder[]>([]);
   const [activeSavedChatMenuId, setActiveSavedChatMenuId] = useState<
     string | null
   >(null);
@@ -182,7 +182,9 @@ export default function DsiqChatPage() {
   );
   const [isSavedSelectMode, setIsSavedSelectMode] = useState(false);
   const [deleteSavedChatIds, setDeleteSavedChatIds] = useState<string[]>([]);
-  const [projectPickerChatIds, setProjectPickerChatIds] = useState<string[]>(
+  const [confirmingRecentDeleteChatId, setConfirmingRecentDeleteChatId] =
+    useState<string | null>(null);
+  const [libraryPickerChatIds, setLibraryPickerChatIds] = useState<string[]>(
     [],
   );
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(
@@ -269,30 +271,30 @@ export default function DsiqChatPage() {
   }, [user]);
 
   useEffect(() => {
-    async function loadUserProjects() {
+    async function loadUserLibraryFolders() {
       if (!user) {
-        setProjects([]);
-        setProjectDraftNames({});
+        setLibraryFolders([]);
+        setLibraryFolderDraftNames({});
         return;
       }
 
       try {
-        setIsProjectsLoading(true);
-        const nextProjects = await listProjects(user.uid);
-        setProjects(nextProjects);
-        setProjectDraftNames(
+        setIsLibraryLoading(true);
+        const nextFolders = await listLibraryFolders(user.uid);
+        setLibraryFolders(nextFolders);
+        setLibraryFolderDraftNames(
           Object.fromEntries(
-            nextProjects.map((project) => [project.id, project.name]),
+            nextFolders.map((folder) => [folder.id, folder.name]),
           ),
         );
       } catch (loadError) {
-        console.warn("Projects loading failed.", loadError);
+        console.warn("Library loading failed.", loadError);
       } finally {
-        setIsProjectsLoading(false);
+        setIsLibraryLoading(false);
       }
     }
 
-    void loadUserProjects();
+    void loadUserLibraryFolders();
   }, [user]);
 
   async function refreshPrivateChats() {
@@ -311,21 +313,21 @@ export default function DsiqChatPage() {
     }
   }
 
-  async function refreshProjects() {
+  async function refreshLibraryFolders() {
     if (!user) {
       return;
     }
 
     try {
-      const nextProjects = await listProjects(user.uid);
-      setProjects(nextProjects);
-      setProjectDraftNames(
+      const nextFolders = await listLibraryFolders(user.uid);
+      setLibraryFolders(nextFolders);
+      setLibraryFolderDraftNames(
         Object.fromEntries(
-          nextProjects.map((project) => [project.id, project.name]),
+          nextFolders.map((folder) => [folder.id, folder.name]),
         ),
       );
     } catch (loadError) {
-      console.warn("Projects refresh failed.", loadError);
+      console.warn("Library refresh failed.", loadError);
     }
   }
 
@@ -407,7 +409,7 @@ export default function DsiqChatPage() {
     setIsChatActionsOpen(false);
     setActiveSavedChatMenuId(null);
     setIsSearchPanelOpen(false);
-    setIsProjectsPanelOpen(false);
+    setIsLibraryPanelOpen(false);
     closeSavedChatsPanel();
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
@@ -427,7 +429,7 @@ export default function DsiqChatPage() {
       setIsChatActionsOpen(false);
       setActiveSavedChatMenuId(null);
       setIsSearchPanelOpen(false);
-      setIsProjectsPanelOpen(false);
+      setIsLibraryPanelOpen(false);
       closeSavedChatsPanel();
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
@@ -446,7 +448,7 @@ export default function DsiqChatPage() {
   function openSearchPanel(mobile = false) {
     setIsSearchPanelOpen(true);
     setIsSavedChatsPanelOpen(false);
-    setIsProjectsPanelOpen(false);
+    setIsLibraryPanelOpen(false);
     setChatSearchQuery("");
     setActiveSavedChatMenuId(null);
     if (mobile) {
@@ -455,8 +457,8 @@ export default function DsiqChatPage() {
     void refreshPrivateChats();
   }
 
-  function openProjectsPanel(mobile = false) {
-    setIsProjectsPanelOpen(true);
+  function openLibraryPanel(mobile = false) {
+    setIsLibraryPanelOpen(true);
     setIsSavedChatsPanelOpen(false);
     setActionStatus("");
     setIsChatActionsOpen(false);
@@ -464,17 +466,17 @@ export default function DsiqChatPage() {
     if (mobile) {
       setIsMobileSidebarOpen(false);
     }
-    void refreshProjects();
+    void refreshLibraryFolders();
   }
 
   function openSavedChatsPanel(mobile = false) {
     setIsSavedChatsPanelOpen(true);
     setIsSearchPanelOpen(false);
-    setIsProjectsPanelOpen(false);
+    setIsLibraryPanelOpen(false);
     setActionStatus("");
     setActiveSavedChatMenuId(null);
     setRenamingSavedChatId(null);
-    setProjectPickerChatIds([]);
+    setLibraryPickerChatIds([]);
     setDeleteSavedChatIds([]);
     if (mobile) {
       setIsMobileSidebarOpen(false);
@@ -488,7 +490,7 @@ export default function DsiqChatPage() {
     setSelectedSavedChatIds([]);
     setActiveSavedChatMenuId(null);
     setRenamingSavedChatId(null);
-    setProjectPickerChatIds([]);
+    setLibraryPickerChatIds([]);
     setDeleteSavedChatIds([]);
   }
 
@@ -565,6 +567,7 @@ export default function DsiqChatPage() {
     }
 
     setDeleteSavedChatIds([]);
+    setConfirmingRecentDeleteChatId(null);
     setSelectedSavedChatIds((current) =>
       current.filter((chatId) => !chatIds.includes(chatId)),
     );
@@ -575,105 +578,106 @@ export default function DsiqChatPage() {
     );
   }
 
-  function openSavedChatProjectPicker(chatIds: string[]) {
-    setProjectPickerChatIds(chatIds);
+  function openSavedChatLibraryPicker(chatIds: string[]) {
+    setLibraryPickerChatIds(chatIds);
     setActiveSavedChatMenuId(null);
-    void refreshProjects();
+    setConfirmingRecentDeleteChatId(null);
+    void refreshLibraryFolders();
   }
 
-  async function handleAddSavedChatsToProject(projectId: string) {
-    if (!user || !projectPickerChatIds.length) {
+  async function handleAddSavedChatsToLibraryFolder(folderId: string) {
+    if (!user || !libraryPickerChatIds.length) {
       return;
     }
 
     await Promise.all(
-      projectPickerChatIds.map((chatId) =>
-        addChatToProject({
+      libraryPickerChatIds.map((chatId) =>
+        addChatToLibraryFolder({
           chatId,
-          projectId,
+          folderId,
           uid: user.uid,
         }),
       ),
     );
-    setProjectPickerChatIds([]);
+    setLibraryPickerChatIds([]);
     setSelectedSavedChatIds([]);
     setIsSavedSelectMode(false);
-    await refreshProjects();
+    await refreshLibraryFolders();
     setActionStatus(
-      projectPickerChatIds.length === 1
-        ? "Chat added to project."
-        : "Chats added to project.",
+      libraryPickerChatIds.length === 1
+        ? "Chat added to Library."
+        : "Chats added to Library.",
     );
   }
 
-  async function handleCreateProject() {
+  async function handleCreateLibraryFolder() {
     if (!user) {
-      setActionStatus("Sign in again to create a project.");
+      setActionStatus("Sign in again to create a library folder.");
       return;
     }
 
     try {
-      setIsProjectsLoading(true);
-      const projectId = await createProject(
+      setIsLibraryLoading(true);
+      const folderId = await createLibraryFolder(
         user.uid,
-        newProjectName || "Untitled project",
+        newLibraryFolderName || "Untitled folder",
       );
-      setNewProjectName("");
+      setNewLibraryFolderName("");
 
       if (currentChatId) {
-        await addChatToProject({
+        await addChatToLibraryFolder({
           chatId: currentChatId,
-          projectId,
+          folderId,
           uid: user.uid,
         });
-        setActionStatus("Project created and current chat added.");
+        setActionStatus("Library folder created and current chat added.");
       } else {
-        setActionStatus("Project created.");
+        setActionStatus("Library folder created.");
       }
 
-      await refreshProjects();
+      await refreshLibraryFolders();
     } finally {
-      setIsProjectsLoading(false);
+      setIsLibraryLoading(false);
     }
   }
 
-  async function handleSaveProjectName(projectId: string) {
+  async function handleSaveLibraryFolderName(folderId: string) {
     if (!user) {
-      setActionStatus("Sign in again to save the project.");
+      setActionStatus("Sign in again to save the library folder.");
       return;
     }
 
     try {
-      setIsProjectsLoading(true);
-      await updateProjectName({
-        name: projectDraftNames[projectId] || "Untitled project",
-        projectId,
+      setIsLibraryLoading(true);
+      await updateLibraryFolderName({
+        name: libraryFolderDraftNames[folderId] || "Untitled folder",
+        folderId,
         uid: user.uid,
       });
-      setActionStatus("Project name saved.");
-      await refreshProjects();
+      setActionStatus("Library folder saved.");
+      await refreshLibraryFolders();
     } finally {
-      setIsProjectsLoading(false);
+      setIsLibraryLoading(false);
     }
   }
 
-  async function handleAddCurrentChatToProject(projectId: string) {
+  async function handleAddCurrentChatToLibraryFolder(folderId: string) {
     if (!user || !currentChatId) {
-      setActionStatus("Start or open a chat before adding it to a project.");
+      setActionStatus("Start or open a chat before adding it to Library.");
       return;
     }
 
     try {
-      setIsProjectsLoading(true);
-      await addChatToProject({
+      setIsLibraryLoading(true);
+      await addChatToLibraryFolder({
         chatId: currentChatId,
-        projectId,
+        folderId,
         uid: user.uid,
       });
-      setActionStatus("Chat added to project.");
-      await refreshProjects();
+      setActionStatus("Chat added to Library.");
+      await refreshLibraryFolders();
     } finally {
-      setIsProjectsLoading(false);
+      setIsLibraryLoading(false);
     }
   }
 
@@ -774,9 +778,9 @@ export default function DsiqChatPage() {
     setActionStatus("Chat exported.");
   }
 
-  function addToProject() {
+  function addToLibrary() {
     setIsChatActionsOpen(false);
-    openProjectsPanel();
+    openLibraryPanel();
   }
 
   async function shareChat() {
@@ -975,7 +979,7 @@ export default function DsiqChatPage() {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
-            const isProjects = item.label === "Projects";
+            const isLibrary = item.label === "Library";
             const isSavedChats = item.label === "Saved Chats";
 
             if (isNewChat) {
@@ -1017,13 +1021,13 @@ export default function DsiqChatPage() {
               );
             }
 
-            if (isProjects) {
+            if (isLibrary) {
               return (
                 <button
                   key={item.label}
                   type="button"
                   title={expanded ? undefined : item.label}
-                  onClick={() => openProjectsPanel(mobile)}
+                  onClick={() => openLibraryPanel(mobile)}
                   className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
@@ -1109,25 +1113,50 @@ export default function DsiqChatPage() {
                         type="button"
                         aria-label={`More actions for ${chat.title}`}
                         aria-expanded={activeSavedChatMenuId === chat.id}
-                        onClick={() =>
+                        onClick={() => {
+                          setConfirmingRecentDeleteChatId(null);
                           setActiveSavedChatMenuId((current) =>
                             current === chat.id ? null : chat.id,
-                          )
-                        }
+                          );
+                        }}
                         className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--color-muted)] opacity-100 transition hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)]"
                       >
                         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
                       </button>
                       {activeSavedChatMenuId === chat.id ? (
-                        <div className="absolute right-2 top-10 z-50 w-40 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
-                          <button
-                            type="button"
-                            onClick={() => void handleDeleteSavedChats([chat.id])}
-                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            Delete
-                          </button>
+                        <div className="absolute right-2 top-10 z-50 w-48 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                          {confirmingRecentDeleteChatId === chat.id ? (
+                            <div className="space-y-2 px-1 py-1">
+                              <p className="px-2 text-xs font-medium text-[color:var(--color-text)]">
+                                Delete this chat?
+                              </p>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmingRecentDeleteChatId(null)}
+                                  className="h-8 flex-1 rounded-full border border-[color:var(--color-line)] text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteSavedChats([chat.id])}
+                                  className="h-8 flex-1 rounded-full bg-red-600 text-xs font-semibold text-white transition hover:bg-red-700"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingRecentDeleteChatId(chat.id)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              Delete
+                            </button>
+                          )}
                         </div>
                       ) : null}
                     </div>
@@ -1344,8 +1373,8 @@ export default function DsiqChatPage() {
                       Saved Chats
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                      Open, rename, export, delete, or add saved chats to a
-                      project.
+                      Open, rename, export, delete, or add saved chats to
+                      Library.
                     </p>
                   </div>
                   {privateChats.length ? (
@@ -1374,11 +1403,11 @@ export default function DsiqChatPage() {
                         type="button"
                         disabled={!selectedSavedChatIds.length}
                         onClick={() =>
-                          openSavedChatProjectPicker(selectedSavedChatIds)
+                          openSavedChatLibraryPicker(selectedSavedChatIds)
                         }
                         className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Add to project
+                        Add to Library
                       </button>
                       <button
                         type="button"
@@ -1392,40 +1421,41 @@ export default function DsiqChatPage() {
                   </div>
                 ) : null}
 
-                {projectPickerChatIds.length ? (
+                {libraryPickerChatIds.length ? (
                   <div className="mt-4 rounded-2xl border border-[color:var(--color-line)] p-3">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">Add to project</p>
+                      <p className="text-sm font-semibold">Add to Library</p>
                       <button
                         type="button"
-                        aria-label="Close project picker"
-                        onClick={() => setProjectPickerChatIds([])}
+                        aria-label="Close library picker"
+                        onClick={() => setLibraryPickerChatIds([])}
                         className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
-                    {projects.length ? (
+                    {libraryFolders.length ? (
                       <div className="mt-2 grid gap-2">
-                        {projects.map((project) => (
+                        {libraryFolders.map((folder) => (
                           <button
-                            key={project.id}
+                            key={folder.id}
                             type="button"
                             onClick={() =>
-                              void handleAddSavedChatsToProject(project.id)
+                              void handleAddSavedChatsToLibraryFolder(folder.id)
                             }
                             className="flex min-h-10 items-center justify-between rounded-xl bg-[color:var(--color-surface-strong)] px-3 text-left text-sm font-medium transition hover:bg-[color:var(--color-line)]"
                           >
-                            <span className="truncate">{project.name}</span>
+                            <span className="truncate">{folder.name}</span>
                             <span className="ml-3 shrink-0 text-xs text-[color:var(--color-muted)]">
-                              {project.chatIds.length} chats
+                              {folder.chatIds.length} chats
                             </span>
                           </button>
                         ))}
                       </div>
                     ) : (
                       <p className="mt-2 rounded-xl bg-[color:var(--color-surface-strong)] px-3 py-3 text-sm text-[color:var(--color-muted)]">
-                        Create a project first, then add saved chats to it.
+                        Create a library folder first, then add saved chats to
+                        it.
                       </p>
                     )}
                   </div>
@@ -1587,14 +1617,14 @@ export default function DsiqChatPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => openSavedChatProjectPicker([chat.id])}
+                                  onClick={() => openSavedChatLibraryPicker([chat.id])}
                                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                                 >
-                                  <FolderKanban
+                                  <BookOpen
                                     className="h-4 w-4"
                                     aria-hidden="true"
                                   />
-                                  Add to project
+                                  Add to Library
                                 </button>
                                 <button
                                   type="button"
@@ -1632,71 +1662,71 @@ export default function DsiqChatPage() {
             </div>
           ) : null}
 
-          {isProjectsPanelOpen ? (
+          {isLibraryPanelOpen ? (
             <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
               <section
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="projects-title"
+                aria-labelledby="library-title"
                 className="relative w-full max-w-xl rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
               >
                 <button
                   type="button"
-                  aria-label="Close projects"
-                  onClick={() => setIsProjectsPanelOpen(false)}
+                  aria-label="Close library folders"
+                  onClick={() => setIsLibraryPanelOpen(false)}
                   className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <div className="pr-10">
-                  <h2 id="projects-title" className="text-base font-semibold">
-                    Projects
+                  <h2 id="library-title" className="text-base font-semibold">
+                    Library
                   </h2>
                   <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                    Create projects, rename them anytime, and save chats into
-                    them.
+                    Create folders, rename them anytime, and save study chats
+                    into them.
                   </p>
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <input
                     type="text"
-                    value={newProjectName}
-                    onChange={(event) => setNewProjectName(event.target.value)}
-                    placeholder="New project name"
+                    value={newLibraryFolderName}
+                    onChange={(event) => setNewLibraryFolderName(event.target.value)}
+                    placeholder="New folder name"
                     className="h-11 rounded-2xl border border-[color:var(--color-line)] px-4 text-sm outline-none transition focus:border-[#111111]"
                   />
                   <button
                     type="button"
-                    onClick={() => void handleCreateProject()}
-                    disabled={isProjectsLoading}
+                    onClick={() => void handleCreateLibraryFolder()}
+                    disabled={isLibraryLoading}
                     className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    New Project
+                    New Folder
                   </button>
                 </div>
 
                 <div className="mt-4 max-h-[360px] overflow-y-auto">
-                  {projects.length ? (
+                  {libraryFolders.length ? (
                     <div className="flex flex-col gap-3">
-                      {projects.map((project) => {
+                      {libraryFolders.map((folder) => {
                         const hasCurrentChat = Boolean(
-                          currentChatId && project.chatIds.includes(currentChatId),
+                          currentChatId && folder.chatIds.includes(currentChatId),
                         );
 
                         return (
                           <article
-                            key={project.id}
+                            key={folder.id}
                             className="rounded-2xl border border-[color:var(--color-line)] p-3"
                           >
                             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                               <input
                                 type="text"
-                                value={projectDraftNames[project.id] ?? project.name}
+                                value={libraryFolderDraftNames[folder.id] ?? folder.name}
                                 onChange={(event) =>
-                                  setProjectDraftNames((current) => ({
+                                  setLibraryFolderDraftNames((current) => ({
                                     ...current,
-                                    [project.id]: event.target.value,
+                                    [folder.id]: event.target.value,
                                   }))
                                 }
                                 className="h-10 rounded-xl border border-[color:var(--color-line)] px-3 text-sm font-medium outline-none transition focus:border-[#111111]"
@@ -1704,9 +1734,9 @@ export default function DsiqChatPage() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  void handleSaveProjectName(project.id)
+                                  void handleSaveLibraryFolderName(folder.id)
                                 }
-                                disabled={isProjectsLoading}
+                                disabled={isLibraryLoading}
                                 className="inline-flex h-10 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 Save
@@ -1714,16 +1744,16 @@ export default function DsiqChatPage() {
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                               <p className="text-xs text-[color:var(--color-muted)]">
-                                {project.chatIds.length} saved chat
-                                {project.chatIds.length === 1 ? "" : "s"}
+                                {folder.chatIds.length} saved chat
+                                {folder.chatIds.length === 1 ? "" : "s"}
                               </p>
                               <button
                                 type="button"
                                 onClick={() =>
-                                  void handleAddCurrentChatToProject(project.id)
+                                  void handleAddCurrentChatToLibraryFolder(folder.id)
                                 }
                                 disabled={
-                                  isProjectsLoading ||
+                                  isLibraryLoading ||
                                   !currentChatId ||
                                   hasCurrentChat
                                 }
@@ -1740,7 +1770,7 @@ export default function DsiqChatPage() {
                     </div>
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
-                      No projects yet. Create one to organize your saved chats.
+                      No library folders yet. Create one to organize your saved chats.
                     </p>
                   )}
                 </div>
@@ -1807,11 +1837,11 @@ export default function DsiqChatPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={addToProject}
+                        onClick={addToLibrary}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                       >
-                        <FolderKanban className="h-4 w-4" aria-hidden="true" />
-                        Add to project
+                        <BookOpen className="h-4 w-4" aria-hidden="true" />
+                        Add to Library
                       </button>
                       <button
                         type="button"
@@ -1830,7 +1860,7 @@ export default function DsiqChatPage() {
             <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:pt-10">
               <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-center">
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
-                  DSIQ is ready to guide your skills, projects, missions, and
+                  DSIQ is ready to guide your skills, Library, missions, and
                   opportunities.
                 </p>
 

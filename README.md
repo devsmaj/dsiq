@@ -27,17 +27,17 @@ It helps users answer practical questions like:
 - Public `/chat` supports guest chat with temporary session storage.
 - Private workspace lives at `/dsiq/chat`.
 - `/dashboard` redirects to `/dsiq/chat`.
-- Private chat has a collapsible sidebar with New Chat, Search Chats, AI Mentor, Learning Roadmap, Projects, and Saved Chats.
+- Private chat has a collapsible sidebar with New Chat, Search Chats, AI Mentor, Learning Roadmap, Library, and Saved Chats.
 - Private chat auto-saves conversations and shows recent chats in the expanded sidebar.
 - Private chat history uses Firestore when available and local storage as a fallback.
-- Active private chats include top-right New Chat and more-actions controls for read aloud, email draft, markdown export, project handoff, and share/copy.
+- Active private chats include top-right New Chat and more-actions controls for read aloud, email draft, markdown export, Library handoff, and share/copy.
 - AI responses include one-click copy feedback.
-- Recent sidebar chat rows include a three-dot menu with Delete.
+- Recent sidebar chat rows include a three-dot menu with Delete confirmation.
 - Saved chat messages keep stable IDs/timestamps.
 - Search Chats opens a searchable saved-chat panel with a top-right close button.
-- Saved Chats opens a management panel with rename, export, add to project, delete, bulk delete, and bulk add to project.
-- Projects opens a panel where users can create projects, rename project names anytime, save the name, and add the current chat to a project.
-- Project data uses Firestore when available and local storage as a fallback.
+- Saved Chats opens a management panel with rename, export, add to Library, delete, bulk delete, and bulk add to Library.
+- Library opens a panel where students can create folders, rename folders anytime, save the name, and add the current chat to a folder.
+- Library folder data uses Firestore when available and local storage as a fallback.
 - Profile popup includes Profile, Settings, Help, and Logout.
 - Settings is a shared appearance/language/data-controls panel used from public and private UI.
 - Profile editing supports role dropdown, goals dropdown, image URL, local image upload, cancel, local save, and Firebase sync when available.
