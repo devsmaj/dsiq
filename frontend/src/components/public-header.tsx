@@ -46,13 +46,7 @@ export function PublicHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
-              onClick={showNavigationLoading}
-            >
-              Log in
-            </Link>
+            <Link href="/login">Log in</Link>
           </nav>
 
           <button
@@ -90,13 +84,7 @@ export function PublicHeader() {
             </nav>
 
             <div className="mt-4 border-t border-[color:var(--color-line)] pt-4">
-              <Link
-                href="/login"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium leading-none !text-white transition hover:bg-black"
-                onClick={showNavigationLoading}
-              >
-                Log in
-              </Link>
+              <Link href="/login">Log in</Link>
             </div>
           </div>
         ) : null}
