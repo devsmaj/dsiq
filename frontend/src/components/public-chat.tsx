@@ -108,29 +108,6 @@ export function PublicChat() {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
-    function updateStableChatHeight() {
-      if (document.activeElement === inputRef.current) {
-        return;
-      }
-
-      document.documentElement.style.setProperty(
-        "--dsiq-public-chat-height",
-        `${window.innerHeight}px`,
-      );
-    }
-
-    updateStableChatHeight();
-    window.addEventListener("resize", updateStableChatHeight);
-    window.addEventListener("orientationchange", updateStableChatHeight);
-
-    return () => {
-      window.removeEventListener("resize", updateStableChatHeight);
-      window.removeEventListener("orientationchange", updateStableChatHeight);
-      document.documentElement.style.removeProperty("--dsiq-public-chat-height");
-    };
-  }, []);
-
-  useEffect(() => {
     if (initialQuestion || (!shouldUseGuestChat && (isAuthLoading || user))) {
       return;
     }
@@ -362,10 +339,7 @@ export function PublicChat() {
   }
 
   return (
-    <main
-      className="flex flex-col overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]"
-      style={{ height: "var(--dsiq-public-chat-height, 100vh)" }}
-    >
+    <main className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
       <header className="shrink-0 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link

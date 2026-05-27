@@ -386,7 +386,7 @@ a {
     position: fixed;
     left: 1rem;
     right: 1rem;
-    top: calc(var(--dsiq-public-chat-height, 100vh) * 0.52);
+    top: 50svh;
     z-index: 40;
     margin-top: 0 !important;
     transform: translateY(-50%);
