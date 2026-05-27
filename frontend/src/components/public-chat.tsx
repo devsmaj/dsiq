@@ -401,14 +401,14 @@ export function PublicChat() {
                 <p className="mt-3 text-sm text-[color:var(--color-muted)]">
                   Guest chats are temporary in this browser session.
                 </p>
-                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <div className="mt-6 flex flex-wrap justify-center gap-2.5">
                   {quickActions.map((action) => (
                     <button
                       key={action.label}
                       type="button"
                       onClick={() => handleQuickAction(action.prompt)}
                       disabled={isSending}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-5 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-4 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {action.label}
                     </button>
@@ -454,7 +454,7 @@ export function PublicChat() {
 
         <form
           onSubmit={handleSubmit}
-          className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+          className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
           style={{
             marginBottom:
               "calc(env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px))",

@@ -399,7 +399,7 @@ export function HomeChat() {
               </h1>
 
               <form
-                className="mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+                className="mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
                 onSubmit={handlePromptSubmit}
                 style={{
                   transform:
@@ -495,12 +495,12 @@ export function HomeChat() {
                 </div>
               </form>
 
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-2.5">
                 {quickActions.map((mode, index) => (
                   <button
                     type="button"
                     key={mode.label}
-                    className="inline-flex min-h-12 animate-fade-up items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-5 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
+                    className="inline-flex min-h-10 animate-fade-up items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-4 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] sm:min-h-11"
                     style={{ animationDelay: `${index * 70}ms` }}
                     onClick={() => handleQuickPrompt(mode.prompt)}
                   >
