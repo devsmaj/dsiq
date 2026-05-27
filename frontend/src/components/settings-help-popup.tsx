@@ -1,25 +1,42 @@
 "use client";
 
 import {
+  Bell,
+  BookOpen,
   Check,
   ChevronDown,
+  CircleUserRound,
   Database,
+  Download,
+  Eye,
+  GraduationCap,
+  Lock,
+  LogOut,
+  Mail,
   Monitor,
   Moon,
   Settings,
+  Shield,
   Sun,
+  Trash2,
   X,
 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+
+import { useAuth } from "@/components/auth-provider";
+import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
+import {
+  updateLocalUserLanguage,
+  type StoredUserProfile,
+} from "@/lib/user-profile-store";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 const OPEN_SETTINGS_EVENT = "dsiq:open-settings-help";
 const LANGUAGE_STORAGE_KEY = "dsiq-language";
 const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
-
-// Set to false to disable Google Website Translator integration entirely.
-const ENABLE_GOOGLE_TRANSLATE = false;
-
+const DELETE_CONFIRMATION_TEXT = "DELETE";
+const ENABLE_GOOGLE_TRANSLATE = true;
 
 const languages = [
   { code: "auto", label: "Auto-detect" },
@@ -62,8 +79,23 @@ const appearanceOptions = [
   { value: "light", label: "Light", icon: Sun },
 ] as const;
 
+const privatePanels = [
+  { id: "general", label: "General", icon: Settings },
+  { id: "account", label: "Account", icon: CircleUserRound },
+  { id: "personalization", label: "Personalization", icon: GraduationCap },
+  { id: "privacy", label: "Privacy", icon: Shield },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "data", label: "Data Controls", icon: Database },
+] as const;
+
+const publicPanels = [
+  { id: "general", label: "General", icon: Settings },
+  { id: "data", label: "Data Controls", icon: Database },
+] as const;
+
 type LanguageCode = (typeof languages)[number]["code"];
 type AppearanceValue = (typeof appearanceOptions)[number]["value"];
+type PanelId = (typeof privatePanels)[number]["id"];
 
 type GoogleTranslateWindow = Window &
   typeof globalThis & {
@@ -77,6 +109,18 @@ type GoogleTranslateWindow = Window &
     };
     googleTranslateElementInit?: () => void;
   };
+
+export function openSettingsHelpPopup() {
+  window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT));
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function isLanguageCode(value: string | null): value is LanguageCode {
+  return languages.some((item) => item.code === value);
+}
 
 function getInitialAppearance(): AppearanceValue {
   if (typeof window === "undefined") {
@@ -95,17 +139,29 @@ function getInitialLanguage(): LanguageCode {
   }
 
   const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  return languages.some((item) => item.code === savedLanguage)
-    ? (savedLanguage as LanguageCode)
-    : "auto";
+  return isLanguageCode(savedLanguage) ? savedLanguage : "auto";
 }
 
-export function openSettingsHelpPopup() {
-  window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT));
+function getBrowserLanguage(): LanguageCode {
+  if (typeof navigator === "undefined") {
+    return "en";
+  }
+
+  const deviceLanguage = navigator.language || "en";
+  const exactMatch = languages.find((item) => item.code === deviceLanguage);
+  const baseMatch = languages.find(
+    (item) => item.code === deviceLanguage.split("-")[0],
+  );
+
+  return (exactMatch || baseMatch)?.code || "en";
+}
+
+function getAppliedLanguage(languageCode: LanguageCode): LanguageCode {
+  return languageCode === "auto" ? getBrowserLanguage() : languageCode;
 }
 
 function setTranslateCookie(languageCode: LanguageCode) {
-  const translateCode = languageCode === "auto" ? "en" : languageCode;
+  const translateCode = getAppliedLanguage(languageCode);
   const cookieValue = `/en/${translateCode}`;
   const maxAge = 60 * 60 * 24 * 365;
 
@@ -117,16 +173,24 @@ function getTranslateCombo() {
   return document.querySelector<HTMLSelectElement>(".goog-te-combo");
 }
 
-function applyGoogleTranslate(languageCode: LanguageCode) {
-  setTranslateCookie(languageCode);
-  document.documentElement.lang = languageCode === "auto" ? "en" : languageCode;
+function applyLanguage(languageCode: LanguageCode) {
+  const appliedLanguage = getAppliedLanguage(languageCode);
+  document.documentElement.lang = appliedLanguage;
+  document.documentElement.dir = ["ar", "fa", "he"].includes(appliedLanguage)
+    ? "rtl"
+    : "ltr";
 
+  if (!ENABLE_GOOGLE_TRANSLATE) {
+    return false;
+  }
+
+  setTranslateCookie(languageCode);
   const combo = getTranslateCombo();
   if (!combo) {
     return false;
   }
 
-  combo.value = languageCode === "auto" ? "en" : languageCode;
+  combo.value = appliedLanguage;
   combo.dispatchEvent(new Event("change"));
   return true;
 }
@@ -142,16 +206,42 @@ function applyAppearance(appearance: AppearanceValue) {
         : "light dark";
 }
 
+function getProviderLabel(user: { email: string | null } | null) {
+  return user?.email ? "Email / connected provider" : "Connected provider";
+}
+
+function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
+  const selectedGoals =
+    profile?.selectedGoals?.length
+      ? profile.selectedGoals
+      : goals?.length
+        ? goals
+        : [];
+
+  return selectedGoals.length ? selectedGoals.join(", ") : "Not set yet";
+}
+
 export function SettingsHelpPopup() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { authMode, deleteAccount, logout, user } = useAuth();
+  const { answers, profile } = useUserProfile();
+  const isPrivateUser = Boolean(user);
+  const visiblePanels = isPrivateUser ? privatePanels : publicPanels;
+  const retryTimerRef = useRef<number | null>(null);
+
   const [isOpen, setIsOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<"general" | "data">("general");
+  const [activePanel, setActivePanel] = useState<PanelId>("general");
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [appearance, setAppearance] =
     useState<AppearanceValue>(getInitialAppearance);
   const [language, setLanguage] = useState<LanguageCode>(getInitialLanguage);
-  const retryTimerRef = useRef<number | null>(null);
+  const [toastMessage, setToastMessage] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const selectedLanguage = useMemo(
     () => languages.find((item) => item.code === language) || languages[0],
@@ -168,6 +258,8 @@ export function SettingsHelpPopup() {
     function openPopup() {
       setIsOpen(true);
       setActivePanel("general");
+      setDeleteError("");
+      setDeleteConfirmText("");
     }
 
     window.addEventListener(OPEN_SETTINGS_EVENT, openPopup);
@@ -175,13 +267,34 @@ export function SettingsHelpPopup() {
   }, []);
 
   useEffect(() => {
-    applyAppearance(appearance);
-
-    // Disable Google Translate usage.
-    if (ENABLE_GOOGLE_TRANSLATE) {
-      setTranslateCookie(language);
+    if (
+      activePanel !== "general" &&
+      !visiblePanels.some((panel) => panel.id === activePanel)
+    ) {
+      setActivePanel("general");
     }
-  }, [appearance, language]);
+  }, [activePanel, visiblePanels]);
+
+  useEffect(() => {
+    applyAppearance(appearance);
+  }, [appearance]);
+
+  useEffect(() => {
+    applyLanguage(language);
+  }, [language]);
+
+  useEffect(() => {
+    const profileLanguage = profile?.languagePreference;
+    if (!isLanguageCode(profileLanguage || null)) {
+      return;
+    }
+
+    if (profileLanguage !== language) {
+      setLanguage(profileLanguage);
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, profileLanguage);
+      applyLanguage(profileLanguage);
+    }
+  }, [language, profile?.languagePreference]);
 
   useEffect(() => {
     if (!ENABLE_GOOGLE_TRANSLATE) return;
@@ -220,20 +333,12 @@ export function SettingsHelpPopup() {
   useEffect(() => {
     if (!ENABLE_GOOGLE_TRANSLATE) return;
 
-    const savedLanguage =
-      (window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null) ||
-      "auto";
-
-    if (savedLanguage === "auto") {
-      return;
-    }
-
     if (retryTimerRef.current) {
       window.clearTimeout(retryTimerRef.current);
     }
 
     retryTimerRef.current = window.setTimeout(() => {
-      applyGoogleTranslate(savedLanguage);
+      applyLanguage(language);
     }, 500);
 
     return () => {
@@ -241,7 +346,7 @@ export function SettingsHelpPopup() {
         window.clearTimeout(retryTimerRef.current);
       }
     };
-  }, [pathname]);
+  }, [language, pathname]);
 
   function selectAppearance(nextAppearance: AppearanceValue) {
     setAppearance(nextAppearance);
@@ -250,11 +355,84 @@ export function SettingsHelpPopup() {
     setIsAppearanceOpen(false);
   }
 
-  function selectLanguage(nextLanguage: LanguageCode) {
-    // Store selection, but do NOT apply Google Translate.
+  async function selectLanguage(nextLanguage: LanguageCode) {
     setLanguage(nextLanguage);
+    applyLanguage(nextLanguage);
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
     setIsLanguageOpen(false);
+
+    if (!user) {
+      return;
+    }
+
+    updateLocalUserLanguage(user.uid, nextLanguage);
+
+    if (authMode === "firebase") {
+      try {
+        await updateFirebaseUserLanguage({
+          uid: user.uid,
+          languagePreference: nextLanguage,
+        });
+      } catch (error) {
+        console.warn("Language preference sync failed.", error);
+      }
+    }
+  }
+
+  async function handleLogout() {
+    await logout();
+    setIsOpen(false);
+    router.replace("/");
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== DELETE_CONFIRMATION_TEXT) {
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      setDeleteError("");
+      await deleteAccount();
+      setIsDeleteModalOpen(false);
+      setIsOpen(false);
+      setToastMessage("Account deleted successfully");
+      await wait(900);
+      router.replace("/");
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "We could not delete your account right now.",
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }
+
+  function exportData() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const data = {
+      exportedAt: new Date().toISOString(),
+      profile,
+      onboarding: answers,
+      settings: {
+        appearance,
+        language,
+      },
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "dsiq-data.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -262,6 +440,8 @@ export function SettingsHelpPopup() {
       {ENABLE_GOOGLE_TRANSLATE ? (
         <div id="google_translate_element" className="dsiq-translate-widget" />
       ) : null}
+
+      {toastMessage ? <Toast message={toastMessage} /> : null}
 
       {isOpen ? (
         <div
@@ -276,46 +456,44 @@ export function SettingsHelpPopup() {
           <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="settings-help-title"
-            className="grid max-h-[88vh] w-full max-w-[760px] grid-cols-1 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] shadow-[0_26px_80px_rgba(0,0,0,0.22)] md:grid-cols-[230px_minmax(0,1fr)]"
+            aria-labelledby="settings-title"
+            className="grid max-h-[88vh] w-full max-w-[820px] grid-cols-1 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] shadow-[0_26px_80px_rgba(0,0,0,0.22)] md:grid-cols-[230px_minmax(0,1fr)]"
           >
             <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-3 md:border-b-0 md:border-r">
-              <div className="mb-2 flex items-center justify-between md:hidden">
+              <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold">Settings</p>
                 <button
                   type="button"
                   aria-label="Close settings"
                   onClick={() => setIsOpen(false)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-line)]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-line)] md:hidden"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActivePanel("general")}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition ${
-                  activePanel === "general"
-                    ? "bg-[color:var(--color-surface)] shadow-[0_8px_22px_rgba(0,0,0,0.06)]"
-                    : "hover:bg-[color:var(--color-surface)]"
-                }`}
-              >
-                <Settings className="h-4 w-4" aria-hidden="true" />
-                General
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePanel("data")}
-                className={`mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition ${
-                  activePanel === "data"
-                    ? "bg-[color:var(--color-surface)] shadow-[0_8px_22px_rgba(0,0,0,0.06)]"
-                    : "hover:bg-[color:var(--color-surface)]"
-                }`}
-              >
-                <Database className="h-4 w-4" aria-hidden="true" />
-                Data Controls
-              </button>
+              <nav className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
+                {visiblePanels.map((panel) => {
+                  const Icon = panel.icon;
+                  const isActive = activePanel === panel.id;
+
+                  return (
+                    <button
+                      key={panel.id}
+                      type="button"
+                      onClick={() => setActivePanel(panel.id)}
+                      className={`flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition md:w-full md:gap-3 md:py-3 ${
+                        isActive
+                          ? "bg-[color:var(--color-surface)] shadow-[0_8px_22px_rgba(0,0,0,0.06)]"
+                          : "hover:bg-[color:var(--color-surface)]"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                      {panel.label}
+                    </button>
+                  );
+                })}
+              </nav>
             </aside>
 
             <div className="min-h-[430px] overflow-y-auto p-5 sm:p-6">
@@ -331,120 +509,575 @@ export function SettingsHelpPopup() {
               </div>
 
               {activePanel === "general" ? (
-                <div>
-                  <h2
-                    id="settings-help-title"
-                    className="text-center text-lg font-semibold"
-                  >
-                    General
-                  </h2>
+                <GeneralPanel
+                  appearance={appearance}
+                  isAppearanceOpen={isAppearanceOpen}
+                  isLanguageOpen={isLanguageOpen}
+                  language={language}
+                  selectedAppearance={selectedAppearance}
+                  selectedLanguage={selectedLanguage}
+                  onAppearanceOpenChange={setIsAppearanceOpen}
+                  onLanguageOpenChange={setIsLanguageOpen}
+                  onSelectAppearance={selectAppearance}
+                  onSelectLanguage={(nextLanguage) => void selectLanguage(nextLanguage)}
+                />
+              ) : null}
 
-                  <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-                    <div className="grid gap-3 py-4 sm:grid-cols-[1fr_190px] sm:items-center">
-                      <div>
-                        <p className="text-sm font-semibold">Appearance</p>
-                        <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                          Match your device or choose a fixed look.
-                        </p>
-                      </div>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsAppearanceOpen((value) => !value);
-                            setIsLanguageOpen(false);
-                          }}
-                          className="flex h-11 w-full items-center justify-between rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                          aria-expanded={isAppearanceOpen}
-                        >
-                          <span>{selectedAppearance.label}</span>
-                          <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        {isAppearanceOpen ? (
-                          <div className="absolute right-0 top-12 z-20 w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
-                            {appearanceOptions.map((option) => {
-                              const Icon = option.icon;
-                              return (
-                                <button
-                                  key={option.value}
-                                  type="button"
-                                  onClick={() => selectAppearance(option.value)}
-                                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[color:var(--color-surface-strong)]"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4" aria-hidden="true" />
-                                    {option.label}
-                                  </span>
-                                  {appearance === option.value ? (
-                                    <Check className="h-4 w-4" aria-hidden="true" />
-                                  ) : null}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
+              {activePanel === "account" && isPrivateUser ? (
+                <AccountPanel
+                  email={user?.email || "No email available"}
+                  providerLabel={getProviderLabel(user)}
+                  onChangePassword={() => {
+                    setIsOpen(false);
+                    router.push("/forgot-password");
+                  }}
+                  onLogout={() => void handleLogout()}
+                  onProfile={() => {
+                    setIsOpen(false);
+                    router.push("/profile");
+                  }}
+                />
+              ) : null}
 
-                    <div className="grid gap-3 py-4 sm:grid-cols-[1fr_240px] sm:items-start">
-                      <div>
-                        <p className="text-sm font-semibold">Language</p>
-                        <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                          Translate DSIQ pages automatically after selection.
-                        </p>
-                      </div>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsLanguageOpen((value) => !value);
-                            setIsAppearanceOpen(false);
-                          }}
-                          className="flex h-11 w-full items-center justify-between rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                          aria-expanded={isLanguageOpen}
-                        >
-                          <span>{selectedLanguage.label}</span>
-                          <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        {isLanguageOpen ? (
-                          <div className="absolute right-0 top-12 z-30 max-h-72 w-full overflow-y-auto rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.14)]">
-                            {languages.map((option) => (
-                              <button
-                                key={option.code}
-                                type="button"
-                                onClick={() => selectLanguage(option.code)}
-                                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[color:var(--color-surface-strong)]"
-                              >
-                                <span>{option.label}</span>
-                                {language === option.code ? (
-                                  <Check className="h-4 w-4" aria-hidden="true" />
-                                ) : null}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h2 className="text-center text-lg font-semibold">
-                    Data Controls
-                  </h2>
-                  <div className="mt-7 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
-                    <p className="text-sm font-semibold">Chat and page data</p>
-                    <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-                      Your selected appearance and language are saved in this
-                      browser so every page keeps the same preference.
-                    </p>
-                  </div>
-                </div>
-              )}
+              {activePanel === "personalization" && isPrivateUser ? (
+                <PersonalizationPanel
+                  goals={getGoalSummary(profile, answers?.selectedGoals)}
+                  level={profile?.role || answers?.role || "Not set yet"}
+                />
+              ) : null}
+
+              {activePanel === "privacy" && isPrivateUser ? (
+                <PrivacyPanel
+                  onDeleteAccount={() => {
+                    setDeleteConfirmText("");
+                    setDeleteError("");
+                    setIsDeleteModalOpen(true);
+                  }}
+                  onExportData={exportData}
+                />
+              ) : null}
+
+              {activePanel === "notifications" && isPrivateUser ? (
+                <NotificationsPanel />
+              ) : null}
+
+              {activePanel === "data" ? (
+                <DataControlsPanel
+                  isPrivateUser={isPrivateUser}
+                  languageLabel={selectedLanguage.label}
+                />
+              ) : null}
             </div>
           </section>
         </div>
       ) : null}
+
+      {isDeleteModalOpen ? (
+        <DeleteAccountModal
+          confirmText={deleteConfirmText}
+          error={deleteError}
+          isDeleting={isDeletingAccount}
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={() => void handleDeleteAccount()}
+          onConfirmTextChange={setDeleteConfirmText}
+        />
+      ) : null}
     </>
+  );
+}
+
+function GeneralPanel({
+  appearance,
+  isAppearanceOpen,
+  isLanguageOpen,
+  language,
+  onAppearanceOpenChange,
+  onLanguageOpenChange,
+  onSelectAppearance,
+  onSelectLanguage,
+  selectedAppearance,
+  selectedLanguage,
+}: {
+  appearance: AppearanceValue;
+  isAppearanceOpen: boolean;
+  isLanguageOpen: boolean;
+  language: LanguageCode;
+  onAppearanceOpenChange: (value: boolean | ((current: boolean) => boolean)) => void;
+  onLanguageOpenChange: (value: boolean | ((current: boolean) => boolean)) => void;
+  onSelectAppearance: (value: AppearanceValue) => void;
+  onSelectLanguage: (value: LanguageCode) => void;
+  selectedAppearance: (typeof appearanceOptions)[number];
+  selectedLanguage: (typeof languages)[number];
+}) {
+  return (
+    <div>
+      <PanelTitle title="General" />
+      <div className="mt-7 divide-y divide-[color:var(--color-line)]">
+        <SettingRow
+          description="Match your device or choose a fixed look."
+          title="Appearance"
+        >
+          <DropdownButton
+            expanded={isAppearanceOpen}
+            label={selectedAppearance.label}
+            onClick={() => {
+              onAppearanceOpenChange((value) => !value);
+              onLanguageOpenChange(false);
+            }}
+          />
+          {isAppearanceOpen ? (
+            <DropdownMenu>
+              {appearanceOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <DropdownOption
+                    key={option.value}
+                    checked={appearance === option.value}
+                    icon={<Icon className="h-4 w-4" aria-hidden="true" />}
+                    label={option.label}
+                    onClick={() => onSelectAppearance(option.value)}
+                  />
+                );
+              })}
+            </DropdownMenu>
+          ) : null}
+        </SettingRow>
+
+        <SettingRow
+          description="Use one language preference across public and private pages."
+          title="Language"
+        >
+          <DropdownButton
+            expanded={isLanguageOpen}
+            label={selectedLanguage.label}
+            onClick={() => {
+              onLanguageOpenChange((value) => !value);
+              onAppearanceOpenChange(false);
+            }}
+          />
+          {isLanguageOpen ? (
+            <DropdownMenu scroll>
+              {languages.map((option) => (
+                <DropdownOption
+                  key={option.code}
+                  checked={language === option.code}
+                  label={option.label}
+                  onClick={() => onSelectLanguage(option.code)}
+                />
+              ))}
+            </DropdownMenu>
+          ) : null}
+        </SettingRow>
+
+        <SettingRow
+          description="Keep readable contrast, keyboard focus, and clean motion."
+          title="Accessibility"
+        >
+          <span className="text-sm font-medium text-[color:var(--color-muted)]">
+            Optimized
+          </span>
+        </SettingRow>
+      </div>
+    </div>
+  );
+}
+
+function AccountPanel({
+  email,
+  onChangePassword,
+  onLogout,
+  onProfile,
+  providerLabel,
+}: {
+  email: string;
+  onChangePassword: () => void;
+  onLogout: () => void;
+  onProfile: () => void;
+  providerLabel: string;
+}) {
+  return (
+    <div>
+      <PanelTitle title="Account" />
+      <div className="mt-7 divide-y divide-[color:var(--color-line)]">
+        <InfoRow icon={<Mail />} label="Email" value={email} />
+        <InfoRow
+          icon={<Lock />}
+          label="Connected login providers"
+          value={providerLabel}
+        />
+        <ActionRow
+          icon={<Lock />}
+          label="Change password"
+          onClick={onChangePassword}
+        />
+        <ActionRow
+          icon={<CircleUserRound />}
+          label="Profile settings"
+          onClick={onProfile}
+        />
+        <ActionRow icon={<LogOut />} label="Logout" onClick={onLogout} />
+      </div>
+    </div>
+  );
+}
+
+function PersonalizationPanel({
+  goals,
+  level,
+}: {
+  goals: string;
+  level: string;
+}) {
+  return (
+    <div>
+      <PanelTitle title="Personalization" />
+      <div className="mt-7 divide-y divide-[color:var(--color-line)]">
+        <InfoRow icon={<BookOpen />} label="Learning goals" value={goals} />
+        <InfoRow
+          icon={<GraduationCap />}
+          label="AI teacher style"
+          value="Step-by-step and practical"
+        />
+        <InfoRow
+          icon={<Eye />}
+          label="Focus preferences"
+          value="One focused task at a time"
+        />
+        <InfoRow icon={<GraduationCap />} label="Experience level" value={level} />
+        <InfoRow
+          icon={<BookOpen />}
+          label="Preferred learning style"
+          value="Practice with short explanations"
+        />
+      </div>
+    </div>
+  );
+}
+
+function PrivacyPanel({
+  onDeleteAccount,
+  onExportData,
+}: {
+  onDeleteAccount: () => void;
+  onExportData: () => void;
+}) {
+  return (
+    <div>
+      <PanelTitle title="Privacy" />
+      <div className="mt-7 divide-y divide-[color:var(--color-line)]">
+        <InfoRow
+          icon={<Trash2 />}
+          label="Clear chat history"
+          value="Manage saved chats from the chat sidebar"
+        />
+        <ActionRow icon={<Download />} label="Export data" onClick={onExportData} />
+        <InfoRow
+          icon={<Shield />}
+          label="AI memory controls"
+          value="Uses profile and onboarding context"
+        />
+        <ActionRow
+          danger
+          icon={<Trash2 />}
+          label="Delete account"
+          onClick={onDeleteAccount}
+        />
+      </div>
+    </div>
+  );
+}
+
+function NotificationsPanel() {
+  return (
+    <div>
+      <PanelTitle title="Notifications" />
+      <div className="mt-7 divide-y divide-[color:var(--color-line)]">
+        <InfoRow icon={<Mail />} label="Email notifications" value="Off" />
+        <InfoRow icon={<Bell />} label="Study reminders" value="Off" />
+        <InfoRow icon={<Bell />} label="Focus reminders" value="Off" />
+      </div>
+    </div>
+  );
+}
+
+function DataControlsPanel({
+  isPrivateUser,
+  languageLabel,
+}: {
+  isPrivateUser: boolean;
+  languageLabel: string;
+}) {
+  return (
+    <div>
+      <PanelTitle title="Data Controls" />
+      <div className="mt-7 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+        <p className="text-sm font-semibold">Saved preferences</p>
+        <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
+          Appearance and language are saved in this browser. Current language:
+          {" "}
+          <span className="font-semibold text-[color:var(--color-text)]">
+            {languageLabel}
+          </span>
+          .
+        </p>
+        {isPrivateUser ? (
+          <p className="mt-3 text-sm leading-7 text-[color:var(--color-muted)]">
+            Your language preference is also saved to your profile when cloud
+            sync is available.
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccountModal({
+  confirmText,
+  error,
+  isDeleting,
+  onCancel,
+  onConfirm,
+  onConfirmTextChange,
+}: {
+  confirmText: string;
+  error: string;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onConfirmTextChange: (value: string) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
+              Delete your account?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+              This action cannot be undone. Your chats, profile, and saved data
+              will be permanently removed.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close delete account modal"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <label className="mt-5 block">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+            Type DELETE to confirm
+          </span>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(event) => onConfirmTextChange(event.target.value)}
+            className="mt-2 h-12 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+          />
+        </label>
+
+        {error ? (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={confirmText !== DELETE_CONFIRMATION_TEXT || isDeleting}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isDeleting ? <LoadingSpinner /> : null}
+            Delete account
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PanelTitle({ title }: { title: string }) {
+  return (
+    <h2 id="settings-title" className="text-center text-lg font-semibold">
+      {title}
+    </h2>
+  );
+}
+
+function SettingRow({
+  children,
+  description,
+  title,
+}: {
+  children: React.ReactNode;
+  description: string;
+  title: string;
+}) {
+  return (
+    <div className="grid gap-3 py-4 sm:grid-cols-[1fr_230px] sm:items-start">
+      <div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+          {description}
+        </p>
+      </div>
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactElement;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-4">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="mt-1 truncate text-xs text-[color:var(--color-muted)]">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ActionRow({
+  danger,
+  icon,
+  label,
+  onClick,
+}: {
+  danger?: boolean;
+  icon: React.ReactElement;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 py-4 text-left transition hover:text-black ${
+        danger ? "text-red-600" : "text-[color:var(--color-text)]"
+      }`}
+    >
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          danger
+            ? "bg-red-50 text-red-600"
+            : "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]"
+        }`}
+      >
+        {icon}
+      </span>
+      <span className="text-sm font-semibold">{label}</span>
+    </button>
+  );
+}
+
+function DropdownButton({
+  expanded,
+  label,
+  onClick,
+}: {
+  expanded: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-11 w-full items-center justify-between rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+      aria-expanded={expanded}
+    >
+      <span>{label}</span>
+      <ChevronDown className="h-4 w-4" aria-hidden="true" />
+    </button>
+  );
+}
+
+function DropdownMenu({
+  children,
+  scroll,
+}: {
+  children: React.ReactNode;
+  scroll?: boolean;
+}) {
+  return (
+    <div
+      className={`absolute right-0 top-12 z-30 w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.14)] ${
+        scroll ? "max-h-72 overflow-y-auto" : ""
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DropdownOption({
+  checked,
+  icon,
+  label,
+  onClick,
+}: {
+  checked: boolean;
+  icon?: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[color:var(--color-surface-strong)]"
+    >
+      <span className="flex items-center gap-2">
+        {icon}
+        {label}
+      </span>
+      {checked ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
+    </button>
+  );
+}
+
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="fixed left-1/2 top-4 z-[110] -translate-x-1/2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-[0_14px_34px_rgba(15,23,42,0.12)] transition">
+      {message}
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <span
+      className="block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+      aria-label="Loading"
+    />
   );
 }

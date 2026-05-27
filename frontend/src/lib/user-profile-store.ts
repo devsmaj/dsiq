@@ -22,6 +22,7 @@ export type StoredUserProfile = {
   selectedGoals?: string[];
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
+  languagePreference?: string;
   updatedAt?: string;
 };
 
@@ -124,6 +125,23 @@ export function updateLocalUserProfileImage(uid: string, profileImageUrl: string
             profileImageUrl,
           }
         : existing.onboardingAnswers,
+      updatedAt: new Date().toISOString(),
+    }),
+  );
+}
+
+export function updateLocalUserLanguage(uid: string, languagePreference: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const existing = readLocalUserProfile(uid) || {};
+
+  window.localStorage.setItem(
+    getProfileKey(uid),
+    JSON.stringify({
+      ...existing,
+      languagePreference,
       updatedAt: new Date().toISOString(),
     }),
   );

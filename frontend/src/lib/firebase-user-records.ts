@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -8,6 +7,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -40,6 +40,7 @@ export type FirebaseUserProfile = {
   displayName?: string | null;
   email?: string | null;
   photoURL?: string | null;
+  languagePreference?: string;
 };
 
 export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
@@ -164,6 +165,26 @@ export async function updateFirebaseUserProfileImage(input: {
   );
 }
 
+export async function updateFirebaseUserLanguage(input: {
+  languagePreference: string;
+  uid: string;
+}) {
+  if (!db) {
+    return;
+  }
+
+  const userRef = doc(db, "users", input.uid);
+
+  await setDoc(
+    userRef,
+    {
+      languagePreference: input.languagePreference,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
 export async function isFirebaseNicknameTaken(uid: string, nickname: string) {
   if (!db) {
     return false;
@@ -205,5 +226,20 @@ export async function deleteFirebaseUserRecord(uid: string) {
   }
 
   const userRef = doc(db, "users", uid);
-  await deleteDoc(userRef);
+  const chatsSnapshot = await getDocs(collection(userRef, "chats"));
+  const batch = writeBatch(db);
+
+  for (const chatDocument of chatsSnapshot.docs) {
+    const messagesSnapshot = await getDocs(
+      collection(chatDocument.ref, "messages"),
+    );
+
+    messagesSnapshot.docs.forEach((messageDocument) => {
+      batch.delete(messageDocument.ref);
+    });
+    batch.delete(chatDocument.ref);
+  }
+
+  batch.delete(userRef);
+  await batch.commit();
 }
