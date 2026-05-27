@@ -9,6 +9,10 @@ import { auth } from "@/lib/firebase";
 import { withTimeout } from "@/lib/async-timeout";
 
 const RESEND_COUNTDOWN_SECONDS = 30;
+const PASSWORD_RESET_ACTION_SETTINGS = {
+  url: "https://devsmaj.github.io/dsiq/reset-password",
+  handleCodeInApp: true,
+};
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -79,7 +83,7 @@ export default function ForgotPasswordPage() {
     try {
       setIsLoading(true);
       await withTimeout(
-        sendPasswordResetEmail(auth, email),
+        sendPasswordResetEmail(auth, email, PASSWORD_RESET_ACTION_SETTINGS),
         undefined,
         "Password reset request timed out.",
       );
