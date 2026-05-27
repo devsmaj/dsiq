@@ -393,9 +393,9 @@ export function PublicChat() {
 
         <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {messages.length === 0 ? (
-            <div className="flex min-h-full items-center justify-center text-center">
+            <div className="flex min-h-full items-center justify-center pt-8 text-center sm:pt-0">
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <h1 className="text-3xl font-semibold tracking-tight text-[#111111]">
                   Ask DSIQ anything.
                 </h1>
                 <p className="mt-3 text-sm text-[color:var(--color-muted)]">
@@ -408,7 +408,7 @@ export function PublicChat() {
                       type="button"
                       onClick={() => handleQuickAction(action.prompt)}
                       disabled={isSending}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-5 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {action.label}
                     </button>

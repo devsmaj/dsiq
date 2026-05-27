@@ -385,9 +385,9 @@ export function HomeChat() {
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-[72px] sm:px-8 lg:pt-[82px]">
+          <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-14 sm:px-8 sm:pt-[72px] lg:pt-[82px]">
             <div className="w-full max-w-[760px]">
-              <h1 className="text-[24px] font-normal leading-[1.18] text-[color:var(--color-text)] sm:text-[34px]">
+              <h1 className="text-[24px] font-medium leading-[1.18] text-[#111111] sm:text-[34px]">
                 <span className="block">Meet DSIQ,</span>
                 <span
                   key={heroLines[heroLineIndex]}
@@ -499,7 +499,7 @@ export function HomeChat() {
                   <button
                     type="button"
                     key={mode.label}
-                    className="inline-flex min-h-12 animate-fade-up items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
+                    className="inline-flex min-h-12 animate-fade-up items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-5 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] sm:min-h-14 sm:text-base"
                     style={{ animationDelay: `${index * 70}ms` }}
                     onClick={() => handleQuickPrompt(mode.prompt)}
                   >
