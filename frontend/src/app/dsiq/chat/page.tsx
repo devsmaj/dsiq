@@ -1864,7 +1864,7 @@ export default function DsiqChatPage() {
             <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:pt-10">
               <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-center">
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
-                  DSIQ is ready to guide your skills, Library, missions, and
+                  DSIQ is ready to guide your skills, learning, missions, and
                   opportunities.
                 </p>
 
