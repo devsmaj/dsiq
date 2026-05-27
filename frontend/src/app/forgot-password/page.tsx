@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { sendPasswordResetEmail } from "firebase/auth";
 
 import { AuthShell } from "@/components/auth-shell";
 import { auth } from "@/lib/firebase";
 import { withTimeout } from "@/lib/async-timeout";
+
+const RESEND_COUNTDOWN_SECONDS = 30;
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -27,9 +29,45 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const isButtonDisabled = isLoading || resendCountdown > 0;
+
+  useEffect(() => {
+    if (resendCountdown <= 0) {
+      return;
+    }
+
+    const countdownTimer = window.setTimeout(() => {
+      setResendCountdown((seconds) => Math.max(seconds - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(countdownTimer);
+  }, [resendCountdown]);
+
+  function getButtonContent() {
+    if (isLoading) {
+      return (
+        <span className="inline-flex items-center justify-center gap-2">
+          <LoadingSpinner />
+          Sending...
+        </span>
+      );
+    }
+
+    if (resendCountdown > 0) {
+      return `Resend in ${resendCountdown}s`;
+    }
+
+    return message ? "Resend reset link" : "Send reset link";
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isButtonDisabled) {
+      return;
+    }
+
     setMessage("");
     setError("");
 
@@ -46,6 +84,7 @@ export default function ForgotPasswordPage() {
         "Password reset request timed out.",
       );
       setMessage("Reset link sent. Check your email for the next step.");
+      setResendCountdown(RESEND_COUNTDOWN_SECONDS);
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
     } finally {
@@ -86,10 +125,10 @@ export default function ForgotPasswordPage() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isButtonDisabled}
           className="w-full rounded-[var(--radius-md)] bg-[#111111] px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Sending reset link..." : "Send reset link"}
+          {getButtonContent()}
         </button>
       </form>
 
@@ -99,5 +138,14 @@ export default function ForgotPasswordPage() {
         </Link>
       </p>
     </AuthShell>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <span
+      className="block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+      aria-label="Loading"
+    />
   );
 }
