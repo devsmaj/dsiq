@@ -73,6 +73,11 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function getProfileRoleLabel(role?: string | null) {
+  const trimmedRole = role?.trim();
+  return trimmedRole || "Member";
+}
+
 export default function DsiqMentorPage() {
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -92,6 +97,7 @@ export default function DsiqMentorPage() {
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
   const role = profile?.role || answers?.role || "student";
+  const profileRoleLabel = getProfileRoleLabel(profile?.role || answers?.role);
   const goals =
     profile?.selectedGoals?.length
       ? profile.selectedGoals
@@ -289,7 +295,7 @@ export default function DsiqMentorPage() {
                   {displayName}
                 </span>
                 <span className="block text-xs text-[color:var(--color-muted)]">
-                  Free
+                  {profileRoleLabel}
                 </span>
               </span>
             ) : null}

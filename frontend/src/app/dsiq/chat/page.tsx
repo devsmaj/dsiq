@@ -118,6 +118,11 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function getProfileRoleLabel(role?: string | null) {
+  const trimmedRole = role?.trim();
+  return trimmedRole || "Member";
+}
+
 function createClientMessageId() {
   if (typeof window !== "undefined" && window.crypto?.randomUUID) {
     return `message-${window.crypto.randomUUID()}`;
@@ -207,6 +212,7 @@ export default function DsiqChatPage() {
     "Saleh";
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
+  const profileRoleLabel = getProfileRoleLabel(profile?.role || answers?.role);
   const filteredPrivateChats = privateChats.filter((chat) => {
     const query = chatSearchQuery.trim().toLowerCase();
     if (!query) {
@@ -1191,7 +1197,7 @@ export default function DsiqChatPage() {
                   {displayName}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--color-muted)]">
-                  Free Plan
+                  {profileRoleLabel}
                 </p>
               </div>
               <Link
@@ -1251,7 +1257,7 @@ export default function DsiqChatPage() {
                   {displayName}
                 </span>
                 <span className="block text-xs text-[color:var(--color-muted)]">
-                  Free
+                  {profileRoleLabel}
                 </span>
               </span>
             ) : null}
