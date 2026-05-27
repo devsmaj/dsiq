@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { DsiqLogo } from "@/components/dsiq-logo";
 
 const privateNavItems = [
-  { href: "/dsiq/chat", label: "Chat" },
+  { href: "/dsiq/chat", label: "Try Chat" },
   { href: "/profile", label: "Profile" },
 ];
 

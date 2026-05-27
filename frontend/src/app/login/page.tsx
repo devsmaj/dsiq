@@ -8,8 +8,9 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth-shell";
 import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
-import { UI_LOADING_TIMEOUT_MS } from "@/lib/async-timeout";
 import { getPostAuthPath } from "@/lib/auth-routing";
+
+const SUCCESS_REDIRECT_DELAY_MS = 700;
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -74,6 +75,10 @@ function getSafeNextPath() {
   return nextPath;
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 async function getLoginDestination(
   user: { uid: string },
   authMode: "firebase" | "local",
@@ -98,26 +103,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "demo" | "email" | "google" | null
   >(null);
   const isLoading = loadingAction !== null;
 
   useEffect(() => {
-    if (!loadingAction) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setLoadingAction(null);
-    }, UI_LOADING_TIMEOUT_MS);
-
-    return () => window.clearTimeout(timeout);
-  }, [loadingAction]);
-
-  useEffect(() => {
     async function routeSignedInUserAwayFromLogin() {
-      if (isAuthLoading || !user) {
+      if (isAuthLoading || !user || loadingAction) {
         return;
       }
 
@@ -125,47 +119,54 @@ export default function LoginPage() {
     }
 
     void routeSignedInUserAwayFromLogin();
-  }, [authMode, isAuthLoading, router, user]);
+  }, [authMode, isAuthLoading, loadingAction, router, user]);
+
+  async function routeAfterSuccessfulLogin(nextUser: { uid: string }) {
+    const destination = await getLoginDestination(nextUser, authMode);
+    setSuccessMessage("Login successful");
+    await wait(SUCCESS_REDIRECT_DELAY_MS);
+    router.replace(destination);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     try {
       setLoadingAction("email");
       const nextUser = await loginOrSignupWithEmail({ email, password });
-      router.replace(await getLoginDestination(nextUser, authMode));
+      await routeAfterSuccessfulLogin(nextUser);
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
-    } finally {
       setLoadingAction(null);
     }
   }
 
   async function handleGoogleLogin() {
     setError("");
+    setSuccessMessage("");
 
     try {
       setLoadingAction("google");
       const nextUser = await loginWithGoogle();
-      router.replace(await getLoginDestination(nextUser, authMode));
+      await routeAfterSuccessfulLogin(nextUser);
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
-    } finally {
       setLoadingAction(null);
     }
   }
 
   async function handleAppleLogin() {
     setError("");
+    setSuccessMessage("");
 
     try {
       setLoadingAction("apple");
       const nextUser = await loginWithApple();
-      router.replace(await getLoginDestination(nextUser, authMode));
+      await routeAfterSuccessfulLogin(nextUser);
     } catch (submissionError) {
       setError(getAuthErrorMessage(submissionError));
-    } finally {
       setLoadingAction(null);
     }
   }
@@ -175,6 +176,8 @@ export default function LoginPage() {
       title="Login or Sign Up"
       description="Continue to your chats, coaching, missions, and progress."
     >
+      {successMessage ? <SuccessToast message={successMessage} /> : null}
+
       <button
         type="button"
         onClick={handleGoogleLogin}
@@ -182,7 +185,16 @@ export default function LoginPage() {
         className="mb-3 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <GoogleIcon />
-        <span>{loadingAction === "google" ? <LoadingSpinner /> : "Continue with Google"}</span>
+        <span className="inline-flex items-center justify-center gap-2">
+          {loadingAction === "google" ? (
+            <>
+              <LoadingSpinner />
+              Signing in...
+            </>
+          ) : (
+            "Continue with Google"
+          )}
+        </span>
         <span />
       </button>
 
@@ -193,7 +205,16 @@ export default function LoginPage() {
         className="mb-5 grid h-12 w-full grid-cols-[1.5rem_1fr_1.5rem] items-center rounded-full border border-[color:var(--color-line)] bg-white px-5 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <AppleIcon />
-        <span>{loadingAction === "apple" ? <LoadingSpinner /> : "Continue with Apple"}</span>
+        <span className="inline-flex items-center justify-center gap-2">
+          {loadingAction === "apple" ? (
+            <>
+              <LoadingSpinner />
+              Loading...
+            </>
+          ) : (
+            "Continue with Apple"
+          )}
+        </span>
         <span />
       </button>
 
@@ -203,7 +224,7 @@ export default function LoginPage() {
         disabled={isLoading}
         className="mb-5 h-11 w-full rounded-full text-sm font-medium text-[#111111] underline underline-offset-4 transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Chat
+        Try Chat
       </button>
 
       <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase text-[color:var(--color-text)]">
@@ -256,7 +277,14 @@ export default function LoginPage() {
           disabled={isLoading}
           className="h-12 w-full rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loadingAction === "email" ? <LoadingSpinner /> : "Continue"}
+          {loadingAction === "email" ? (
+            <span className="inline-flex items-center justify-center gap-2">
+              <LoadingSpinner />
+              Loading...
+            </span>
+          ) : (
+            "Continue"
+          )}
         </button>
       </form>
 
@@ -278,10 +306,18 @@ export default function LoginPage() {
   );
 }
 
+function SuccessToast({ message }: { message: string }) {
+  return (
+    <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-[0_14px_34px_rgba(15,23,42,0.12)] transition">
+      {message}
+    </div>
+  );
+}
+
 function LoadingSpinner() {
   return (
     <span
-      className="mx-auto block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      className="block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
       aria-label="Loading"
     />
   );

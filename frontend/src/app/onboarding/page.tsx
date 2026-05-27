@@ -32,6 +32,8 @@ import {
   saveLocalOnboardingAnswers,
 } from "@/lib/user-profile-store";
 
+const SUCCESS_REDIRECT_DELAY_MS = 700;
+
 const goalOptions = [
   { label: "Learn programming", icon: Code2 },
   { label: "Build real projects", icon: Rocket },
@@ -56,6 +58,10 @@ const roleOptions = [
 type OnboardingStep = "account" | "goals" | "success";
 type NicknameStatus = "idle" | "checking" | "available" | "taken" | "error";
 
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export default function OnboardingPage() {
   const [step, setStep] = useState<OnboardingStep>("account");
   const [fullName, setFullName] = useState("");
@@ -64,6 +70,7 @@ export default function OnboardingPage() {
   const [role, setRole] = useState("Student");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -205,6 +212,7 @@ export default function OnboardingPage() {
     try {
       setIsSubmitting(true);
       setError("");
+      setSuccessMessage("");
 
       const saveSucceeded = (() => {
         try {
@@ -240,6 +248,8 @@ export default function OnboardingPage() {
         ONBOARDING_CHAT_LOADING_BYPASS_KEY,
         String(Date.now()),
       );
+      setSuccessMessage("Account created successfully");
+      await wait(SUCCESS_REDIRECT_DELAY_MS);
       router.replace("/dsiq/chat");
       return;
 
@@ -259,6 +269,8 @@ export default function OnboardingPage() {
   return (
     <PrivateRoute>
       <main className="flex min-h-screen items-center justify-center bg-[color:var(--color-background)] px-4 py-10 text-[color:var(--color-text)] sm:px-6 lg:px-8">
+        {successMessage ? <SuccessToast message={successMessage} /> : null}
+
         <section className="w-full max-w-[560px] rounded-[2rem] border border-[color:var(--color-line)] bg-white px-5 py-7 shadow-[0_24px_80px_rgba(11,37,39,0.10)] sm:px-8 sm:py-9">
           {step === "account" ? (
             <div>
@@ -513,6 +525,14 @@ export default function OnboardingPage() {
         </section>
       </main>
     </PrivateRoute>
+  );
+}
+
+function SuccessToast({ message }: { message: string }) {
+  return (
+    <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-[0_14px_34px_rgba(15,23,42,0.12)] transition">
+      {message}
+    </div>
   );
 }
 
