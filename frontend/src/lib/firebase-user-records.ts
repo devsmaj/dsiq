@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -7,7 +8,6 @@ import {
   serverTimestamp,
   setDoc,
   where,
-  writeBatch,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
@@ -225,21 +225,42 @@ export async function deleteFirebaseUserRecord(uid: string) {
     return;
   }
 
-  const userRef = doc(db, "users", uid);
-  const chatsSnapshot = await getDocs(collection(userRef, "chats"));
-  const batch = writeBatch(db);
+  const firestore = db;
+  const userRef = doc(firestore, "users", uid);
+  const chatsSnapshot = await getDocs(
+    collection(firestore, "users", uid, "chats"),
+  );
 
   for (const chatDocument of chatsSnapshot.docs) {
+    const chatRef = doc(firestore, "users", uid, "chats", chatDocument.id);
     const messagesSnapshot = await getDocs(
-      collection(chatDocument.ref, "messages"),
+      collection(
+        firestore,
+        "users",
+        uid,
+        "chats",
+        chatDocument.id,
+        "messages",
+      ),
     );
 
-    messagesSnapshot.docs.forEach((messageDocument) => {
-      batch.delete(messageDocument.ref);
-    });
-    batch.delete(chatDocument.ref);
+    await Promise.all(
+      messagesSnapshot.docs.map((messageDocument) =>
+        deleteDoc(
+          doc(
+            firestore,
+            "users",
+            uid,
+            "chats",
+            chatDocument.id,
+            "messages",
+            messageDocument.id,
+          ),
+        ),
+      ),
+    );
+    await deleteDoc(chatRef);
   }
 
-  batch.delete(userRef);
-  await batch.commit();
+  await deleteDoc(userRef);
 }

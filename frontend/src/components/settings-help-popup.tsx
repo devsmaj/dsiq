@@ -1,18 +1,17 @@
 "use client";
 
 import {
-  Bell,
   BookOpen,
   Check,
   ChevronDown,
   CircleUserRound,
   Database,
-  Download,
   Eye,
+  FileText,
   GraduationCap,
-  Lock,
+  HelpCircle,
   LogOut,
-  Mail,
+  Megaphone,
   Monitor,
   Moon,
   Settings,
@@ -84,7 +83,7 @@ const privatePanels = [
   { id: "account", label: "Account", icon: CircleUserRound },
   { id: "personalization", label: "Personalization", icon: GraduationCap },
   { id: "privacy", label: "Privacy", icon: Shield },
-  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "notifications", label: "Notifications", icon: Megaphone },
   { id: "data", label: "Data Controls", icon: Database },
 ] as const;
 
@@ -284,8 +283,8 @@ export function SettingsHelpPopup() {
   }, [language]);
 
   useEffect(() => {
-    const profileLanguage = profile?.languagePreference;
-    if (!isLanguageCode(profileLanguage || null)) {
+    const profileLanguage = profile?.languagePreference || null;
+    if (!isLanguageCode(profileLanguage)) {
       return;
     }
 
@@ -699,14 +698,14 @@ function AccountPanel({
     <div>
       <PanelTitle title="Account" />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow icon={<Mail />} label="Email" value={email} />
+        <InfoRow icon={<FileText />} label="Email" value={email} />
         <InfoRow
-          icon={<Lock />}
+          icon={<Shield />}
           label="Connected login providers"
           value={providerLabel}
         />
         <ActionRow
-          icon={<Lock />}
+          icon={<Shield />}
           label="Change password"
           onClick={onChangePassword}
         />
@@ -770,7 +769,7 @@ function PrivacyPanel({
           label="Clear chat history"
           value="Manage saved chats from the chat sidebar"
         />
-        <ActionRow icon={<Download />} label="Export data" onClick={onExportData} />
+        <ActionRow icon={<FileText />} label="Export data" onClick={onExportData} />
         <InfoRow
           icon={<Shield />}
           label="AI memory controls"
@@ -792,9 +791,9 @@ function NotificationsPanel() {
     <div>
       <PanelTitle title="Notifications" />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow icon={<Mail />} label="Email notifications" value="Off" />
-        <InfoRow icon={<Bell />} label="Study reminders" value="Off" />
-        <InfoRow icon={<Bell />} label="Focus reminders" value="Off" />
+        <InfoRow icon={<FileText />} label="Email notifications" value="Off" />
+        <InfoRow icon={<Megaphone />} label="Study reminders" value="Off" />
+        <InfoRow icon={<HelpCircle />} label="Focus reminders" value="Off" />
       </div>
     </div>
   );
