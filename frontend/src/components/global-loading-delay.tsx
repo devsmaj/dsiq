@@ -7,6 +7,7 @@ import {
   HOME_CHAT_LOADING_BYPASS_KEY,
   ONBOARDING_CHAT_LOADING_BYPASS_KEY,
 } from "@/lib/chat-loading-bypass";
+import { dsiqLogoSrc } from "@/lib/public-asset";
 
 const LOADING_DELAY_MS = 3000;
 const CHAT_BYPASS_MAX_AGE_MS = 30000;
@@ -93,9 +94,11 @@ function LoadingDelayOverlay() {
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[color:var(--color-background)]/92 backdrop-blur-sm"
     >
       <div className="flex flex-col items-center gap-4">
-        <span className="text-xl font-semibold tracking-tight text-[color:var(--color-text)]">
-          DSIQ
-        </span>
+        <img
+          src={dsiqLogoSrc}
+          alt=""
+          className="h-12 w-12 object-contain"
+        />
         <div className="flex items-center gap-2 text-[color:var(--color-text)]">
           <span className="typing-dot" />
           <span className="typing-dot [animation-delay:120ms]" />
