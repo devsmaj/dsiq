@@ -576,11 +576,6 @@ export function SettingsHelpPopup() {
                     setConfirmPassword("");
                     setIsChangePasswordOpen(true);
                   }}
-                  onLogout={() => void handleLogout()}
-                  onProfile={() => {
-                    setIsOpen(false);
-                    router.push("/profile");
-                  }}
                 />
               ) : null}
 
@@ -745,14 +740,10 @@ function GeneralPanel({
 function AccountPanel({
   email,
   onChangePassword,
-  onLogout,
-  onProfile,
   providerLabel,
 }: {
   email: string;
   onChangePassword: () => void;
-  onLogout: () => void;
-  onProfile: () => void;
   providerLabel: string;
 }) {
   return (
@@ -770,12 +761,6 @@ function AccountPanel({
           label="Change password"
           onClick={onChangePassword}
         />
-        <ActionRow
-          icon={<CircleUserRound />}
-          label="Profile settings"
-          onClick={onProfile}
-        />
-        <ActionRow icon={<LogOut />} label="Logout" onClick={onLogout} />
       </div>
     </div>
   );
