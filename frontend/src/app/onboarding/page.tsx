@@ -298,34 +298,61 @@ export default function OnboardingPage() {
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
-                <label className="relative block">
+                <label className="block">
                   <span className="sr-only">Nickname</span>
-                  <input
-                    type="text"
-                    value={nickname}
-                    onChange={(event) =>
-                      setNickname(normalizeNickname(event.target.value))
-                    }
-                    placeholder="Nickname"
-                    className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 pr-12 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
-                  />
-                  {nicknameStatus === "checking" ? (
-                    <span
-                      className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent"
-                      aria-label="Checking nickname"
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={nickname}
+                      onChange={(event) =>
+                        setNickname(normalizeNickname(event.target.value))
+                      }
+                      placeholder="Nickname"
+                      aria-describedby="nickname-status"
+                      className={`h-[52px] w-full rounded-2xl border bg-white px-4 pr-12 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111] ${
+                        nicknameStatus === "taken"
+                          ? "border-red-400"
+                          : nicknameStatus === "available"
+                            ? "border-emerald-400"
+                            : "border-[color:var(--color-line)]"
+                      }`}
                     />
-                  ) : null}
-                  {nicknameStatus === "available" ? (
-                    <Check
-                      className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--color-brand-strong)]"
-                      aria-label="Nickname available"
-                    />
+                    {nicknameStatus === "checking" ? (
+                      <span
+                        className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent"
+                        aria-label="Checking nickname"
+                      />
+                    ) : null}
+                    {nicknameStatus === "available" ? (
+                      <Check
+                        className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-600"
+                        aria-label="Nickname available"
+                      />
+                    ) : null}
+                    {nicknameStatus === "taken" ? (
+                      <X
+                        className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-red-600"
+                        aria-label="Nickname unavailable"
+                      />
+                    ) : null}
+                  </div>
+                  {nicknameStatus === "available" && nickname ? (
+                    <p
+                      id="nickname-status"
+                      className="mt-1.5 px-1 text-xs font-medium text-emerald-700"
+                      aria-live="polite"
+                    >
+                      Available
+                    </p>
                   ) : null}
                   {nicknameStatus === "taken" ? (
-                    <X
-                      className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--color-danger)]"
-                      aria-label="Nickname unavailable"
-                    />
+                    <p
+                      id="nickname-status"
+                      className="mt-1.5 px-1 text-xs font-medium text-red-600"
+                      aria-live="polite"
+                    >
+                      This username is already taken. Try another.
+                    </p>
                   ) : null}
                 </label>
                 <label className="block">
