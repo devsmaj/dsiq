@@ -10,7 +10,8 @@ import { useAuth } from "@/components/auth-provider";
 import { AppleIcon, GoogleIcon } from "@/components/provider-icons";
 import { getPostAuthPath } from "@/lib/auth-routing";
 
-const SUCCESS_REDIRECT_DELAY_MS = 700;
+const SUCCESS_REDIRECT_DELAY_MS = 900;
+const PREPARING_PROFILE_DELAY_MS = 550;
 
 function getAuthErrorMessage(error: unknown) {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -55,26 +56,6 @@ function getAuthErrorMessage(error: unknown) {
   return "We could not log you in. Please try again.";
 }
 
-function getSafeNextPath() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const nextPath = new URLSearchParams(window.location.search).get("next") || "";
-
-  if (
-    !nextPath.startsWith("/") ||
-    nextPath.startsWith("//") ||
-    nextPath.startsWith("/login") ||
-    nextPath.startsWith("/signup") ||
-    nextPath.startsWith("/forgot-password")
-  ) {
-    return "";
-  }
-
-  return nextPath;
-}
-
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -83,10 +64,7 @@ async function getLoginDestination(
   user: { uid: string },
   authMode: "firebase" | "local",
 ) {
-  const postAuthPath = await getPostAuthPath(user, authMode);
-  const nextPath = getSafeNextPath();
-
-  return postAuthPath === "/dsiq/chat" && nextPath ? nextPath : postAuthPath;
+  return getPostAuthPath(user, authMode);
 }
 
 export default function LoginPage() {
@@ -104,6 +82,7 @@ export default function LoginPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [redirectMessage, setRedirectMessage] = useState("");
   const [loadingAction, setLoadingAction] = useState<
     "apple" | "demo" | "email" | "google" | null
   >(null);
@@ -123,7 +102,17 @@ export default function LoginPage() {
 
   async function routeAfterSuccessfulLogin(nextUser: { uid: string }) {
     const destination = await getLoginDestination(nextUser, authMode);
+    const isOnboardingRequired = destination === "/onboarding";
+
+    if (isOnboardingRequired) {
+      setRedirectMessage("Preparing your profile...");
+      await wait(PREPARING_PROFILE_DELAY_MS);
+      router.replace(destination);
+      return;
+    }
+
     setSuccessMessage("Login successful");
+    setRedirectMessage("Redirecting to dashboard...");
     await wait(SUCCESS_REDIRECT_DELAY_MS);
     router.replace(destination);
   }
@@ -132,6 +121,7 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setSuccessMessage("");
+    setRedirectMessage("");
 
     try {
       setLoadingAction("email");
@@ -146,6 +136,7 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     setError("");
     setSuccessMessage("");
+    setRedirectMessage("");
 
     try {
       setLoadingAction("google");
@@ -160,6 +151,7 @@ export default function LoginPage() {
   async function handleAppleLogin() {
     setError("");
     setSuccessMessage("");
+    setRedirectMessage("");
 
     try {
       setLoadingAction("apple");
@@ -177,6 +169,7 @@ export default function LoginPage() {
       description="Continue to your chats, coaching, missions, and progress."
     >
       {successMessage ? <SuccessToast message={successMessage} /> : null}
+      {redirectMessage ? <RedirectOverlay message={redirectMessage} /> : null}
 
       <button
         type="button"
@@ -209,7 +202,7 @@ export default function LoginPage() {
           {loadingAction === "apple" ? (
             <>
               <LoadingSpinner />
-              Loading...
+              Signing in...
             </>
           ) : (
             "Continue with Apple"
@@ -280,7 +273,7 @@ export default function LoginPage() {
           {loadingAction === "email" ? (
             <span className="inline-flex items-center justify-center gap-2">
               <LoadingSpinner />
-              Loading...
+              Signing in...
             </span>
           ) : (
             "Continue"
@@ -310,6 +303,17 @@ function SuccessToast({ message }: { message: string }) {
   return (
     <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-[0_14px_34px_rgba(15,23,42,0.12)] transition">
       {message}
+    </div>
+  );
+}
+
+function RedirectOverlay({ message }: { message: string }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/80 px-5 backdrop-blur-sm transition">
+      <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--color-line)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--color-text)] shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
+        <LoadingSpinner />
+        {message}
+      </div>
     </div>
   );
 }

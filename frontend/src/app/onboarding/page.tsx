@@ -71,6 +71,7 @@ export default function OnboardingPage() {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [redirectMessage, setRedirectMessage] = useState("");
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus>("idle");
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -213,6 +214,7 @@ export default function OnboardingPage() {
       setIsSubmitting(true);
       setError("");
       setSuccessMessage("");
+      setRedirectMessage("");
 
       const saveSucceeded = (() => {
         try {
@@ -249,8 +251,9 @@ export default function OnboardingPage() {
         String(Date.now()),
       );
       setSuccessMessage("Account created successfully");
+      setRedirectMessage("Redirecting to dashboard...");
       await wait(SUCCESS_REDIRECT_DELAY_MS);
-      router.replace("/dsiq/chat");
+      router.replace("/dashboard");
       return;
 
 
@@ -519,6 +522,11 @@ export default function OnboardingPage() {
                   DSIQ can make mistakes. Don&apos;t share sensitive information.
                 </p>
               )}
+              {redirectMessage ? (
+                <p className="mx-auto mt-4 text-sm font-medium text-[color:var(--color-muted)]">
+                  {redirectMessage}
+                </p>
+              ) : null}
               </div>
             </div>
           ) : null}
