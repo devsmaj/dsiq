@@ -141,6 +141,29 @@ export async function updateFirebaseUserProfile(input: {
   );
 }
 
+export async function updateFirebaseUserProfileImage(input: {
+  uid: string;
+  profileImageUrl: string;
+}) {
+  if (!db) {
+    return;
+  }
+
+  const userRef = doc(db, "users", input.uid);
+
+  await setDoc(
+    userRef,
+    {
+      profileImageUrl: input.profileImageUrl,
+      onboardingAnswers: {
+        profileImageUrl: input.profileImageUrl,
+      },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
 export async function isFirebaseNicknameTaken(uid: string, nickname: string) {
   if (!db) {
     return false;

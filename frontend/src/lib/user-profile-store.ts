@@ -106,6 +106,29 @@ export function updateLocalUserProfile(
   );
 }
 
+export function updateLocalUserProfileImage(uid: string, profileImageUrl: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const existing = readLocalUserProfile(uid) || {};
+
+  window.localStorage.setItem(
+    getProfileKey(uid),
+    JSON.stringify({
+      ...existing,
+      profileImageUrl,
+      onboardingAnswers: existing.onboardingAnswers
+        ? {
+            ...existing.onboardingAnswers,
+            profileImageUrl,
+          }
+        : existing.onboardingAnswers,
+      updatedAt: new Date().toISOString(),
+    }),
+  );
+}
+
 export function isLocalNicknameTaken(uid: string, nickname: string) {
   if (typeof window === "undefined") {
     return false;
