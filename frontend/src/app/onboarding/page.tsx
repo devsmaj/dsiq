@@ -377,7 +377,7 @@ export default function OnboardingPage() {
               <p className="mt-5 text-center text-xs leading-6 text-[color:var(--color-muted)]">
                 By clicking &quot;Finish creating account&quot;, you agree to our{" "}
                 <Link href="/terms" className="underline underline-offset-4">
-                  Terms
+                  Terms of Use
                 </Link>{" "}
                 and{" "}
                 <Link href="/privacy" className="underline underline-offset-4">

@@ -512,11 +512,11 @@ export function HomeChat() {
 
             <p className="mt-auto text-center text-[11px] leading-5 text-[color:var(--color-muted)]">
               <Link href="/terms" className="underline">
-                DSIQ Terms
+                Terms of Use
               </Link>{" "}
               and the{" "}
               <Link href="/privacy" className="underline">
-                DSIQ Privacy Policy
+                Privacy Policy
               </Link>{" "}
               apply. DSIQ is AI and can make mistakes.
             </p>

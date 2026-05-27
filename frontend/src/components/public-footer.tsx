@@ -10,8 +10,8 @@ const footerLinks = [
 ];
 
 const legalLinks = [
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Use" },
 ];
 
 export function PublicFooter() {
