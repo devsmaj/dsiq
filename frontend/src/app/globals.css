@@ -373,4 +373,22 @@ a {
     min-height: 3rem;
     width: 100%;
   }
+
+  .public-chat-layout {
+    padding-bottom: 9rem;
+  }
+
+  .public-chat-messages {
+    padding-bottom: 9rem;
+  }
+
+  .public-chat-composer {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: calc(var(--dsiq-public-chat-height, 100vh) * 0.52);
+    z-index: 40;
+    margin-top: 0 !important;
+    transform: translateY(-50%);
+  }
 }

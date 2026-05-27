@@ -401,7 +401,7 @@ export function PublicChat() {
         </div>
       </header>
 
-      <section className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6">
+      <section className="public-chat-layout mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6">
         {isGuest ? (
           <div className="mb-4 shrink-0 rounded-[1.25rem] border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm text-[color:var(--color-muted)] shadow-[0_12px_35px_rgba(0,0,0,0.05)]">
             <Link
@@ -414,7 +414,7 @@ export function PublicChat() {
           </div>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="public-chat-messages min-h-0 flex-1 overflow-y-auto pr-1">
           {messages.length === 0 ? (
             <div className="flex min-h-full items-center justify-center pt-8 text-center sm:pt-0">
               <div>
@@ -477,7 +477,7 @@ export function PublicChat() {
 
         <form
           onSubmit={handleSubmit}
-          className="mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
+          className="public-chat-composer mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
         >
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
