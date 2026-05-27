@@ -78,6 +78,36 @@ const collapsedItems = [
   sidebarItems[4],
 ] as const;
 
+const appVersion = "0.1.0";
+
+const helpItems = [
+  {
+    title: "Frequently Asked Questions",
+    description: "Find quick answers about chats, saved work, and your AI Teacher.",
+    icon: HelpCircle,
+  },
+  {
+    title: "Contact Support",
+    description: "Reach the DSIQ team when you need help with your account.",
+    icon: CircleUserRound,
+  },
+  {
+    title: "Report a Problem",
+    description: "Tell us when something is broken or not working as expected.",
+    icon: Target,
+  },
+  {
+    title: "Send Feedback",
+    description: "Share what would make DSIQ better for your learning flow.",
+    icon: SquarePen,
+  },
+  {
+    title: "App Version",
+    description: `DSIQ ${appVersion}`,
+    icon: FileText,
+  },
+] as const;
+
 type SpeechRecognitionResultLike = {
   0?: {
     transcript?: string;
@@ -154,6 +184,7 @@ export default function DsiqChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
@@ -906,6 +937,14 @@ export default function DsiqChatPage() {
     openSettingsHelpPopup();
   }
 
+  function openHelpFromProfile() {
+    setIsProfileMenuOpen(false);
+    if (isMobileSidebarOpen) {
+      setIsMobileSidebarOpen(false);
+    }
+    setIsHelpOpen(true);
+  }
+
   const ProfileAvatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
     const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-xs";
 
@@ -1223,7 +1262,7 @@ export default function DsiqChatPage() {
               </button>
               <button
                 type="button"
-                onClick={openSettingsFromProfile}
+                onClick={openHelpFromProfile}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
               >
                 <HelpCircle className="h-4 w-4" aria-hidden="true" />
@@ -2070,6 +2109,87 @@ export default function DsiqChatPage() {
                   Yes
                 </button>
               </div>
+            </section>
+          </div>
+        ) : null}
+
+        {isHelpOpen ? (
+          <div
+            className="fixed inset-0 z-[70] flex items-start justify-center bg-black/35 px-4 py-8 backdrop-blur-sm sm:items-center"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsHelpOpen(false);
+              }
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="help-title"
+              className="w-full max-w-lg rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.20)] transition sm:p-6"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2
+                    id="help-title"
+                    className="text-lg font-semibold text-[color:var(--color-text)]"
+                  >
+                    Help
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
+                    Quick support options for your DSIQ workspace.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close help"
+                  onClick={() => setIsHelpOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="mt-5 divide-y divide-[color:var(--color-line)]">
+                {helpItems.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <button
+                      key={item.title}
+                      type="button"
+                      className="flex w-full items-center gap-3 py-4 text-left transition hover:text-black"
+                      onClick={() => {
+                        if (item.title === "Contact Support") {
+                          window.location.href =
+                            "mailto:support@dsiq.app?subject=DSIQ%20Support";
+                        }
+                      }}
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-[color:var(--color-text)]">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-[color:var(--color-muted)]">
+                          {item.description}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsHelpOpen(false)}
+                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                Close
+              </button>
             </section>
           </div>
         ) : null}
