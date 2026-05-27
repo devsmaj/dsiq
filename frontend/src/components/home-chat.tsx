@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   FileText,
   ImageIcon,
+  Info,
   Menu,
   Mic,
   Plus,
@@ -541,17 +542,17 @@ export function HomeChat() {
               <button
                 type="button"
                 onClick={openNewChatDialog}
-                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#202124] transition hover:bg-[color:var(--color-surface-strong)]"
               >
-                <SquarePen className="h-4 w-4" aria-hidden="true" />
+                <SquarePen className="h-4 w-4 shrink-0 text-[#6f7278]" aria-hidden="true" />
                 New Chat
               </button>
               <button
                 type="button"
                 onClick={openSearchChats}
-                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#202124] transition hover:bg-[color:var(--color-surface-strong)]"
               >
-                <Search className="h-4 w-4" aria-hidden="true" />
+                <Search className="h-4 w-4 shrink-0 text-[#6f7278]" aria-hidden="true" />
                 Search Chats
               </button>
             </div>
@@ -559,16 +560,18 @@ export function HomeChat() {
             <div className="space-y-2 border-t border-[color:var(--color-line)] pt-4">
               <Link
                 href="/about"
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-[#202124] transition hover:bg-[color:var(--color-surface-strong)]"
                 onClick={() => setIsMobileDrawerOpen(false)}
               >
+                <Info className="h-4 w-4 shrink-0 text-[#6f7278]" aria-hidden="true" />
                 About DSIQ
               </Link>
               <button
                 type="button"
-                className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#202124] transition hover:bg-[color:var(--color-surface-strong)]"
                 onClick={openSettingsPanel}
               >
+                <Settings className="h-4 w-4 shrink-0 text-[#6f7278]" aria-hidden="true" />
                 Settings
               </button>
             </div>

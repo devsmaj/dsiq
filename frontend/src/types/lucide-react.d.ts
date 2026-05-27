@@ -32,6 +32,7 @@ declare module "lucide-react" {
   export const GraduationCap: LucideIcon;
   export const HelpCircle: LucideIcon;
   export const ImageIcon: LucideIcon;
+  export const Info: LucideIcon;
   export const LayoutList: LucideIcon;
   export const Lightbulb: LucideIcon;
   export const LogOut: LucideIcon;
