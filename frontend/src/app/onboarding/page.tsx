@@ -33,6 +33,7 @@ import {
 } from "@/lib/user-profile-store";
 
 const SUCCESS_REDIRECT_DELAY_MS = 700;
+const ONBOARDING_CLOUD_SAVE_TIMEOUT_MS = 10000;
 
 const goalOptions = [
   { label: "Learn programming", icon: Code2 },
@@ -231,19 +232,14 @@ export default function OnboardingPage() {
       }
 
       if (authMode === "firebase") {
-        void withTimeout(
+        await withTimeout(
           saveFirebaseOnboardingAnswers({
             uid: user.uid,
             answers,
           }),
-          undefined,
-          "Firebase onboarding save timed out.",
-        ).catch((saveError) => {
-          console.warn(
-            "Firebase onboarding save failed; proceeding with local onboarding completion.",
-            saveError,
-          );
-        });
+          ONBOARDING_CLOUD_SAVE_TIMEOUT_MS,
+          "We could not save your profile to your account yet. Please try again.",
+        );
       }
 
       window.sessionStorage.setItem(

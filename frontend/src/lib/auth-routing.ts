@@ -2,11 +2,13 @@
 
 import { getFirebaseUserProfile } from "@/lib/firebase-user-records";
 import { readLocalUserProfile } from "@/lib/user-profile-store";
-import { UI_LOADING_TIMEOUT_MS, withTimeout } from "@/lib/async-timeout";
+import { withTimeout } from "@/lib/async-timeout";
 
 type RouteUser = {
   uid: string;
 };
+
+const PROFILE_ROUTE_LOOKUP_TIMEOUT_MS = 10000;
 
 export async function getPostAuthPath(
   user: RouteUser,
@@ -23,7 +25,7 @@ export async function getPostAuthPath(
       authMode === "firebase" && !user.uid.startsWith("local-")
         ? await withTimeout(
             getFirebaseUserProfile(user.uid),
-            UI_LOADING_TIMEOUT_MS,
+            PROFILE_ROUTE_LOOKUP_TIMEOUT_MS,
             "Firebase profile routing lookup timed out.",
           )
         : localProfile;
