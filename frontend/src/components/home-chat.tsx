@@ -342,8 +342,17 @@ export function HomeChat() {
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
-              <Link href="/" className="text-xl font-medium tracking-tight">
-                DSIQ
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-xl font-medium tracking-tight"
+                aria-label="DSIQ home"
+              >
+                <img
+                  src="/assets/logo/dsiq-logo.png"
+                  alt=""
+                  className="h-8 w-8 object-contain"
+                />
+                <span>DSIQ</span>
               </Link>
             </div>
 

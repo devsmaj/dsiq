@@ -344,8 +344,17 @@ export function PublicChat() {
     <main className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
       <header className="shrink-0 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-xl font-medium tracking-tight">
-            DSIQ
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xl font-medium tracking-tight"
+            aria-label="DSIQ home"
+          >
+            <img
+              src="/assets/logo/dsiq-logo.png"
+              alt=""
+              className="h-8 w-8 object-contain"
+            />
+            <span>DSIQ</span>
           </Link>
           <div className="flex items-center gap-3">
             <button

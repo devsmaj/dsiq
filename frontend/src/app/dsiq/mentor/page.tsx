@@ -206,9 +206,11 @@ export default function DsiqMentorPage() {
             }`}
             aria-label="DSIQ chat"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#111111] text-sm font-semibold text-white">
-              D
-            </span>
+            <img
+              src="/assets/logo/dsiq-logo.png"
+              alt=""
+              className="h-8 w-8 shrink-0 object-contain"
+            />
             {expanded ? (
               <span className="text-sm font-semibold tracking-[0.02em]">
                 DSIQ
