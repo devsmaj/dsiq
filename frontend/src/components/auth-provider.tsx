@@ -13,15 +13,18 @@ import {
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
+  EmailAuthProvider,
   fetchSignInMethodsForEmail,
   GoogleAuthProvider,
   onAuthStateChanged,
   OAuthProvider,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   updateProfile,
   type User,
 } from "firebase/auth";
@@ -64,6 +67,10 @@ type AuthContextValue = {
     email: string;
     password: string;
   }) => Promise<AppUser>;
+  changePassword: (input: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<void>;
   resetPassword: (email: string) => Promise<string>;
   tryDemo: () => Promise<AppUser>;
   logout: () => Promise<void>;
@@ -495,6 +502,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         setUser(nextUser);
         return nextUser;
+      },
+      changePassword: async ({ currentPassword, newPassword }) => {
+        if (!user?.email) {
+          throw new Error("No email address was found for this account.");
+        }
+
+        if (authMode === "local") {
+          const passwordKey = `${LOCAL_PASSWORD_PREFIX}${user.email.toLowerCase()}`;
+          const storedPassword = window.localStorage.getItem(passwordKey);
+
+          if (!storedPassword) {
+            throw new Error("This account does not have a password to change.");
+          }
+
+          if (storedPassword !== currentPassword) {
+            throw new Error("Current password is incorrect.");
+          }
+
+          window.localStorage.setItem(passwordKey, newPassword);
+          return;
+        }
+
+        if (!auth?.currentUser) {
+          throw new Error("No active account was found.");
+        }
+
+        const credential = EmailAuthProvider.credential(
+          user.email,
+          currentPassword,
+        );
+
+        try {
+          await withTimeout(
+            reauthenticateWithCredential(auth.currentUser, credential),
+            undefined,
+            "Password verification timed out.",
+          );
+          await withTimeout(
+            updatePassword(auth.currentUser, newPassword),
+            undefined,
+            "Password update timed out.",
+          );
+        } catch (error) {
+          const code = getAuthCode(error);
+
+          if (
+            code.includes("wrong-password") ||
+            code.includes("invalid-credential")
+          ) {
+            throw new Error("Current password is incorrect.");
+          }
+
+          if (code.includes("weak-password")) {
+            throw new Error("Use a stronger password with at least 6 characters.");
+          }
+
+          if (code.includes("requires-recent-login")) {
+            throw new Error("For security, please log in again before changing your password.");
+          }
+
+          if (code.includes("provider-already-linked") || code.includes("operation-not-allowed")) {
+            throw new Error("Password changes are not available for this login provider.");
+          }
+
+          throw error instanceof Error
+            ? error
+            : new Error("We could not change your password right now.");
+        }
       },
       resetPassword: async (email) => {
         if (authMode === "local") {

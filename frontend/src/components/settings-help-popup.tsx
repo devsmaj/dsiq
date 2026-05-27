@@ -223,7 +223,7 @@ function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
 export function SettingsHelpPopup() {
   const pathname = usePathname();
   const router = useRouter();
-  const { authMode, deleteAccount, logout, user } = useAuth();
+  const { authMode, changePassword, deleteAccount, logout, user } = useAuth();
   const { answers, profile } = useUserProfile();
   const isPrivateUser = Boolean(user);
   const visiblePanels = isPrivateUser ? privatePanels : publicPanels;
@@ -239,8 +239,14 @@ export function SettingsHelpPopup() {
   const [toastMessage, setToastMessage] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [changePasswordError, setChangePasswordError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const selectedLanguage = useMemo(
     () => languages.find((item) => item.code === language) || languages[0],
@@ -409,6 +415,43 @@ export function SettingsHelpPopup() {
     }
   }
 
+  async function handleChangePassword() {
+    setChangePasswordError("");
+
+    if (!currentPassword) {
+      setChangePasswordError("Enter your current password.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setChangePasswordError("Use a stronger password with at least 6 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError("New passwords do not match.");
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await changePassword({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setIsChangePasswordOpen(false);
+      setToastMessage("Password changed successfully");
+    } catch (error) {
+      setChangePasswordError(
+        error instanceof Error
+          ? error.message
+          : "We could not change your password right now.",
+      );
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
+
   function exportData() {
     if (typeof window === "undefined") {
       return;
@@ -527,8 +570,11 @@ export function SettingsHelpPopup() {
                   email={user?.email || "No email available"}
                   providerLabel={getProviderLabel(user)}
                   onChangePassword={() => {
-                    setIsOpen(false);
-                    router.push("/forgot-password");
+                    setChangePasswordError("");
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    setIsChangePasswordOpen(true);
                   }}
                   onLogout={() => void handleLogout()}
                   onProfile={() => {
@@ -579,6 +625,21 @@ export function SettingsHelpPopup() {
           onCancel={() => setIsDeleteModalOpen(false)}
           onConfirm={() => void handleDeleteAccount()}
           onConfirmTextChange={setDeleteConfirmText}
+        />
+      ) : null}
+
+      {isChangePasswordOpen ? (
+        <ChangePasswordModal
+          confirmPassword={confirmPassword}
+          currentPassword={currentPassword}
+          error={changePasswordError}
+          isSaving={isChangingPassword}
+          newPassword={newPassword}
+          onCancel={() => setIsChangePasswordOpen(false)}
+          onConfirm={() => void handleChangePassword()}
+          onConfirmPasswordChange={setConfirmPassword}
+          onCurrentPasswordChange={setCurrentPassword}
+          onNewPasswordChange={setNewPassword}
         />
       ) : null}
     </>
@@ -908,6 +969,130 @@ function DeleteAccountModal({
         </div>
       </section>
     </div>
+  );
+}
+
+function ChangePasswordModal({
+  confirmPassword,
+  currentPassword,
+  error,
+  isSaving,
+  newPassword,
+  onCancel,
+  onConfirm,
+  onConfirmPasswordChange,
+  onCurrentPasswordChange,
+  onNewPasswordChange,
+}: {
+  confirmPassword: string;
+  currentPassword: string;
+  error: string;
+  isSaving: boolean;
+  newPassword: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onConfirmPasswordChange: (value: string) => void;
+  onCurrentPasswordChange: (value: string) => void;
+  onNewPasswordChange: (value: string) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
+              Change password
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+              Enter your current password, then choose a new one.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close change password modal"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <PasswordField
+            label="Current password"
+            value={currentPassword}
+            onChange={onCurrentPasswordChange}
+          />
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChange={onNewPasswordChange}
+          />
+          <PasswordField
+            label="Confirm new password"
+            value={confirmPassword}
+            onChange={onConfirmPasswordChange}
+          />
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSaving}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#111111] px-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? (
+              <>
+                <LoadingSpinner />
+                Saving...
+              </>
+            ) : (
+              "Save password"
+            )}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PasswordField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+        {label}
+      </span>
+      <input
+        type="password"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+      />
+    </label>
   );
 }
 
