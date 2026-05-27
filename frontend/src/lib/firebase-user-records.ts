@@ -16,10 +16,12 @@ import { normalizeNickname, type OnboardingAnswers, type StoredUserProfile } fro
 type SyncFirebaseUserInput = {
   uid: string;
   email: string | null;
+  emailVerified?: boolean;
   displayName: string | null;
   photoURL?: string | null;
   reason: "signup" | "login";
   authProvider?: "password" | "google" | "apple";
+  providerIds?: string[];
 };
 
 type SaveOnboardingInput = {
@@ -28,6 +30,9 @@ type SaveOnboardingInput = {
 };
 
 export type FirebaseUserProfile = {
+  accountStatus?: string;
+  authProvider?: string;
+  authProviders?: string[];
   fullName?: string;
   nickname?: string;
   nicknameLower?: string;
@@ -39,9 +44,21 @@ export type FirebaseUserProfile = {
   onboardingAnswers?: OnboardingAnswers;
   displayName?: string | null;
   email?: string | null;
+  emailVerified?: boolean;
   photoURL?: string | null;
   languagePreference?: string;
 };
+
+function mergeProviderIds(
+  existingProviders: unknown,
+  nextProviders: string[],
+) {
+  const currentProviders = Array.isArray(existingProviders)
+    ? existingProviders.filter((item) => typeof item === "string")
+    : [];
+
+  return Array.from(new Set([...currentProviders, ...nextProviders]));
+}
 
 export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
   if (!db) {
@@ -49,12 +66,31 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
   }
 
   const userRef = doc(db, "users", input.uid);
+  const existingSnapshot = await getDoc(userRef);
+  const existingData = existingSnapshot.exists()
+    ? (existingSnapshot.data() as FirebaseUserProfile)
+    : null;
+  const authProvider = input.authProvider || "password";
+  const authProviders = mergeProviderIds(existingData?.authProviders, [
+    authProvider,
+    ...(input.providerIds || []),
+  ]);
 
   const baseFields = {
     uid: input.uid,
     email: input.email,
+    emailVerified: Boolean(input.emailVerified),
     displayName: input.displayName,
     photoURL: input.photoURL,
+    authProvider,
+    authProviders,
+    accountStatus: "active",
+    auth: {
+      provider: authProvider,
+      providers: authProviders,
+      emailVerified: Boolean(input.emailVerified),
+      lastSignInAt: serverTimestamp(),
+    },
     updatedAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
   };
@@ -63,11 +99,10 @@ export async function syncFirebaseUserRecord(input: SyncFirebaseUserInput) {
     userRef,
     {
       ...baseFields,
-      authProvider: input.authProvider || "password",
-      ...(input.reason === "signup"
+      ...(!existingSnapshot.exists() || input.reason === "signup"
         ? {
             createdAt: serverTimestamp(),
-            onboardingCompleted: false,
+            onboardingCompleted: existingData?.onboardingCompleted || false,
           }
         : {}),
     },
@@ -96,6 +131,15 @@ export async function saveFirebaseOnboardingAnswers(input: SaveOnboardingInput) 
       selectedGoals: input.answers.selectedGoals,
       onboardingCompleted: true,
       onboardingAnswers: input.answers,
+      profile: {
+        fullName: input.answers.fullName,
+        nickname: input.answers.nickname,
+        role: input.answers.role,
+        profileImageUrl: input.answers.profileImageUrl,
+        age: input.answers.age,
+        selectedGoals: input.answers.selectedGoals,
+      },
+      accountStatus: "active",
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -123,6 +167,14 @@ export async function updateFirebaseUserProfile(input: {
         ? normalizeNickname(input.updates.nickname)
         : undefined,
       onboardingCompleted: true,
+      profile: {
+        fullName: input.updates.fullName,
+        nickname: input.updates.nickname,
+        role: input.updates.role,
+        profileImageUrl: input.updates.profileImageUrl,
+        age: input.updates.age,
+        selectedGoals: input.updates.selectedGoals,
+      },
       onboardingAnswers: {
         fullName: input.updates.fullName,
         nickname: input.updates.nickname,
@@ -156,6 +208,9 @@ export async function updateFirebaseUserProfileImage(input: {
     userRef,
     {
       profileImageUrl: input.profileImageUrl,
+      profile: {
+        profileImageUrl: input.profileImageUrl,
+      },
       onboardingAnswers: {
         profileImageUrl: input.profileImageUrl,
       },
@@ -179,6 +234,9 @@ export async function updateFirebaseUserLanguage(input: {
     userRef,
     {
       languagePreference: input.languagePreference,
+      settings: {
+        languagePreference: input.languagePreference,
+      },
       updatedAt: serverTimestamp(),
     },
     { merge: true },
@@ -227,40 +285,31 @@ export async function deleteFirebaseUserRecord(uid: string) {
 
   const firestore = db;
   const userRef = doc(firestore, "users", uid);
-  const chatsSnapshot = await getDocs(
-    collection(firestore, "users", uid, "chats"),
-  );
+  const chatsSnapshot = await getDocs(collection(userRef, "chats"));
 
   for (const chatDocument of chatsSnapshot.docs) {
-    const chatRef = doc(firestore, "users", uid, "chats", chatDocument.id);
-    const messagesSnapshot = await getDocs(
-      collection(
-        firestore,
-        "users",
-        uid,
-        "chats",
-        chatDocument.id,
-        "messages",
-      ),
-    );
+    const chatRef = doc(userRef, "chats", chatDocument.id);
+    const messagesSnapshot = await getDocs(collection(chatRef, "messages"));
 
     await Promise.all(
       messagesSnapshot.docs.map((messageDocument) =>
-        deleteDoc(
-          doc(
-            firestore,
-            "users",
-            uid,
-            "chats",
-            chatDocument.id,
-            "messages",
-            messageDocument.id,
-          ),
-        ),
+        deleteDoc(doc(chatRef, "messages", messageDocument.id)),
       ),
     );
     await deleteDoc(chatRef);
   }
+
+  await Promise.all(
+    ["projects", "library"].map(async (collectionName) => {
+      const snapshot = await getDocs(collection(userRef, collectionName));
+
+      await Promise.all(
+        snapshot.docs.map((item) =>
+          deleteDoc(doc(userRef, collectionName, item.id)),
+        ),
+      );
+    }),
+  );
 
   await deleteDoc(userRef);
 }

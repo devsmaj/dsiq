@@ -42,8 +42,10 @@ import {
 type AppUser = {
   uid: string;
   email: string | null;
+  emailVerified?: boolean;
   displayName: string | null;
   photoURL?: string | null;
+  providerIds?: string[];
 };
 
 type AuthContextValue = {
@@ -99,14 +101,18 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function mapFirebaseUser(user: {
   uid: string;
   email: string | null;
+  emailVerified?: boolean;
   displayName: string | null;
   photoURL?: string | null;
+  providerData?: Array<{ providerId: string }>;
 }): AppUser {
   return {
     uid: user.uid,
     email: user.email,
+    emailVerified: Boolean(user.emailVerified),
     displayName: user.displayName,
     photoURL: user.photoURL,
+    providerIds: user.providerData?.map((provider) => provider.providerId) || [],
   };
 }
 
@@ -183,10 +189,12 @@ async function signInWithSocialProvider(
   await syncFirebaseUserRecordSafely({
     uid: credential.user.uid,
     email: credential.user.email,
+    emailVerified: credential.user.emailVerified,
     displayName: credential.user.displayName,
     photoURL: credential.user.photoURL,
     reason: "login",
     authProvider,
+    providerIds: credential.user.providerData.map((provider) => provider.providerId),
   });
 
   return mapFirebaseUser(credential.user);
@@ -306,10 +314,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await syncFirebaseUserRecordSafely({
           uid: credential.user.uid,
           email: credential.user.email,
+          emailVerified: credential.user.emailVerified,
           displayName: credential.user.displayName,
           photoURL: credential.user.photoURL,
           reason: "login",
           authProvider: "password",
+          providerIds: credential.user.providerData.map((provider) => provider.providerId),
         });
         const nextUser = mapFirebaseUser(credential.user);
         setUser(nextUser);
@@ -361,10 +371,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await syncFirebaseUserRecordSafely({
             uid: credential.user.uid,
             email: credential.user.email,
+            emailVerified: credential.user.emailVerified,
             displayName: credential.user.displayName,
             photoURL: credential.user.photoURL,
             reason: "login",
             authProvider: "password",
+            providerIds: credential.user.providerData.map((provider) => provider.providerId),
           });
           const nextUser = mapFirebaseUser(credential.user);
           setUser(nextUser);
@@ -404,10 +416,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await syncFirebaseUserRecordSafely({
             uid: credential.user.uid,
             email: credential.user.email,
+            emailVerified: credential.user.emailVerified,
             displayName: credential.user.displayName,
             photoURL: credential.user.photoURL,
             reason: "signup",
             authProvider: "password",
+            providerIds: credential.user.providerData.map((provider) => provider.providerId),
           });
           const nextUser = mapFirebaseUser(credential.user);
           setUser(nextUser);
@@ -490,10 +504,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await syncFirebaseUserRecordSafely({
           uid: credential.user.uid,
           email: credential.user.email,
+          emailVerified: credential.user.emailVerified,
           displayName: fullName.trim() || credential.user.displayName,
           photoURL: credential.user.photoURL,
           reason: "signup",
           authProvider: "password",
+          providerIds: credential.user.providerData.map((provider) => provider.providerId),
         });
 
         const nextUser = mapFirebaseUser({
