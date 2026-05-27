@@ -52,6 +52,7 @@ import {
   updateLibraryFolderName,
   type DsiqLibraryFolder,
 } from "@/lib/library-store";
+import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -942,7 +943,7 @@ export default function DsiqChatPage() {
           >
 
             <img
-              src="/assets/logo/dsiq-logo.png"
+              src={dsiqLogoSrc}
               alt=""
               className="h-8 w-8 shrink-0 object-contain"
             />

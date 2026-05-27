@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 
 import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
+import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const heroLines = [
@@ -348,7 +349,7 @@ export function HomeChat() {
                 aria-label="DSIQ home"
               >
                 <img
-                  src="/assets/logo/dsiq-logo.png"
+                  src={dsiqLogoSrc}
                   alt=""
                   className="h-8 w-8 object-contain"
                 />

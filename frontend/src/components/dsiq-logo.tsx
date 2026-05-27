@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { dsiqLogoSrc } from "@/lib/public-asset";
+
 type DsiqLogoProps = {
   href: string;
 };
@@ -12,7 +14,7 @@ export function DsiqLogo({ href }: DsiqLogoProps) {
       aria-label="DSIQ home"
     >
       <img
-        src="/assets/logo/dsiq-logo.png"
+        src={dsiqLogoSrc}
         alt=""
         className="h-8 w-8 object-contain"
       />

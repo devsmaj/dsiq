@@ -25,6 +25,7 @@ import { FormEvent, useMemo, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
@@ -207,7 +208,7 @@ export default function DsiqMentorPage() {
             aria-label="DSIQ chat"
           >
             <img
-              src="/assets/logo/dsiq-logo.png"
+              src={dsiqLogoSrc}
               alt=""
               className="h-8 w-8 shrink-0 object-contain"
             />

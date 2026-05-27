@@ -11,6 +11,7 @@ import {
   saveFirebaseChatMessage,
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const GUEST_CHAT_KEY = "dsiq.guest.chat";
@@ -350,7 +351,7 @@ export function PublicChat() {
             aria-label="DSIQ home"
           >
             <img
-              src="/assets/logo/dsiq-logo.png"
+              src={dsiqLogoSrc}
               alt=""
               className="h-8 w-8 object-contain"
             />
