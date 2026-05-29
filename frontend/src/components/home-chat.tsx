@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { dsiqLogoSrc } from "@/lib/public-asset";
+import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const heroLines = [
   "your AI coach for skills, opportunities, and action",
@@ -99,6 +100,8 @@ function shufflePromptModes() {
 }
 
 export function HomeChat() {
+  useKeyboardOffset();
+
   const router = useRouter();
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
