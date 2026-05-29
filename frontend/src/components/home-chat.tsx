@@ -20,7 +20,6 @@ import { useRouter } from "next/navigation";
 import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { dsiqLogoSrc } from "@/lib/public-asset";
-import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const heroLines = [
   "your AI coach for skills, opportunities, and action",
@@ -100,8 +99,6 @@ function shufflePromptModes() {
 }
 
 export function HomeChat() {
-  useKeyboardOffset();
-
   const router = useRouter();
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -399,12 +396,8 @@ export function HomeChat() {
               </h1>
 
               <form
-                className="mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
+                className="home-chat-composer mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
                 onSubmit={handlePromptSubmit}
-                style={{
-                  transform:
-                    "translateY(calc(var(--dsiq-keyboard-offset, 0px) * -1))",
-                }}
               >
                 <input
                   ref={promptInputRef}

@@ -391,4 +391,14 @@ a {
     margin-top: 0 !important;
     transform: translateY(-50%);
   }
+
+  .home-chat-composer {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: 50svh;
+    z-index: 40;
+    margin-top: 0 !important;
+    transform: translateY(-50%);
+  }
 }
