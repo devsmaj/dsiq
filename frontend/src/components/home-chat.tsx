@@ -208,41 +208,50 @@ export function HomeChat() {
         <aside className="relative hidden w-[72px] bg-[color:var(--color-surface-strong)] px-4 py-7 md:block">
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-black"
             aria-label="Open menu"
             aria-expanded={isDesktopDrawerOpen}
             onClick={() => setIsDesktopDrawerOpen((value) => !value)}
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
+            <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100">
+              Open menu
+            </span>
           </button>
 
           <div className="mt-4 flex flex-col gap-2">
             <button
               type="button"
               aria-label="New Chat"
-              title="New Chat"
               onClick={openNewChatDialog}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
             >
               <SquarePen className="h-5 w-5" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                New Chat
+              </span>
             </button>
             <button
               type="button"
               aria-label="Search Chats"
-              title="Search Chats"
               onClick={openSearchChats}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
             >
               <Search className="h-5 w-5" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                Search Chats
+              </span>
             </button>
             <button
               type="button"
               aria-label="Settings"
-              title="Settings"
               onClick={openSettingsPanel}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
+              className="group relative flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--color-text)] transition hover:bg-white"
             >
               <Settings className="h-5 w-5" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                Settings
+              </span>
             </button>
           </div>
 

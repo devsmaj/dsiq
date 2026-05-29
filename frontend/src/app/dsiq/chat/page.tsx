@@ -78,6 +78,9 @@ const collapsedItems = [
 
 const appVersion = "0.1.0";
 
+const collapsedTooltipClass =
+  "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
+
 const helpItems = [
   {
     title: "Frequently Asked Questions",
@@ -976,7 +979,11 @@ export default function DsiqChatPage() {
           expanded ? "w-[292px]" : "w-[76px]"
         }`}
       >
-        <div className="flex items-center justify-between">
+        <div
+          className={`flex items-center ${
+            expanded ? "justify-between" : "justify-center"
+          }`}
+        >
           {expanded ? (
             <Link
               href="/dsiq/chat"
@@ -996,15 +1003,15 @@ export default function DsiqChatPage() {
             <button
               type="button"
               aria-label="Open sidebar"
-              title="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
-              className="hidden h-12 w-12 items-center justify-center rounded-2xl transition hover:bg-white lg:flex"
+              className="group relative hidden h-12 w-12 items-center justify-center rounded-2xl transition hover:bg-white lg:flex"
             >
               <img
                 src={dsiqLogoSrc}
                 alt=""
                 className="h-10 w-10 shrink-0 object-contain"
               />
+              <span className={collapsedTooltipClass}>Open sidebar</span>
             </button>
           )}
 
@@ -1017,18 +1024,16 @@ export default function DsiqChatPage() {
             >
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
-          ) : (
+          ) : expanded ? (
             <button
               type="button"
               aria-label="Close sidebar"
               onClick={() => setIsSidebarOpen(false)}
-              className={`hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-white lg:flex ${
-                expanded ? "" : "pointer-events-none invisible"
-              }`}
+              className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-white lg:flex"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
-          )}
+          ) : null}
         </div>
 
         <nav className="mt-7 flex flex-1 flex-col gap-1 overflow-y-auto">
@@ -1044,19 +1049,22 @@ export default function DsiqChatPage() {
                 <button
                   key={item.label}
                   type="button"
-                  title={expanded ? undefined : item.label}
+                  aria-label={item.label}
                   onClick={() => {
                     startNewChat();
                     if (mobile) {
                       setIsMobileSidebarOpen(false);
                     }
                   }}
-                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                  className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {expanded ? <span>{item.label}</span> : null}
+                  {!expanded ? (
+                    <span className={collapsedTooltipClass}>{item.label}</span>
+                  ) : null}
                 </button>
               );
             }
@@ -1066,14 +1074,17 @@ export default function DsiqChatPage() {
                 <button
                   key={item.label}
                   type="button"
-                  title={expanded ? undefined : item.label}
+                  aria-label={item.label}
                   onClick={() => openSearchPanel(mobile)}
-                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                  className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {expanded ? <span>{item.label}</span> : null}
+                  {!expanded ? (
+                    <span className={collapsedTooltipClass}>{item.label}</span>
+                  ) : null}
                 </button>
               );
             }
@@ -1083,14 +1094,17 @@ export default function DsiqChatPage() {
                 <button
                   key={item.label}
                   type="button"
-                  title={expanded ? undefined : item.label}
+                  aria-label={item.label}
                   onClick={() => openSavedChatsPanel(mobile)}
-                  className={`flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                  className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {expanded ? <span>{item.label}</span> : null}
+                  {!expanded ? (
+                    <span className={collapsedTooltipClass}>{item.label}</span>
+                  ) : null}
                 </button>
               );
             }
@@ -1099,13 +1113,13 @@ export default function DsiqChatPage() {
               <Link
                 key={item.label}
                 href={item.href}
-                title={expanded ? undefined : item.label}
+                aria-label={expanded ? undefined : item.label}
                 onClick={() => {
                   if (mobile) {
                     setIsMobileSidebarOpen(false);
                   }
                 }}
-                className={`flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
+                className={`group relative flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
                   expanded ? "gap-3 px-3" : "justify-center px-0"
                 } ${
                   isAiTeacher
@@ -1115,6 +1129,9 @@ export default function DsiqChatPage() {
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {expanded ? <span>{item.label}</span> : null}
+                {!expanded ? (
+                  <span className={collapsedTooltipClass}>{item.label}</span>
+                ) : null}
               </Link>
             );
           })}
@@ -1291,8 +1308,9 @@ export default function DsiqChatPage() {
 
           <button
             type="button"
+            aria-label="Profile"
             onClick={() => setIsProfileMenuOpen((value) => !value)}
-            className={`flex w-full items-center rounded-2xl text-left transition hover:bg-white ${
+            className={`group relative flex w-full items-center rounded-2xl text-left transition hover:bg-white ${
               expanded ? "gap-3 px-3 py-3" : "justify-center px-0 py-3"
             }`}
           >
@@ -1306,6 +1324,9 @@ export default function DsiqChatPage() {
                   {profileRoleLabel}
                 </span>
               </span>
+            ) : null}
+            {!expanded ? (
+              <span className={collapsedTooltipClass}>Profile</span>
             ) : null}
           </button>
         </div>
