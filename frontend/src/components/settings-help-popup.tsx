@@ -20,8 +20,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
@@ -35,7 +35,6 @@ const OPEN_SETTINGS_EVENT = "dsiq:open-settings-help";
 const LANGUAGE_STORAGE_KEY = "dsiq-language";
 const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
 const DELETE_CONFIRMATION_TEXT = "DELETE";
-const ENABLE_GOOGLE_TRANSLATE = true;
 
 const languages = [
   { code: "auto", label: "Auto-detect" },
@@ -96,19 +95,6 @@ type LanguageCode = (typeof languages)[number]["code"];
 type AppearanceValue = (typeof appearanceOptions)[number]["value"];
 type PanelId = (typeof privatePanels)[number]["id"];
 
-type GoogleTranslateWindow = Window &
-  typeof globalThis & {
-    google?: {
-      translate?: {
-        TranslateElement?: new (
-          options: Record<string, unknown>,
-          elementId: string,
-        ) => void;
-      };
-    };
-    googleTranslateElementInit?: () => void;
-  };
-
 export function openSettingsHelpPopup() {
   window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT));
 }
@@ -159,39 +145,12 @@ function getAppliedLanguage(languageCode: LanguageCode): LanguageCode {
   return languageCode === "auto" ? getBrowserLanguage() : languageCode;
 }
 
-function setTranslateCookie(languageCode: LanguageCode) {
-  const translateCode = getAppliedLanguage(languageCode);
-  const cookieValue = `/en/${translateCode}`;
-  const maxAge = 60 * 60 * 24 * 365;
-
-  document.cookie = `googtrans=${cookieValue};path=/;max-age=${maxAge}`;
-  document.cookie = `googtrans=${cookieValue};domain=${window.location.hostname};path=/;max-age=${maxAge}`;
-}
-
-function getTranslateCombo() {
-  return document.querySelector<HTMLSelectElement>(".goog-te-combo");
-}
-
 function applyLanguage(languageCode: LanguageCode) {
   const appliedLanguage = getAppliedLanguage(languageCode);
   document.documentElement.lang = appliedLanguage;
   document.documentElement.dir = ["ar", "fa", "he"].includes(appliedLanguage)
     ? "rtl"
     : "ltr";
-
-  if (!ENABLE_GOOGLE_TRANSLATE) {
-    return false;
-  }
-
-  setTranslateCookie(languageCode);
-  const combo = getTranslateCombo();
-  if (!combo) {
-    return false;
-  }
-
-  combo.value = appliedLanguage;
-  combo.dispatchEvent(new Event("change"));
-  return true;
 }
 
 function applyAppearance(appearance: AppearanceValue) {
@@ -221,13 +180,11 @@ function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
 }
 
 export function SettingsHelpPopup() {
-  const pathname = usePathname();
   const router = useRouter();
   const { authMode, changePassword, deleteAccount, logout, user } = useAuth();
   const { answers, profile } = useUserProfile();
   const isPrivateUser = Boolean(user);
   const visiblePanels = isPrivateUser ? privatePanels : publicPanels;
-  const retryTimerRef = useRef<number | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelId>("general");
@@ -300,58 +257,6 @@ export function SettingsHelpPopup() {
       applyLanguage(profileLanguage);
     }
   }, [language, profile?.languagePreference]);
-
-  useEffect(() => {
-    if (!ENABLE_GOOGLE_TRANSLATE) return;
-
-    const translateWindow = window as GoogleTranslateWindow;
-    translateWindow.googleTranslateElementInit = () => {
-      if (!translateWindow.google?.translate?.TranslateElement) {
-        return;
-      }
-
-      new translateWindow.google.translate.TranslateElement(
-        {
-          pageLanguage: "en",
-          includedLanguages: languages
-            .filter((item) => item.code !== "auto")
-            .map((item) => item.code)
-            .join(","),
-          autoDisplay: false,
-        },
-        "google_translate_element",
-      );
-    };
-
-    if (!document.querySelector("#dsiq-google-translate-script")) {
-      const script = document.createElement("script");
-      script.id = "dsiq-google-translate-script";
-      script.src =
-        "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-      script.async = true;
-      document.body.appendChild(script);
-    } else {
-      translateWindow.googleTranslateElementInit();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!ENABLE_GOOGLE_TRANSLATE) return;
-
-    if (retryTimerRef.current) {
-      window.clearTimeout(retryTimerRef.current);
-    }
-
-    retryTimerRef.current = window.setTimeout(() => {
-      applyLanguage(language);
-    }, 500);
-
-    return () => {
-      if (retryTimerRef.current) {
-        window.clearTimeout(retryTimerRef.current);
-      }
-    };
-  }, [language, pathname]);
 
   function selectAppearance(nextAppearance: AppearanceValue) {
     setAppearance(nextAppearance);
@@ -479,10 +384,6 @@ export function SettingsHelpPopup() {
 
   return (
     <>
-      {ENABLE_GOOGLE_TRANSLATE ? (
-        <div id="google_translate_element" className="dsiq-translate-widget" />
-      ) : null}
-
       {toastMessage ? <Toast message={toastMessage} /> : null}
 
       {isOpen ? (

@@ -86,18 +86,6 @@ body {
   font-family: var(--font-inter), sans-serif;
 }
 
-body > .skiptranslate,
-.dsiq-translate-widget,
-.goog-te-banner-frame,
-.goog-te-balloon-frame,
-#goog-gt-tt {
-  display: none !important;
-}
-
-body {
-  top: 0 !important;
-}
-
 button,
 input,
 textarea,
