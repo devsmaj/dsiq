@@ -35,29 +35,6 @@ const navItems = [
   { href: "/contact", label: "Contact" },
 ];
 
-const promptModes = [
-  {
-    label: "Write pitch",
-    prompt:
-      "Help me write a short opportunity pitch. Ask what I am applying for, then draft a polished version.",
-  },
-  {
-    label: "Build plan",
-    prompt:
-      "Create a 7-day action plan for my goal with daily tasks, time estimates, and a clear first step.",
-  },
-  {
-    label: "Find matches",
-    prompt:
-      "Help me find opportunities that match my skills, location, budget, and available time.",
-  },
-  {
-    label: "Learn path",
-    prompt:
-      "Create a learning roadmap for my goal with beginner, intermediate, and portfolio milestones.",
-  },
-];
-
 type SpeechRecognitionResultLike = {
   0?: {
     transcript?: string;
@@ -88,17 +65,6 @@ type SpeechWindow = Window &
     webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
   };
 
-function shufflePromptModes() {
-  const modes = [...promptModes];
-
-  for (let index = modes.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [modes[index], modes[swapIndex]] = [modes[swapIndex], modes[index]];
-  }
-
-  return modes;
-}
-
 export function HomeChat() {
   useKeyboardOffset();
 
@@ -110,7 +76,6 @@ export function HomeChat() {
   const [isListening, setIsListening] = useState(false);
   const [heroLineIndex, setHeroLineIndex] = useState(0);
   const [prompt, setPrompt] = useState("");
-  const [quickActions] = useState(shufflePromptModes);
   const promptInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,13 +128,6 @@ export function HomeChat() {
       String(Date.now()),
     );
     router.push(`/chat?guest=true&q=${encodeURIComponent(message)}`);
-  }
-
-  function handleQuickPrompt(promptText: string) {
-    setPrompt(promptText);
-    window.requestAnimationFrame(() => {
-      promptInputRef.current?.focus();
-    });
   }
 
   function appendAttachmentNames(files: FileList | null) {
@@ -491,19 +449,6 @@ export function HomeChat() {
                 </div>
               </form>
 
-              <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-                {quickActions.map((mode, index) => (
-                  <button
-                    type="button"
-                    key={mode.label}
-                    className="inline-flex min-h-10 animate-fade-up items-center justify-center rounded-full border border-[#cfd4dc] bg-white px-4 text-sm font-semibold text-[#202124] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#9aa0a6] hover:bg-[color:var(--color-surface-strong)] sm:min-h-11"
-                    style={{ animationDelay: `${index * 70}ms` }}
-                    onClick={() => handleQuickPrompt(mode.prompt)}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <p className="mt-auto text-center text-[11px] leading-5 text-[color:var(--color-muted)]">
