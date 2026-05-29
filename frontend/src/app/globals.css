@@ -386,10 +386,9 @@ a {
     position: fixed;
     left: 1rem;
     right: 1rem;
-    top: 50svh;
+    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px));
     z-index: 40;
     margin-top: 0 !important;
-    transform: translateY(-50%);
   }
 
   .home-chat-composer {

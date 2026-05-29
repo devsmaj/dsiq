@@ -12,6 +12,7 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
 import { dsiqLogoSrc } from "@/lib/public-asset";
+import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
 const GUEST_CHAT_KEY = "dsiq.guest.chat";
 const LOGGED_IN_CHAT_KEY = "dsiq.current.public-chat-id";
@@ -88,6 +89,8 @@ function readGuestMessages() {
 }
 
 export function PublicChat() {
+  useKeyboardOffset();
+
   const searchParams = useSearchParams();
   const initialQuestion = searchParams.get("q")?.trim() || "";
   const shouldUseGuestChat = searchParams.get("guest") === "true";
