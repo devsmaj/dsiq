@@ -1036,7 +1036,11 @@ export default function DsiqChatPage() {
           ) : null}
         </div>
 
-        <nav className="mt-7 flex flex-1 flex-col gap-1 overflow-y-auto">
+        <nav
+          className={`mt-7 flex flex-1 flex-col gap-1 ${
+            expanded ? "overflow-y-auto" : "overflow-visible"
+          }`}
+        >
           {visibleItems.map((item) => {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";

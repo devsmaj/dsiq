@@ -208,7 +208,7 @@ export function HomeChat() {
         <aside className="relative hidden w-[72px] bg-[color:var(--color-surface-strong)] px-4 py-7 md:block">
           <button
             type="button"
-            className="group relative flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:bg-black"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
             aria-label="Open menu"
             aria-expanded={isDesktopDrawerOpen}
             onClick={() => setIsDesktopDrawerOpen((value) => !value)}
