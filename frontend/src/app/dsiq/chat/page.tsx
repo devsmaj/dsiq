@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Bot,
-  ChevronLeft,
-  ChevronRight,
   CircleUserRound,
   Check,
   Copy,
@@ -979,25 +977,36 @@ export default function DsiqChatPage() {
         }`}
       >
         <div className="flex items-center justify-between">
-          <Link
-            href="/dsiq/chat"
-            className={`flex h-11 items-center rounded-2xl px-3 text-[color:var(--color-text)] transition hover:bg-white ${
-              expanded ? "gap-3" : "w-11 justify-center"
-            }`}
-            aria-label="DSIQ chat"
-          >
-
-            <img
-              src={dsiqLogoSrc}
-              alt=""
-              className="h-8 w-8 shrink-0 object-contain"
-            />
-            {expanded ? (
+          {expanded ? (
+            <Link
+              href="/dsiq/chat"
+              className="flex h-12 items-center gap-3 rounded-2xl px-3 text-[color:var(--color-text)] transition hover:bg-white"
+              aria-label="DSIQ chat"
+            >
+              <img
+                src={dsiqLogoSrc}
+                alt=""
+                className="h-10 w-10 shrink-0 object-contain"
+              />
               <span className="text-sm font-semibold tracking-[0.02em]">
                 DSIQ
               </span>
-            ) : null}
-          </Link>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              title="Open sidebar"
+              onClick={() => setIsSidebarOpen(true)}
+              className="hidden h-12 w-12 items-center justify-center rounded-2xl transition hover:bg-white lg:flex"
+            >
+              <img
+                src={dsiqLogoSrc}
+                alt=""
+                className="h-10 w-10 shrink-0 object-contain"
+              />
+            </button>
+          )}
 
           {mobile ? (
             <button
@@ -1011,15 +1020,13 @@ export default function DsiqChatPage() {
           ) : (
             <button
               type="button"
-              aria-label={isSidebarOpen ? "Collapse sidebar" : "Open sidebar"}
-              onClick={() => setIsSidebarOpen((value) => !value)}
-              className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-white lg:flex"
+              aria-label="Close sidebar"
+              onClick={() => setIsSidebarOpen(false)}
+              className={`hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-white lg:flex ${
+                expanded ? "" : "pointer-events-none invisible"
+              }`}
             >
-              {isSidebarOpen ? (
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
-              )}
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>
