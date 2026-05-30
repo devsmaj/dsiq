@@ -1,50 +1,32 @@
 import { Request, Response } from "express";
 
-const DSIQ_SYSTEM_PROMPT = `You are DSIQ, an AI Opportunity Coach and Accountability Assistant designed for students, developers, freelancers, and entrepreneurs.
+const DSIQ_SYSTEM_PROMPT =
+  "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.";
 
-Your goal is to help users:
-- discover opportunities
-- create plans
-- learn skills
-- stay consistent
-- take action
-
-Keep responses:
-- practical
-- intelligent
-- simple
-- motivational
-- action-focused
-
-If user gives little information, ask simple follow-up questions first.
-
-Never give identical fixed responses to everyone.
-Adapt answers based on user goals, skills, time, interests, and budget.`;
-
-type GeminiChatMessage = {
+type GroqChatMessage = {
   role: "model" | "user";
   text: string;
 };
 
 type ChatRequestBody = {
   message?: string;
-  messages?: GeminiChatMessage[];
+  messages?: GroqChatMessage[];
 };
 
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
+type GroqResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
     };
   }>;
 };
 
-function isValidMessage(message: unknown): message is GeminiChatMessage {
+function isValidMessage(message: unknown): message is GroqChatMessage {
   if (!message || typeof message !== "object") {
     return false;
   }
 
-  const candidate = message as Partial<GeminiChatMessage>;
+  const candidate = message as Partial<GroqChatMessage>;
   return (
     (candidate.role === "model" || candidate.role === "user") &&
     typeof candidate.text === "string" &&
@@ -52,11 +34,12 @@ function isValidMessage(message: unknown): message is GeminiChatMessage {
   );
 }
 
-function readResponseText(data: GeminiResponse) {
-  return data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
+function readResponseText(data: GroqResponse) {
+  return data.choices?.[0]?.message?.content?.trim();
+}
+
+function toGroqRole(role: GroqChatMessage["role"]) {
+  return role === "model" ? "assistant" : "user";
 }
 
 export async function createChatCompletion(
@@ -79,63 +62,61 @@ export async function createChatCompletion(
     return response.status(400).json({ error: "Message is required." });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return response
       .status(500)
-      .json({ error: "Gemini is not configured on the server." });
+      .json({ error: "Groq is not configured on the server." });
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-  let geminiResponse: globalThis.Response;
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  let groqResponse: globalThis.Response;
 
   try {
-    geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-        apiKey,
-      )}`,
+    groqResponse = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: DSIQ_SYSTEM_PROMPT }],
-          },
-          contents: messages.slice(-20).map((message) => ({
-            role: message.role,
-            parts: [{ text: message.text }],
-          })),
-          generationConfig: {
-            temperature: 0.8,
-            topP: 0.95,
-          },
+          model,
+          messages: [
+            { role: "system", content: DSIQ_SYSTEM_PROMPT },
+            ...messages.slice(-20).map((message) => ({
+              role: toGroqRole(message.role),
+              content: message.text,
+            })),
+          ],
+          temperature: 0.8,
+          top_p: 0.95,
         }),
       },
     );
   } catch (error) {
-    console.error("Gemini error:", error);
+    console.error("Groq error:", error);
     return response
       .status(502)
       .json({ error: "DSIQ could not answer right now. Please try again." });
   }
 
-  console.log("Response status:", geminiResponse.status);
+  console.log("Response status:", groqResponse.status);
 
-  if (!geminiResponse.ok) {
-    const errorText = await geminiResponse.text().catch((error: unknown) => {
-      console.error("Gemini error:", error);
+  if (!groqResponse.ok) {
+    const errorText = await groqResponse.text().catch((error: unknown) => {
+      console.error("Groq error:", error);
       return "";
     });
-    console.error("Gemini error:", errorText || geminiResponse.statusText);
+    console.error("Groq error:", errorText || groqResponse.statusText);
 
     return response
-      .status(geminiResponse.status === 429 ? 429 : 502)
+      .status(groqResponse.status === 429 ? 429 : 502)
       .json({ error: "DSIQ could not answer right now. Please try again." });
   }
 
-  const data = (await geminiResponse.json()) as GeminiResponse;
+  const data = (await groqResponse.json()) as GroqResponse;
   const text = readResponseText(data);
 
   if (!text) {

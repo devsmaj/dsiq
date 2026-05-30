@@ -9,7 +9,7 @@ import {
 
 import { db } from "@/lib/firebase";
 import { withTimeout } from "@/lib/async-timeout";
-import type { GeminiChatMessage } from "@/lib/gemini";
+import type { GroqChatMessage } from "@/lib/groq";
 
 export type PrivateChatSummary = {
   id: string;
@@ -18,7 +18,7 @@ export type PrivateChatSummary = {
   lastMessage?: string;
 };
 
-export type PrivateChatMessage = GeminiChatMessage & {
+export type PrivateChatMessage = GroqChatMessage & {
   createdAtMs: number;
   deletedAtMs?: number;
   id: string;
@@ -99,7 +99,7 @@ function upsertLocalPrivateChat(
   uid: string,
   chatId: string,
   titleSeed: string,
-  message?: GeminiChatMessage & Partial<PrivateChatMessage>,
+  message?: GroqChatMessage & Partial<PrivateChatMessage>,
 ) {
   const now = Date.now();
   const chats = readLocalPrivateChats(uid);
@@ -227,7 +227,7 @@ export async function createFirebaseChat(uid: string) {
 
 export async function saveFirebaseChatMessage(input: {
   chatId: string;
-  message: GeminiChatMessage;
+  message: GroqChatMessage;
   uid: string;
 }) {
   if (!db) {
@@ -304,7 +304,7 @@ export async function createPrivateChat(uid: string, firstMessage: string) {
 
 export async function savePrivateChatMessage(input: {
   chatId: string;
-  message: GeminiChatMessage & Partial<PrivateChatMessage>;
+  message: GroqChatMessage & Partial<PrivateChatMessage>;
   uid: string;
 }): Promise<PrivateChatMessage> {
   const now = Date.now();

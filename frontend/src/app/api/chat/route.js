@@ -1,25 +1,7 @@
 import { NextResponse } from "next/server";
 
-const DSIQ_SYSTEM_PROMPT = `You are DSIQ, an AI Opportunity Coach and Accountability Assistant designed for students, developers, freelancers, and entrepreneurs.
-
-Your goal is to help users:
-- discover opportunities
-- create plans
-- learn skills
-- stay consistent
-- take action
-
-Keep responses:
-- practical
-- intelligent
-- simple
-- motivational
-- action-focused
-
-If user gives little information, ask simple follow-up questions first.
-
-Never give identical fixed responses to everyone.
-Adapt answers based on user goals, skills, time, interests, and budget.`;
+const DSIQ_SYSTEM_PROMPT =
+  "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.";
 
 function isValidMessage(message) {
   return (
@@ -32,10 +14,11 @@ function isValidMessage(message) {
 }
 
 function readResponseText(data) {
-  return data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
+  return data.choices?.[0]?.message?.content?.trim();
+}
+
+function toGroqRole(role) {
+  return role === "model" ? "assistant" : "user";
 }
 
 export async function POST(request) {
@@ -57,36 +40,34 @@ export async function POST(request) {
     return NextResponse.json({ error: "Message is required." }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Gemini is not configured on the server." },
+      { error: "Groq is not configured on the server." },
       { status: 500 },
     );
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-      apiKey,
-    )}`,
+    "https://api.groq.com/openai/v1/chat/completions",
     {
       method: "POST",
       headers: {
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: DSIQ_SYSTEM_PROMPT }],
-        },
-        contents: messages.slice(-20).map((message) => ({
-          role: message.role,
-          parts: [{ text: message.text }],
-        })),
-        generationConfig: {
-          temperature: 0.8,
-          topP: 0.95,
-        },
+        model,
+        messages: [
+          { role: "system", content: DSIQ_SYSTEM_PROMPT },
+          ...messages.slice(-20).map((message) => ({
+            role: toGroqRole(message.role),
+            content: message.text,
+          })),
+        ],
+        temperature: 0.8,
+        top_p: 0.95,
       }),
     },
   );

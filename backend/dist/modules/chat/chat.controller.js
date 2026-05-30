@@ -1,26 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createChatCompletion = createChatCompletion;
-const DSIQ_SYSTEM_PROMPT = `You are DSIQ, an AI Opportunity Coach and Accountability Assistant designed for students, developers, freelancers, and entrepreneurs.
-
-Your goal is to help users:
-- discover opportunities
-- create plans
-- learn skills
-- stay consistent
-- take action
-
-Keep responses:
-- practical
-- intelligent
-- simple
-- motivational
-- action-focused
-
-If user gives little information, ask simple follow-up questions first.
-
-Never give identical fixed responses to everyone.
-Adapt answers based on user goals, skills, time, interests, and budget.`;
+const DSIQ_SYSTEM_PROMPT = "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.";
 function isValidMessage(message) {
     if (!message || typeof message !== "object") {
         return false;
@@ -31,10 +12,10 @@ function isValidMessage(message) {
         candidate.text.trim().length > 0);
 }
 function readResponseText(data) {
-    return data.candidates?.[0]?.content?.parts
-        ?.map((part) => part.text || "")
-        .join("")
-        .trim();
+    return data.choices?.[0]?.message?.content?.trim();
+}
+function toGroqRole(role) {
+    return role === "model" ? "assistant" : "user";
 }
 async function createChatCompletion(request, response) {
     console.log("Incoming chat request");
@@ -49,53 +30,53 @@ async function createChatCompletion(request, response) {
     if (messages.length === 0) {
         return response.status(400).json({ error: "Message is required." });
     }
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
         return response
             .status(500)
-            .json({ error: "Gemini is not configured on the server." });
+            .json({ error: "Groq is not configured on the server." });
     }
-    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-    let geminiResponse;
+    const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+    let groqResponse;
     try {
-        geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
+                Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                systemInstruction: {
-                    parts: [{ text: DSIQ_SYSTEM_PROMPT }],
-                },
-                contents: messages.slice(-20).map((message) => ({
-                    role: message.role,
-                    parts: [{ text: message.text }],
-                })),
-                generationConfig: {
-                    temperature: 0.8,
-                    topP: 0.95,
-                },
+                model,
+                messages: [
+                    { role: "system", content: DSIQ_SYSTEM_PROMPT },
+                    ...messages.slice(-20).map((message) => ({
+                        role: toGroqRole(message.role),
+                        content: message.text,
+                    })),
+                ],
+                temperature: 0.8,
+                top_p: 0.95,
             }),
         });
     }
     catch (error) {
-        console.error("Gemini error:", error);
+        console.error("Groq error:", error);
         return response
             .status(502)
             .json({ error: "DSIQ could not answer right now. Please try again." });
     }
-    console.log("Response status:", geminiResponse.status);
-    if (!geminiResponse.ok) {
-        const errorText = await geminiResponse.text().catch((error) => {
-            console.error("Gemini error:", error);
+    console.log("Response status:", groqResponse.status);
+    if (!groqResponse.ok) {
+        const errorText = await groqResponse.text().catch((error) => {
+            console.error("Groq error:", error);
             return "";
         });
-        console.error("Gemini error:", errorText || geminiResponse.statusText);
+        console.error("Groq error:", errorText || groqResponse.statusText);
         return response
-            .status(geminiResponse.status === 429 ? 429 : 502)
+            .status(groqResponse.status === 429 ? 429 : 502)
             .json({ error: "DSIQ could not answer right now. Please try again." });
     }
-    const data = (await geminiResponse.json());
+    const data = (await groqResponse.json());
     const text = readResponseText(data);
     if (!text) {
         return response

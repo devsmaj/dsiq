@@ -22,7 +22,7 @@ import {
 import { FormEvent, useMemo, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
-import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -84,7 +84,7 @@ export default function DsiqMentorPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [mentorMessages, setMentorMessages] = useState<GeminiChatMessage[]>([]);
+  const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [focusEnabled, setFocusEnabled] = useState(false);
@@ -142,7 +142,7 @@ export default function DsiqMentorPage() {
     setError("");
     setIsSending(true);
 
-    const userMessage: GeminiChatMessage = {
+    const userMessage: GroqChatMessage = {
       role: "user",
       text: question,
     };
@@ -150,7 +150,7 @@ export default function DsiqMentorPage() {
     setMentorMessages(nextMessages);
 
     try {
-      const answer = await askGemini([
+      const answer = await askGroq([
         {
           role: "user",
           text: `${mentorContext}\n\nStudent question: ${question}`,

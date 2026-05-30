@@ -10,7 +10,7 @@ import {
   createFirebaseChat,
   saveFirebaseChatMessage,
 } from "@/lib/firebase-chat-store";
-import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 
@@ -81,7 +81,7 @@ function readGuestMessages() {
   }
 
   try {
-    return JSON.parse(storedMessages) as GeminiChatMessage[];
+    return JSON.parse(storedMessages) as GroqChatMessage[];
   } catch {
     window.sessionStorage.removeItem(GUEST_CHAT_KEY);
     return [];
@@ -96,7 +96,7 @@ export function PublicChat() {
   const shouldUseGuestChat = searchParams.get("guest") === "true";
   const { isLoading: isAuthLoading, user } = useAuth();
   const isGuest = shouldUseGuestChat || !user;
-  const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
+  const [messages, setMessages] = useState<GroqChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -176,7 +176,7 @@ export function PublicChat() {
     return chatId;
   }
 
-  async function saveMessage(message: GeminiChatMessage) {
+  async function saveMessage(message: GroqChatMessage) {
     if (isGuest || !user) {
       return;
     }
@@ -207,7 +207,7 @@ export function PublicChat() {
     setInput("");
     setIsSending(true);
 
-    const userMessage: GeminiChatMessage = {
+    const userMessage: GroqChatMessage = {
       role: "user",
       text: trimmedText,
     };
@@ -216,8 +216,8 @@ export function PublicChat() {
     await saveMessage(userMessage);
 
     try {
-      const response = await askGemini(nextMessages);
-      const modelMessage: GeminiChatMessage = {
+      const response = await askGroq(nextMessages);
+      const modelMessage: GroqChatMessage = {
         role: "model",
         text: response,
       };

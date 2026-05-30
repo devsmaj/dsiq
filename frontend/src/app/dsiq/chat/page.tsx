@@ -42,7 +42,7 @@ import {
   type PrivateChatMessage,
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
-import { askGemini, type GeminiChatMessage } from "@/lib/gemini";
+import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import {
   addChatToLibraryFolder,
   createLibraryFolder,
@@ -162,7 +162,7 @@ function createClientMessageId() {
   return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function toGeminiMessages(messages: PrivateChatMessage[]): GeminiChatMessage[] {
+function toGroqMessages(messages: PrivateChatMessage[]): GroqChatMessage[] {
   return messages.map(({ role, text }) => ({ role, text }));
 }
 
@@ -410,7 +410,7 @@ export default function DsiqChatPage() {
       });
       void refreshPrivateChats();
 
-      const response = await askGemini(toGeminiMessages(nextMessages));
+      const response = await askGroq(toGroqMessages(nextMessages));
       const modelMessage: PrivateChatMessage = {
         createdAtMs: Date.now(),
         id: createClientMessageId(),

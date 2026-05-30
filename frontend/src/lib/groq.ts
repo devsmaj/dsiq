@@ -1,4 +1,4 @@
-export type GeminiChatMessage = {
+export type GroqChatMessage = {
   role: "model" | "user";
   text: string;
 };
@@ -6,7 +6,7 @@ export type GeminiChatMessage = {
 const CHAT_API_URL = "https://dsiq.onrender.com/api/chat";
 const CHAT_TIMEOUT_MS = 20000;
 
-export async function askGemini(messages: GeminiChatMessage[]) {
+export async function askGroq(messages: GroqChatMessage[]) {
   const latestUserMessage = [...messages]
     .reverse()
     .find((message) => message.role === "user");
@@ -20,8 +20,6 @@ export async function askGemini(messages: GeminiChatMessage[]) {
     messages,
   };
 
-  console.log("Sending request to:", CHAT_API_URL);
-  console.log("Request body:", body);
   try {
     const response = await fetch(CHAT_API_URL, {
       method: "POST",
@@ -31,7 +29,6 @@ export async function askGemini(messages: GeminiChatMessage[]) {
       signal: controller.signal,
       body: JSON.stringify(body),
     });
-    console.log("Render backend response", response.status, response.ok);
 
     if (!response.ok) {
       const data = (await response.json().catch(() => null)) as {
@@ -39,8 +36,7 @@ export async function askGemini(messages: GeminiChatMessage[]) {
       } | null;
 
       throw new Error(
-        data?.error ||
-          "DSIQ could not reach Gemini right now. Please try again.",
+        data?.error || "DSIQ could not answer right now. Please try again.",
       );
     }
 
@@ -52,8 +48,6 @@ export async function askGemini(messages: GeminiChatMessage[]) {
       "DSIQ did not return a response. Please try again."
     );
   } catch (error) {
-    console.error("Fetch failed:", error);
-
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("DSIQ is taking too long to respond. Please try again.");
     }
