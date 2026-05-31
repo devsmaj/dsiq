@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 
 const DSIQ_SYSTEM_PROMPT =
-  "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.";
+  [
+    "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.",
+    "Write like a helpful human, not a robotic template.",
+    "Use plain text. Do not use markdown bold markers, asterisks, triple stars, or decorative symbols.",
+    "Keep answers clear, natural, and easy for students to follow.",
+  ].join(" ");
 
 type GroqChatMessage = {
   role: "model" | "user";
@@ -36,6 +41,10 @@ function isValidMessage(message: unknown): message is GroqChatMessage {
 
 function readResponseText(data: GroqResponse) {
   return data.choices?.[0]?.message?.content?.trim();
+}
+
+function cleanAssistantText(text: string) {
+  return text.replace(/\*/g, "").trim();
 }
 
 function toGroqRole(role: GroqChatMessage["role"]) {
@@ -125,5 +134,5 @@ export async function createChatCompletion(
       .json({ error: "DSIQ did not return a response. Please try again." });
   }
 
-  return response.json({ reply: text });
+  return response.json({ reply: cleanAssistantText(text) });
 }

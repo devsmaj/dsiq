@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
 const DSIQ_SYSTEM_PROMPT =
-  "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.";
+  [
+    "You are DSIQ, an AI teacher and learning coach. Teach students step by step from beginner to professional.",
+    "Write like a helpful human, not a robotic template.",
+    "Use plain text. Do not use markdown bold markers, asterisks, triple stars, or decorative symbols.",
+    "Keep answers clear, natural, and easy for students to follow.",
+  ].join(" ");
 
 function isValidMessage(message) {
   return (
@@ -15,6 +20,10 @@ function isValidMessage(message) {
 
 function readResponseText(data) {
   return data.choices?.[0]?.message?.content?.trim();
+}
+
+function cleanAssistantText(text) {
+  return text.replace(/\*/g, "").trim();
 }
 
 function toGroqRole(role) {
@@ -89,5 +98,5 @@ export async function POST(request) {
     );
   }
 
-  return NextResponse.json({ text });
+  return NextResponse.json({ text: cleanAssistantText(text) });
 }

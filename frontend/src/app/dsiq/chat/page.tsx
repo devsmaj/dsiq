@@ -8,7 +8,6 @@ import {
   Check,
   Copy,
   FileText,
-  BookOpen,
   GraduationCap,
   HelpCircle,
   ImageIcon,
@@ -43,13 +42,6 @@ import {
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
-import {
-  addChatToLibraryFolder,
-  createLibraryFolder,
-  listLibraryFolders,
-  updateLibraryFolderName,
-  type DsiqLibraryFolder,
-} from "@/lib/library-store";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -190,26 +182,19 @@ export default function DsiqChatPage() {
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
-  const [isLibraryPanelOpen, setIsLibraryPanelOpen] = useState(false);
   const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isReadingAloud, setIsReadingAloud] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
-  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
-  const [newLibraryFolderName, setNewLibraryFolderName] = useState("");
-  const [libraryFolderDraftNames, setLibraryFolderDraftNames] = useState<
-    Record<string, string>
-  >({});
   const [savedChatDraftTitles, setSavedChatDraftTitles] = useState<
     Record<string, string>
   >({});
   const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
-  const [libraryFolders, setLibraryFolders] = useState<DsiqLibraryFolder[]>([]);
   const [activeSavedChatMenuId, setActiveSavedChatMenuId] = useState<
     string | null
   >(null);
@@ -223,9 +208,6 @@ export default function DsiqChatPage() {
   const [deleteSavedChatIds, setDeleteSavedChatIds] = useState<string[]>([]);
   const [confirmingRecentDeleteChatId, setConfirmingRecentDeleteChatId] =
     useState<string | null>(null);
-  const [libraryPickerChatIds, setLibraryPickerChatIds] = useState<string[]>(
-    [],
-  );
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(
     null,
   );
@@ -310,33 +292,6 @@ export default function DsiqChatPage() {
     void loadChats();
   }, [user]);
 
-  useEffect(() => {
-    async function loadUserLibraryFolders() {
-      if (!user) {
-        setLibraryFolders([]);
-        setLibraryFolderDraftNames({});
-        return;
-      }
-
-      try {
-        setIsLibraryLoading(true);
-        const nextFolders = await listLibraryFolders(user.uid);
-        setLibraryFolders(nextFolders);
-        setLibraryFolderDraftNames(
-          Object.fromEntries(
-            nextFolders.map((folder) => [folder.id, folder.name]),
-          ),
-        );
-      } catch (loadError) {
-        console.warn("Library loading failed.", loadError);
-      } finally {
-        setIsLibraryLoading(false);
-      }
-    }
-
-    void loadUserLibraryFolders();
-  }, [user]);
-
   async function refreshPrivateChats() {
     if (!user) {
       return;
@@ -350,24 +305,6 @@ export default function DsiqChatPage() {
       );
     } catch (loadError) {
       console.warn("Private chats refresh failed.", loadError);
-    }
-  }
-
-  async function refreshLibraryFolders() {
-    if (!user) {
-      return;
-    }
-
-    try {
-      const nextFolders = await listLibraryFolders(user.uid);
-      setLibraryFolders(nextFolders);
-      setLibraryFolderDraftNames(
-        Object.fromEntries(
-          nextFolders.map((folder) => [folder.id, folder.name]),
-        ),
-      );
-    } catch (loadError) {
-      console.warn("Library refresh failed.", loadError);
     }
   }
 
@@ -449,7 +386,6 @@ export default function DsiqChatPage() {
     setIsChatActionsOpen(false);
     setActiveSavedChatMenuId(null);
     setIsSearchPanelOpen(false);
-    setIsLibraryPanelOpen(false);
     closeSavedChatsPanel();
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
@@ -469,7 +405,6 @@ export default function DsiqChatPage() {
       setIsChatActionsOpen(false);
       setActiveSavedChatMenuId(null);
       setIsSearchPanelOpen(false);
-      setIsLibraryPanelOpen(false);
       closeSavedChatsPanel();
       setIsChatsLoading(true);
       setCurrentChatId(chatId);
@@ -488,7 +423,6 @@ export default function DsiqChatPage() {
   function openSearchPanel(mobile = false) {
     setIsSearchPanelOpen(true);
     setIsSavedChatsPanelOpen(false);
-    setIsLibraryPanelOpen(false);
     setChatSearchQuery("");
     setActiveSavedChatMenuId(null);
     if (mobile) {
@@ -497,26 +431,12 @@ export default function DsiqChatPage() {
     void refreshPrivateChats();
   }
 
-  function openLibraryPanel(mobile = false) {
-    setIsLibraryPanelOpen(true);
-    setIsSavedChatsPanelOpen(false);
-    setActionStatus("");
-    setIsChatActionsOpen(false);
-    setActiveSavedChatMenuId(null);
-    if (mobile) {
-      setIsMobileSidebarOpen(false);
-    }
-    void refreshLibraryFolders();
-  }
-
   function openSavedChatsPanel(mobile = false) {
     setIsSavedChatsPanelOpen(true);
     setIsSearchPanelOpen(false);
-    setIsLibraryPanelOpen(false);
     setActionStatus("");
     setActiveSavedChatMenuId(null);
     setRenamingSavedChatId(null);
-    setLibraryPickerChatIds([]);
     setDeleteSavedChatIds([]);
     if (mobile) {
       setIsMobileSidebarOpen(false);
@@ -530,7 +450,6 @@ export default function DsiqChatPage() {
     setSelectedSavedChatIds([]);
     setActiveSavedChatMenuId(null);
     setRenamingSavedChatId(null);
-    setLibraryPickerChatIds([]);
     setDeleteSavedChatIds([]);
   }
 
@@ -616,109 +535,6 @@ export default function DsiqChatPage() {
     setActionStatus(
       chatIds.length === 1 ? "Saved chat deleted." : "Saved chats deleted.",
     );
-  }
-
-  function openSavedChatLibraryPicker(chatIds: string[]) {
-    setLibraryPickerChatIds(chatIds);
-    setActiveSavedChatMenuId(null);
-    setConfirmingRecentDeleteChatId(null);
-    void refreshLibraryFolders();
-  }
-
-  async function handleAddSavedChatsToLibraryFolder(folderId: string) {
-    if (!user || !libraryPickerChatIds.length) {
-      return;
-    }
-
-    await Promise.all(
-      libraryPickerChatIds.map((chatId) =>
-        addChatToLibraryFolder({
-          chatId,
-          folderId,
-          uid: user.uid,
-        }),
-      ),
-    );
-    setLibraryPickerChatIds([]);
-    setSelectedSavedChatIds([]);
-    setIsSavedSelectMode(false);
-    await refreshLibraryFolders();
-    setActionStatus(
-      libraryPickerChatIds.length === 1
-        ? "Chat added to Library."
-        : "Chats added to Library.",
-    );
-  }
-
-  async function handleCreateLibraryFolder() {
-    if (!user) {
-      setActionStatus("Sign in again to create a library folder.");
-      return;
-    }
-
-    try {
-      setIsLibraryLoading(true);
-      const folderId = await createLibraryFolder(
-        user.uid,
-        newLibraryFolderName || "Untitled folder",
-      );
-      setNewLibraryFolderName("");
-
-      if (currentChatId) {
-        await addChatToLibraryFolder({
-          chatId: currentChatId,
-          folderId,
-          uid: user.uid,
-        });
-        setActionStatus("Library folder created and current chat added.");
-      } else {
-        setActionStatus("Library folder created.");
-      }
-
-      await refreshLibraryFolders();
-    } finally {
-      setIsLibraryLoading(false);
-    }
-  }
-
-  async function handleSaveLibraryFolderName(folderId: string) {
-    if (!user) {
-      setActionStatus("Sign in again to save the library folder.");
-      return;
-    }
-
-    try {
-      setIsLibraryLoading(true);
-      await updateLibraryFolderName({
-        name: libraryFolderDraftNames[folderId] || "Untitled folder",
-        folderId,
-        uid: user.uid,
-      });
-      setActionStatus("Library folder saved.");
-      await refreshLibraryFolders();
-    } finally {
-      setIsLibraryLoading(false);
-    }
-  }
-
-  async function handleAddCurrentChatToLibraryFolder(folderId: string) {
-    if (!user || !currentChatId) {
-      setActionStatus("Start or open a chat before adding it to Library.");
-      return;
-    }
-
-    try {
-      setIsLibraryLoading(true);
-      await addChatToLibraryFolder({
-        chatId: currentChatId,
-        folderId,
-        uid: user.uid,
-      });
-      setActionStatus("Chat added to Library.");
-      await refreshLibraryFolders();
-    } finally {
-      setIsLibraryLoading(false);
-    }
   }
 
   function getChatText() {
@@ -816,11 +632,6 @@ export default function DsiqChatPage() {
     URL.revokeObjectURL(url);
     setIsChatActionsOpen(false);
     setActionStatus("Chat exported.");
-  }
-
-  function addToLibrary() {
-    setIsChatActionsOpen(false);
-    openLibraryPanel();
   }
 
   async function shareChat() {
@@ -1454,8 +1265,7 @@ export default function DsiqChatPage() {
                       Saved Chats
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                      Open, rename, export, delete, or add saved chats to
-                      Library.
+                      Open, rename, export, or delete saved chats.
                     </p>
                   </div>
                   {privateChats.length ? (
@@ -1483,62 +1293,12 @@ export default function DsiqChatPage() {
                       <button
                         type="button"
                         disabled={!selectedSavedChatIds.length}
-                        onClick={() =>
-                          openSavedChatLibraryPicker(selectedSavedChatIds)
-                        }
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Add to Library
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!selectedSavedChatIds.length}
                         onClick={() => setDeleteSavedChatIds(selectedSavedChatIds)}
                         className="inline-flex h-9 items-center justify-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Delete
                       </button>
                     </div>
-                  </div>
-                ) : null}
-
-                {libraryPickerChatIds.length ? (
-                  <div className="mt-4 rounded-2xl border border-[color:var(--color-line)] p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">Add to Library</p>
-                      <button
-                        type="button"
-                        aria-label="Close library picker"
-                        onClick={() => setLibraryPickerChatIds([])}
-                        className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
-                      >
-                        <X className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </div>
-                    {libraryFolders.length ? (
-                      <div className="mt-2 grid gap-2">
-                        {libraryFolders.map((folder) => (
-                          <button
-                            key={folder.id}
-                            type="button"
-                            onClick={() =>
-                              void handleAddSavedChatsToLibraryFolder(folder.id)
-                            }
-                            className="flex min-h-10 items-center justify-between rounded-xl bg-[color:var(--color-surface-strong)] px-3 text-left text-sm font-medium transition hover:bg-[color:var(--color-line)]"
-                          >
-                            <span className="truncate">{folder.name}</span>
-                            <span className="ml-3 shrink-0 text-xs text-[color:var(--color-muted)]">
-                              {folder.chatIds.length} chats
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-2 rounded-xl bg-[color:var(--color-surface-strong)] px-3 py-3 text-sm text-[color:var(--color-muted)]">
-                        Create a library folder first, then add saved chats to
-                        it.
-                      </p>
-                    )}
                   </div>
                 ) : null}
 
@@ -1698,17 +1458,6 @@ export default function DsiqChatPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => openSavedChatLibraryPicker([chat.id])}
-                                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                                >
-                                  <BookOpen
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                  Add to Library
-                                </button>
-                                <button
-                                  type="button"
                                   onClick={() => void exportSavedChat(chat)}
                                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                                 >
@@ -1736,122 +1485,6 @@ export default function DsiqChatPage() {
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
                       No saved chats yet. Send a message and DSIQ will save the
                       chat here.
-                    </p>
-                  )}
-                </div>
-              </section>
-            </div>
-          ) : null}
-
-          {isLibraryPanelOpen ? (
-            <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
-              <section
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="library-title"
-                className="relative w-full max-w-xl rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
-              >
-                <button
-                  type="button"
-                  aria-label="Close library folders"
-                  onClick={() => setIsLibraryPanelOpen(false)}
-                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <div className="pr-10">
-                  <h2 id="library-title" className="text-base font-semibold">
-                    Library
-                  </h2>
-                  <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
-                    Create folders, rename them anytime, and save study chats
-                    into them.
-                  </p>
-                </div>
-
-                <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <input
-                    type="text"
-                    value={newLibraryFolderName}
-                    onChange={(event) => setNewLibraryFolderName(event.target.value)}
-                    placeholder="New folder name"
-                    className="h-11 rounded-2xl border border-[color:var(--color-line)] px-4 text-sm outline-none transition focus:border-[#111111]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleCreateLibraryFolder()}
-                    disabled={isLibraryLoading}
-                    className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    New Folder
-                  </button>
-                </div>
-
-                <div className="mt-4 max-h-[360px] overflow-y-auto">
-                  {libraryFolders.length ? (
-                    <div className="flex flex-col gap-3">
-                      {libraryFolders.map((folder) => {
-                        const hasCurrentChat = Boolean(
-                          currentChatId && folder.chatIds.includes(currentChatId),
-                        );
-
-                        return (
-                          <article
-                            key={folder.id}
-                            className="rounded-2xl border border-[color:var(--color-line)] p-3"
-                          >
-                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                              <input
-                                type="text"
-                                value={libraryFolderDraftNames[folder.id] ?? folder.name}
-                                onChange={(event) =>
-                                  setLibraryFolderDraftNames((current) => ({
-                                    ...current,
-                                    [folder.id]: event.target.value,
-                                  }))
-                                }
-                                className="h-10 rounded-xl border border-[color:var(--color-line)] px-3 text-sm font-medium outline-none transition focus:border-[#111111]"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleSaveLibraryFolderName(folder.id)
-                                }
-                                disabled={isLibraryLoading}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Save
-                              </button>
-                            </div>
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-xs text-[color:var(--color-muted)]">
-                                {folder.chatIds.length} saved chat
-                                {folder.chatIds.length === 1 ? "" : "s"}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleAddCurrentChatToLibraryFolder(folder.id)
-                                }
-                                disabled={
-                                  isLibraryLoading ||
-                                  !currentChatId ||
-                                  hasCurrentChat
-                                }
-                                className="inline-flex h-9 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] px-4 text-xs font-semibold transition hover:bg-[color:var(--color-line)] disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {hasCurrentChat
-                                  ? "Chat added"
-                                  : "Add current chat"}
-                              </button>
-                            </div>
-                          </article>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
-                      No library folders yet. Create one to organize your saved chats.
                     </p>
                   )}
                 </div>
@@ -1915,14 +1548,6 @@ export default function DsiqChatPage() {
                       >
                         <FileText className="h-4 w-4" aria-hidden="true" />
                         Export to docs
-                      </button>
-                      <button
-                        type="button"
-                        onClick={addToLibrary}
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                      >
-                        <BookOpen className="h-4 w-4" aria-hidden="true" />
-                        Add to Library
                       </button>
                       <button
                         type="button"
