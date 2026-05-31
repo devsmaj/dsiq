@@ -55,7 +55,7 @@ const sidebarItems = [
     href: "/dsiq/chat?panel=roadmap",
     icon: GraduationCap,
   },
-  { label: "Focus Mode", href: "/dsiq/chat?panel=focus", icon: Target },
+
   { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 

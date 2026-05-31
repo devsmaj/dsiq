@@ -10,9 +10,9 @@ import {
   Search,
   Send,
   SquarePen,
-  Target,
   X,
 } from "lucide-react";
+
 import { FormEvent, useMemo, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
@@ -29,7 +29,7 @@ const sidebarItems = [
     href: "/dsiq/chat?panel=roadmap",
     icon: GraduationCap,
   },
-  { label: "Focus Mode", href: "/dsiq/chat?panel=focus", icon: Target },
+
   { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
 ] as const;
 
@@ -40,6 +40,9 @@ const collapsedItems = [
   sidebarItems[3],
   sidebarItems[4],
 ] as const;
+
+
+
 
 const collapsedTooltipClass =
   "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
@@ -120,6 +123,7 @@ export default function DsiqMentorPage() {
   const currentMission = answers?.skills || "HTML Fundamentals";
   const currentLesson = currentMission;
   const roadmapProgress = 25;
+
 
   const mentorContext = useMemo(
     () =>
@@ -415,84 +419,21 @@ export default function DsiqMentorPage() {
             </button>
 
             <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-5 py-6 pt-20 sm:px-8 lg:px-10 lg:pt-8">
-              <section className="rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <ProfileAvatar size="sm" />
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Good to see you, {displayName}.
-                      </p>
-                      <p className="mt-1 text-xs text-[color:var(--color-muted)]">
-                        One student. One teacher. One next step.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 text-sm sm:grid-cols-3 sm:text-right">
-                    <div>
-                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
-                        Current Goal
-                      </p>
-                      <p className="mt-1 font-semibold">{primaryGoal}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
-                        Current Mission
-                      </p>
-                      <p className="mt-1 font-semibold">{currentMission}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
-                        Roadmap Progress
-                      </p>
-                      <p className="mt-1 font-semibold">{roadmapProgress}%</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                      <Target className="h-4 w-4" aria-hidden="true" />
-                      Progress
-                    </div>
-                    <h1 className="mt-2 truncate text-xl font-semibold text-[#111111]">
-                      {primaryGoal}
-                    </h1>
-                    <p className="mt-1 text-sm text-[color:var(--color-muted)]">
-                      Current lesson: {currentLesson}
+              <section className="flex flex-col gap-1 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center gap-3">
+                  <ProfileAvatar size="sm" />
+                  <div>
+                    <p className="text-sm font-semibold">Good to see you, {displayName}.</p>
+                    <p className="mt-1 text-xs text-[color:var(--color-muted)]">
+                      Current goal: {primaryGoal}
+                    </p>
+                    <p className="mt-1 text-xs text-[color:var(--color-muted)]">
+                      Progress: {roadmapProgress}%
                     </p>
                   </div>
-
-                  <div className="w-full sm:max-w-xs">
-                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[color:var(--color-muted)]">
-                      <span>{roadmapProgress}% complete</span>
-                      <span>Roadmap</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-[color:var(--color-surface-strong)]">
-                      <div
-                        className="h-full rounded-full bg-[#111111]"
-                        style={{ width: `${roadmapProgress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPrompt(
-                        `Continue my lesson: ${currentLesson}. Teach me the next step clearly.`,
-                      )
-                    }
-                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
-                  >
-                    Continue
-                  </button>
                 </div>
               </section>
+
 
               <article className="flex min-h-[620px] flex-1 flex-col rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
                 <div className="border-b border-[color:var(--color-line)] px-5 py-4">
