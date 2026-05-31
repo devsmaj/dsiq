@@ -43,7 +43,7 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Prompt input with send button.
 - [x] Attachment menu for photo/file labels.
 - [x] Voice input support when browser supports speech recognition.
-- [x] Quick prompt chips.
+- [x] Quick prompt chips removed from the public home input to keep it minimal.
 - [x] Public top nav links: About, Features, How It Works, Pricing, Contact.
 - [x] Login button.
 - [x] Public sidebar/menu for New Chat, Search Chats, and Settings.
@@ -88,8 +88,8 @@ This TODO tracks the current DSIQ web app as built in this repository.
   - [x] Learning Roadmap
   - [x] Focus Mode
   - [x] Profile avatar at bottom
-- [x] Bottom profile area shows avatar, user name, and Free.
-- [x] Profile popup includes user name and Free Plan.
+- [x] Bottom profile area shows avatar, user name, and selected role.
+- [x] Profile popup includes user name and selected role.
 - [x] Profile popup actions: Profile, Settings, Help, Logout.
 - [x] Profile popup has top-right X close button.
 - [x] Private chat input sends messages to DSIQ AI.
@@ -109,21 +109,16 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Clicking a recent private chat reloads its conversation.
 - [x] Local chat-history fallback works when Firebase is unavailable.
 - [x] Active private chats show top-right New Chat and more-actions controls.
-- [x] Chat actions support draft to email, export to docs, add to Library, and share.
+- [x] Chat actions support draft to email, export to docs, and share.
 - [x] Top-right chat actions include Read aloud / Stop reading.
 - [x] AI responses include copy action with copied check feedback.
 - [x] Saved chat messages include stable message IDs and timestamps.
 - [x] Search Chats opens a real searchable saved-chat panel with top-right X close.
 - [x] Saved Chats opens a real management panel with top-right X close.
-- [x] Saved Chats supports single-chat rename, export, add to Library, and delete.
+- [x] Saved Chats supports single-chat rename, export, and delete.
 - [x] Saved Chats supports multi-select bulk delete.
-- [x] Saved Chats supports multi-select bulk add to Library.
 - [x] Deleted saved chats are hidden with a deletion timestamp.
-- [x] Library opens a real folder panel with top-right X close.
-- [x] Users can create folders from the Library panel.
-- [x] Users can edit a folder name anytime and save it.
-- [x] Users can add the current chat to a Library folder.
-- [x] Library folders save to Firestore with local storage fallback.
+- [x] Removed Add to Library actions from private chat and saved chats.
 - [x] AI Teacher sidebar link opens `/dsiq/mentor`.
 - [x] AI Teacher is slightly highlighted in the private sidebar.
 - [x] Focus Mode replaces Library in the private sidebar.
@@ -143,6 +138,30 @@ This TODO tracks the current DSIQ web app as built in this repository.
 - [x] Smart Focus Mentor section with privacy note.
 - [x] Mentor insight card.
 - [x] Mobile responsive layout.
+
+## AI Teacher Behavior Vision
+
+- [x] DSIQ is positioned as an AI Teacher, Mentor, Coach, and Accountability Partner, not a normal chatbot.
+- [x] AI responses are guided toward plain human text without markdown asterisks or decorative symbols.
+- [ ] Keep AI responses short and meaningful by default.
+- [ ] Make AI Teacher ask diagnostic questions before creating a learning plan.
+- [ ] Make AI Teacher focus on one lesson, one mission, and one goal at a time.
+- [ ] Prevent giant roadmap dumps inside chat.
+- [ ] Add focus protection when students try to jump between topics.
+- [ ] Add evidence-based coaching for consistency and confidence.
+- [ ] Add learning verification with questions, exercises, quizzes, and small projects.
+- [ ] Add adaptive difficulty based on user performance.
+- [ ] Make AI Teacher read roadmap state before responding.
+- [ ] Make AI Teacher continue from the last completed lesson when roadmap data exists.
+
+## Roadmap System
+
+- [ ] Build real screen/panel for Learning Roadmap.
+- [ ] Save roadmaps outside chat.
+- [ ] Roadmap data model includes goal, current stage, missions, progress percentage, completed lessons, and skills gained.
+- [ ] Roadmaps update dynamically from completed lessons, quizzes, exercises, and projects.
+- [ ] Connect AI Teacher responses to roadmap progress.
+- [ ] Add topic-switch checks using roadmap progress.
 
 ## Profile
 
@@ -199,9 +218,12 @@ This TODO tracks the current DSIQ web app as built in this repository.
 
 - [x] Frontend chat helper calls DSIQ chat API.
 - [x] Backend `/api/chat` route exists.
-- [x] Gemini-backed response flow.
+- [x] Groq-backed response flow for testing.
+- [ ] Replace test Groq provider with real Gemini API integration for live production.
 - [x] Public and private chat share the same AI helper.
 - [x] Request timeout increased for slower AI responses.
+- [x] AI backend uses DSIQ teacher/learning-coach system prompt.
+- [x] AI backend strips asterisks from model replies.
 - [ ] Add streaming responses.
 - [ ] Add richer retry behavior.
 - [ ] Add server health indicator in UI.
@@ -257,9 +279,12 @@ This TODO tracks the current DSIQ web app as built in this repository.
 
 - [ ] Repair local frontend dependencies so ESLint can run.
 - [x] Build the real private Search Chats panel.
-- [x] Build the real private Library panel.
+- [x] Remove Add to Library from private chat.
 - [x] Build the real private Saved Chats panel.
 - [x] Build the real private AI Teacher page.
 - [ ] Build the real private sidebar panel for Learning Roadmap.
+- [ ] Implement roadmap storage and AI Teacher roadmap awareness.
+- [ ] Implement focus protection for topic switching.
+- [ ] Implement learning verification missions and quizzes.
 - [x] Persist and reload private chat history.
 - [ ] Add production Open Graph image.
