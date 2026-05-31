@@ -1151,8 +1151,9 @@ export default function DsiqChatPage() {
 
   return (
     <PrivateRoute>
-      <main className="min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="flex min-h-screen">
+      <main className="h-screen overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+        <div className="flex h-full"> 
+
           <div className="hidden lg:block">
             <SidebarContent />
           </div>
@@ -1492,7 +1493,8 @@ export default function DsiqChatPage() {
             </div>
           ) : null}
 
-          <section className="relative flex min-w-0 flex-1 flex-col bg-[color:var(--color-background)]">
+          <section className="relative flex min-w-0 flex-1 flex-col bg-[color:var(--color-background)] h-full">
+
             <button
               type="button"
               aria-label="Open menu"
@@ -1563,15 +1565,17 @@ export default function DsiqChatPage() {
               </div>
             ) : null}
 
-            <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 pb-8 pt-24 sm:px-8 lg:pt-10">
-              <div className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center text-center">
+            <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-5 pt-20 sm:px-8 lg:pt-8">
+              <div className="mx-auto flex w-full max-w-[900px] flex-1 flex-col">
+
                 <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
                   DSIQ is ready to guide your skills, learning, missions, and
                   opportunities.
                 </p>
 
                 {messages.length ? (
-                  <div className="mx-auto mt-8 flex max-h-64 w-full max-w-[760px] flex-col gap-4 overflow-y-auto text-left">
+                  <div className="mx-auto flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-left pb-28">
+
                     {messages.map((message, index) => (
                       <article
                         key={message.id}
@@ -1626,12 +1630,9 @@ export default function DsiqChatPage() {
               </div>
 
               <div
-                className="sticky z-30 mx-auto w-full max-w-[820px] lg:static lg:-mt-32"
-                style={{
-                  bottom:
-                    "calc(1rem + env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px))",
-                }}
+                className="sticky z-30 mx-auto w-full max-w-[900px] bottom-0"
               >
+
                 <form
                   onSubmit={submitPrompt}
                   className="rounded-[30px] bg-white px-5 py-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
