@@ -3,23 +3,17 @@
 import Link from "next/link";
 import {
   Bot,
-  CalendarCheck,
-  Check,
-  CircleUserRound,
-  Compass,
   FileText,
   GraduationCap,
-  Lightbulb,
   Menu,
+  Mic,
   Search,
   Send,
-  Shield,
-  Sparkles,
   SquarePen,
   Target,
   X,
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
@@ -47,22 +41,38 @@ const collapsedItems = [
   sidebarItems[4],
 ] as const;
 
-const suggestedPrompts = [
-  "Teach me step by step",
-  "Create today's study plan",
-  "Check my progress",
-  "Give me practice tasks",
-  "Help me stay focused",
-];
-
-const insightTexts = [
-  "You are building consistency.",
-  "Your next step is more important than motivation.",
-  "Focus on one skill today.",
-];
-
 const collapsedTooltipClass =
   "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
+
+type SpeechRecognitionResultLike = {
+  0?: {
+    transcript?: string;
+  };
+};
+
+type SpeechRecognitionEventLike = {
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechWindow = Window &
+  typeof globalThis & {
+    SpeechRecognition?: new () => BrowserSpeechRecognition;
+    webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+  };
 
 function getInitials(name: string) {
   return name
@@ -86,8 +96,9 @@ export default function DsiqMentorPage() {
   const [prompt, setPrompt] = useState("");
   const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
-  const [focusEnabled, setFocusEnabled] = useState(false);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   const displayName =
     profile?.fullName ||
@@ -105,16 +116,10 @@ export default function DsiqMentorPage() {
       : answers?.selectedGoals?.length
         ? answers.selectedGoals
         : [];
-  const primaryGoal =
-    goals[0] || answers?.goal || answers?.interest || role || "a focused learner";
-  const learningFocus =
-    answers?.skills ||
-    goals[0] ||
-    "one important skill that moves you closer to your goal";
-  const nextTask = goals.length
-    ? `Practice one small task for ${goals[0]}`
-    : "Complete one focused study block and write what you learned";
-  const estimatedTime = answers?.time || "30 minutes";
+  const primaryGoal = goals[0] || answers?.goal || answers?.interest || "Learn Programming";
+  const currentMission = answers?.skills || "HTML Fundamentals";
+  const currentLesson = currentMission;
+  const roadmapProgress = 25;
 
   const mentorContext = useMemo(
     () =>
@@ -125,10 +130,11 @@ export default function DsiqMentorPage() {
         `Role: ${role}.`,
         `Selected goals: ${goals.length ? goals.join(", ") : "Not provided"}.`,
         `Age: ${profile?.age || answers?.age || "Not provided"}.`,
-        `Current learning focus: ${learningFocus}.`,
+        `Current mission: ${currentMission}.`,
+        `Current lesson: ${currentLesson}.`,
         "Keep responses clear, supportive, and action-focused.",
       ].join("\n"),
-    [answers?.age, displayName, goals, learningFocus, profile?.age, role],
+    [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, role],
   );
 
   async function submitMentorPrompt(event: FormEvent<HTMLFormElement>) {
@@ -172,6 +178,53 @@ export default function DsiqMentorPage() {
     } finally {
       setIsSending(false);
     }
+  }
+
+  function handleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const speechWindow = window as SpeechWindow;
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setError("Voice input is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const spokenText = transcript.trim();
+      if (spokenText) {
+        setPrompt((current) =>
+          current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
+        );
+      }
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    setError("");
+    setIsListening(true);
+    recognition.start();
   }
 
   const ProfileAvatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
@@ -361,226 +414,179 @@ export default function DsiqMentorPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-8 pt-20 sm:px-8 lg:px-10 lg:pt-10">
-              <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="rounded-[1.75rem] border border-[color:var(--color-line)] bg-white p-6 shadow-[0_12px_36px_rgba(0,0,0,0.04)] sm:p-8">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-line)] px-3 py-1.5 text-xs font-semibold text-[color:var(--color-muted)]">
-                    <Sparkles className="h-4 w-4" aria-hidden="true" />
-                    DSIQ Mentor
-                  </div>
-                  <h1 className="mt-5 max-w-3xl text-3xl font-semibold tracking-normal text-[#111111] sm:text-5xl">
-                    Your AI teacher that knows your goals.
-                  </h1>
-                  <p className="mt-5 max-w-3xl text-base leading-8 text-[color:var(--color-muted)] sm:text-lg">
-                    DSIQ Mentor helps you stay focused, learn faster, build real
-                    projects, and become the person you said you want to become.
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-5">
-                  <div className="flex items-start gap-3">
+            <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-5 py-6 pt-20 sm:px-8 lg:px-10 lg:pt-8">
+              <section className="rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
                     <ProfileAvatar size="sm" />
                     <div>
                       <p className="text-sm font-semibold">
                         Good to see you, {displayName}.
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                        You said you want to become: {primaryGoal}.
+                      <p className="mt-1 text-xs text-[color:var(--color-muted)]">
+                        One student. One teacher. One next step.
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                        Let&apos;s focus on what matters today.
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 text-sm sm:grid-cols-3 sm:text-right">
+                    <div>
+                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
+                        Current Goal
                       </p>
+                      <p className="mt-1 font-semibold">{primaryGoal}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
+                        Current Mission
+                      </p>
+                      <p className="mt-1 font-semibold">{currentMission}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[color:var(--color-muted)]">
+                        Roadmap Progress
+                      </p>
+                      <p className="mt-1 font-semibold">{roadmapProgress}%</p>
                     </div>
                   </div>
                 </div>
               </section>
 
-              <section className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-                <div className="flex flex-col gap-6">
-                  <article className="rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
-                        <Target className="h-5 w-5" aria-hidden="true" />
-                      </span>
-                      <div>
-                        <h2 className="text-base font-semibold">
-                          Today&apos;s Focus
-                        </h2>
-                        <p className="text-xs text-[color:var(--color-muted)]">
-                          Current learning focus
-                        </p>
-                      </div>
+              <section className="rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                      <Target className="h-4 w-4" aria-hidden="true" />
+                      Progress
                     </div>
-                    <div className="mt-5 rounded-2xl bg-[color:var(--color-surface-strong)] p-4">
-                      <p className="text-sm font-semibold">{learningFocus}</p>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--color-muted)]">
-                        {nextTask}
-                      </p>
-                      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
-                        <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-                        {estimatedTime}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPrompt(
-                          `Start a focus session for ${learningFocus}. Give me the first step and keep me on track.`,
-                        )
-                      }
-                      className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      Start focus session
-                    </button>
-                  </article>
-
-                  <article className="rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
-                        <Shield className="h-5 w-5" aria-hidden="true" />
-                      </span>
-                      <h2 className="text-base font-semibold">
-                        Smart Focus Mentor
-                      </h2>
-                    </div>
-                    <p className="mt-4 text-sm leading-7 text-[color:var(--color-muted)]">
-                      With your permission, DSIQ Mentor can help you notice
-                      when your activity does not match your learning goals.
+                    <h1 className="mt-2 truncate text-xl font-semibold text-[#111111]">
+                      {primaryGoal}
+                    </h1>
+                    <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                      Current lesson: {currentLesson}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setFocusEnabled((value) => !value)}
-                      className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      {focusEnabled ? "Smart Focus enabled" : "Enable Smart Focus"}
-                    </button>
-                    <p className="mt-3 text-xs leading-5 text-[color:var(--color-muted)]">
-                      You stay in control. You can turn this off anytime.
-                    </p>
-                  </article>
-
-                  <article className="rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
-                        <Lightbulb className="h-5 w-5" aria-hidden="true" />
-                      </span>
-                      <h2 className="text-base font-semibold">Mentor insight</h2>
-                    </div>
-                    <div className="mt-4 grid gap-3">
-                      {insightTexts.map((insight) => (
-                        <div
-                          key={insight}
-                          className="flex items-start gap-3 rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm"
-                        >
-                          <Check
-                            className="mt-0.5 h-4 w-4 shrink-0"
-                            aria-hidden="true"
-                          />
-                          {insight}
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                </div>
-
-                <article className="flex min-h-[620px] flex-col rounded-[1.75rem] border border-[color:var(--color-line)] bg-white shadow-[0_12px_36px_rgba(0,0,0,0.04)]">
-                  <div className="border-b border-[color:var(--color-line)] px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111111] text-white">
-                        <Bot className="h-5 w-5" aria-hidden="true" />
-                      </span>
-                      <div>
-                        <h2 className="text-base font-semibold">Mentor Chat</h2>
-                        <p className="text-xs text-[color:var(--color-muted)]">
-                          Personal teacher mode
-                        </p>
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
-                    {mentorMessages.length ? (
-                      mentorMessages.map((message, index) => (
-                        <div
-                          key={`${message.role}-${index}`}
-                          className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
-                            message.role === "user"
-                              ? "ml-auto bg-[#111111] text-white"
-                              : "mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
-                          }`}
-                        >
-                          {message.text}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="my-auto mx-auto max-w-md text-center">
-                        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
-                          <Compass className="h-6 w-6" aria-hidden="true" />
-                        </span>
-                        <p className="mt-4 text-sm font-semibold">
-                          Ask your Mentor what to do next.
-                        </p>
-                        <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-                          DSIQ Mentor uses your profile and onboarding answers
-                          to guide your learning with practical next steps.
-                        </p>
-                      </div>
-                    )}
-
-                    {isSending ? (
-                      <div className="mr-auto inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface-strong)] px-4 py-3 text-[color:var(--color-muted)]">
-                        <span className="typing-dot" />
-                        <span className="typing-dot [animation-delay:120ms]" />
-                        <span className="typing-dot [animation-delay:240ms]" />
-                        <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
-                          Mentor thinking
-                        </span>
-                      </div>
-                    ) : null}
-
-                    {error ? (
-                      <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
-                        {error}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="border-t border-[color:var(--color-line)] p-4">
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {suggestedPrompts.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => setPrompt(suggestion)}
-                          className="rounded-full border border-[color:var(--color-line)] px-3 py-2 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
+                  <div className="w-full sm:max-w-xs">
+                    <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[color:var(--color-muted)]">
+                      <span>{roadmapProgress}% complete</span>
+                      <span>Roadmap</span>
                     </div>
-                    <form
-                      onSubmit={submitMentorPrompt}
-                      className="flex items-center gap-3 rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-4 py-3 focus-within:border-[#111111]"
-                    >
-                      <input
-                        type="text"
-                        value={prompt}
-                        onChange={(event) => setPrompt(event.target.value)}
-                        placeholder="Ask your AI Mentor anything..."
-                        className="min-h-10 flex-1 bg-transparent text-sm outline-none"
+                    <div className="h-2 overflow-hidden rounded-full bg-[color:var(--color-surface-strong)]">
+                      <div
+                        className="h-full rounded-full bg-[#111111]"
+                        style={{ width: `${roadmapProgress}%` }}
                       />
-                      <button
-                        type="submit"
-                        disabled={!prompt.trim() || isSending}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-label="Send mentor question"
-                      >
-                        <Send className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </form>
+                    </div>
                   </div>
-                </article>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPrompt(
+                        `Continue my lesson: ${currentLesson}. Teach me the next step clearly.`,
+                      )
+                    }
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+                  >
+                    Continue
+                  </button>
+                </div>
               </section>
+
+              <article className="flex min-h-[620px] flex-1 flex-col rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+                <div className="border-b border-[color:var(--color-line)] px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111111] text-white">
+                      <Bot className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold">AI Teacher</h2>
+                      <p className="text-xs text-[color:var(--color-muted)]">
+                        Ask, practice, and continue your lesson.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
+                  {mentorMessages.length ? (
+                    mentorMessages.map((message, index) => (
+                      <div
+                        key={`${message.role}-${index}`}
+                        className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
+                          message.role === "user"
+                            ? "ml-auto bg-[#111111] text-white"
+                            : "mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                        }`}
+                      >
+                        {message.text}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="my-auto mx-auto max-w-sm text-center">
+                      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
+                        <Bot className="h-6 w-6" aria-hidden="true" />
+                      </span>
+                      <p className="mt-4 text-sm font-semibold">
+                        What should we learn next?
+                      </p>
+                    </div>
+                  )}
+
+                  {isSending ? (
+                    <div className="mr-auto inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface-strong)] px-4 py-3 text-[color:var(--color-muted)]">
+                      <span className="typing-dot" />
+                      <span className="typing-dot [animation-delay:120ms]" />
+                      <span className="typing-dot [animation-delay:240ms]" />
+                      <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
+                        Teacher thinking
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {error ? (
+                    <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                      {error}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="border-t border-[color:var(--color-line)] p-4">
+                  <form
+                    onSubmit={submitMentorPrompt}
+                    className="flex items-center gap-2 rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-4 py-3 focus-within:border-[#111111]"
+                  >
+                    <input
+                      type="text"
+                      value={prompt}
+                      onChange={(event) => setPrompt(event.target.value)}
+                      placeholder="Ask your AI Teacher anything..."
+                      className="min-h-10 flex-1 bg-transparent text-sm outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVoiceInput}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                        isListening
+                          ? "bg-[color:var(--color-surface-strong)] text-[#111111]"
+                          : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface-strong)] hover:text-[#111111]"
+                      }`}
+                      aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                    >
+                      <Mic className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!prompt.trim() || isSending}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Send teacher question"
+                    >
+                      <Send className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </form>
+                </div>
+              </article>
             </div>
           </section>
         </div>
