@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ChatComposer } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
@@ -131,6 +132,7 @@ function getChatHref(chat: PrivateChatSummary) {
 
 export default function DsiqMentorPage() {
   useKeyboardOffset();
+  const { t } = useTranslation();
 
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -1069,7 +1071,7 @@ export default function DsiqMentorPage() {
                     onExpandedChange={setIsComposerExpanded}
                     isListening={isListening}
                     isSending={isSending}
-                    placeholder="Ask your AI Teacher anything..."
+                    placeholder={t("chat.askDsiq")}
                   />
                 </div>
               </article>

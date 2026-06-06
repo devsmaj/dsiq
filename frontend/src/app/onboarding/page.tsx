@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
@@ -64,6 +65,7 @@ function wait(ms: number) {
 }
 
 export default function OnboardingPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<OnboardingStep>("account");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -89,12 +91,12 @@ export default function OnboardingPage() {
 
     if (!user) {
       // No signed-in user yet.
-      setNicknameStatus("idle");
+      window.setTimeout(() => setNicknameStatus("idle"), 0);
       return;
     }
 
 
-    setNicknameStatus("checking");
+    window.setTimeout(() => setNicknameStatus("checking"), 0);
     const timeout = window.setTimeout(async () => {
       try {
         const nicknameTaken =
@@ -275,27 +277,26 @@ export default function OnboardingPage() {
             <div>
               <div className="text-center">
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  Create your DSIQ profile
+                  {t("onboarding.profileTitle")}
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)]">
-                  This helps DSIQ personalize your coaching, learning path, and
-                  recommendations.
+                  {t("onboarding.profileDescription")}
                 </p>
               </div>
 
               <div className="mt-8 space-y-3">
                 <label className="block">
-                  <span className="sr-only">Full name</span>
+                  <span className="sr-only">{t("onboarding.fullName")}</span>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
-                    placeholder="Full name"
+                    placeholder={t("onboarding.fullName")}
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
                 <label className="block">
-                  <span className="sr-only">Nickname</span>
+                  <span className="sr-only">{t("onboarding.nickname")}</span>
                   <div className="relative">
                     <input
                       type="text"
@@ -303,7 +304,7 @@ export default function OnboardingPage() {
                       onChange={(event) =>
                         setNickname(normalizeNickname(event.target.value))
                       }
-                      placeholder="Nickname"
+                      placeholder={t("onboarding.nickname")}
                       aria-describedby="nickname-status"
                       className={`h-[52px] w-full rounded-2xl border bg-white px-4 pr-12 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111] ${
                         nicknameStatus === "taken"
@@ -316,19 +317,19 @@ export default function OnboardingPage() {
                     {nicknameStatus === "checking" ? (
                       <span
                         className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent"
-                        aria-label="Checking nickname"
+                        aria-label={t("common.loading")}
                       />
                     ) : null}
                     {nicknameStatus === "available" ? (
                       <Check
                         className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-600"
-                        aria-label="Nickname available"
+                        aria-label={t("onboarding.available")}
                       />
                     ) : null}
                     {nicknameStatus === "taken" ? (
                       <X
                         className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-red-600"
-                        aria-label="Nickname unavailable"
+                        aria-label={t("onboarding.nicknameTaken")}
                       />
                     ) : null}
                   </div>
@@ -338,7 +339,7 @@ export default function OnboardingPage() {
                       className="mt-1.5 px-1 text-xs font-medium text-emerald-700"
                       aria-live="polite"
                     >
-                      Available
+                      {t("onboarding.available")}
                     </p>
                   ) : null}
                   {nicknameStatus === "taken" ? (
@@ -347,19 +348,19 @@ export default function OnboardingPage() {
                       className="mt-1.5 px-1 text-xs font-medium text-red-600"
                       aria-live="polite"
                     >
-                      This username is already taken. Try another.
+                      {t("onboarding.nicknameTaken")}
                     </p>
                   ) : null}
                 </label>
                 <label className="block">
-                  <span className="sr-only">Age</span>
+                  <span className="sr-only">{t("onboarding.age")}</span>
                   <input
                     type="number"
                     min="1"
                     inputMode="numeric"
                     value={age}
                     onChange={(event) => setAge(event.target.value)}
-                    placeholder="Age"
+                    placeholder={t("onboarding.age")}
                     className="h-[52px] w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm text-[color:var(--color-text)] outline-none transition placeholder:text-[color:var(--color-muted)] focus:border-[#111111]"
                   />
                 </label>
@@ -397,17 +398,17 @@ export default function OnboardingPage() {
                 }
                 className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isCheckingNickname ? <LoadingSpinner /> : "Finish creating account"}
+                {isCheckingNickname ? <LoadingSpinner /> : t("onboarding.finishAccount")}
               </button>
 
               <p className="mt-5 text-center text-xs leading-6 text-[color:var(--color-muted)]">
-                By clicking &quot;Finish creating account&quot;, you agree to our{" "}
+                {t("onboarding.agreementPrefix")}{" "}
                 <Link href="/terms" className="underline underline-offset-4">
-                  Terms of Use
+                  {t("auth.terms")}
                 </Link>{" "}
-                and{" "}
+                {t("onboarding.and")}{" "}
                 <Link href="/privacy" className="underline underline-offset-4">
-                  Privacy Policy
+                  {t("auth.privacyPolicy")}
                 </Link>
                 .
               </p>
@@ -423,17 +424,16 @@ export default function OnboardingPage() {
                   setStep("account");
                 }}
                 className="mb-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
-                aria-label="Go back"
+                aria-label={t("onboarding.back")}
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </button>
               <div className="text-center">
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  What do you want to achieve with DSIQ?
+                  {t("onboarding.goalsTitle")}
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)]">
-                  Select all that apply. DSIQ will use this to build your
-                  personal roadmap.
+                  {t("onboarding.goalsDescription")}
                 </p>
               </div>
 
@@ -485,7 +485,7 @@ export default function OnboardingPage() {
                 onClick={handleGoalsNext}
                 className="mt-6 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
               >
-                Next
+                {t("onboarding.next")}
               </button>
               <button
                 type="button"
@@ -495,7 +495,7 @@ export default function OnboardingPage() {
                 }}
                 className="mx-auto mt-4 block text-sm font-medium text-[color:var(--color-muted)] underline-offset-4 transition hover:text-[color:var(--color-text)] hover:underline"
               >
-                Skip
+                {t("onboarding.skip")}
               </button>
             </div>
           ) : null}
@@ -509,7 +509,7 @@ export default function OnboardingPage() {
                   setStep("goals");
                 }}
                 className="mb-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
-                aria-label="Go back"
+                aria-label={t("onboarding.back")}
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -518,11 +518,10 @@ export default function OnboardingPage() {
                 <Check className="h-7 w-7" aria-hidden="true" />
               </div>
               <h1 className="mt-6 text-2xl font-semibold tracking-tight sm:text-3xl">
-                You&apos;re all set
+                {t("onboarding.successTitle")}
               </h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)]">
-                DSIQ is ready to guide your learning, skills, projects, and
-                opportunities.
+                {t("onboarding.successDescription")}
               </p>
 
               {error ? (
@@ -537,12 +536,12 @@ export default function OnboardingPage() {
                 disabled={isSubmitting}
                 className="mt-7 inline-flex h-[52px] w-full items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? <LoadingSpinner /> : "Continue"}
+                {isSubmitting ? <LoadingSpinner /> : t("auth.continue")}
               </button>
 
               {isSubmitting ? null : (
                 <p className="mx-auto mt-5 max-w-sm text-xs leading-6 text-[color:var(--color-muted)]">
-                  DSIQ can make mistakes. Don&apos;t share sensitive information.
+                  {t("onboarding.disclaimer")}
                 </p>
               )}
               {redirectMessage ? (

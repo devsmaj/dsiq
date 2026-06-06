@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FileText, Save, Send } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
@@ -24,16 +25,13 @@ function formatUpdatedAt(updatedAtMs: number) {
   }).format(new Date(updatedAtMs));
 }
 
-function getChatTypeLabel(chat: PrivateChatSummary) {
-  return chat.chatType === "teacher" ? "AI Teacher" : "Normal Chat";
-}
-
 function getSavedChatHref(chat: PrivateChatSummary) {
   const path = chat.chatType === "teacher" ? "/dsiq/mentor" : "/dsiq/chat";
   return `${path}?chatId=${encodeURIComponent(chat.id)}`;
 }
 
 export default function DsiqSavedChatsPage() {
+  const { t } = useTranslation();
   const { user } = useUserProfile();
   const [chats, setChats] = useState<PrivateChatSummary[]>([]);
   const [error, setError] = useState("");
@@ -73,7 +71,7 @@ export default function DsiqSavedChatsPage() {
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--color-line)] pb-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                Saved Chats
+                {t("saved.title")}
               </p>
               <h1 className="mt-2 text-2xl font-semibold">Bookmarked learning chats</h1>
             </div>
@@ -108,7 +106,9 @@ export default function DsiqSavedChatsPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <span className="mb-2 inline-flex rounded-full bg-[color:var(--color-surface-strong)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-muted)]">
-                        {getChatTypeLabel(chat)}
+                        {chat.chatType === "teacher"
+                          ? t("sidebar.aiTeacher")
+                          : t("sidebar.normalChat")}
                       </span>
                       <h2 className="truncate text-sm font-semibold">
                         {chat.title}

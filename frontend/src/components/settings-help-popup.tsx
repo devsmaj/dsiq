@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
 import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
@@ -31,7 +32,6 @@ import {
   isLanguageCode,
   LANGUAGE_STORAGE_KEY,
   languages,
-  t,
   type LanguageCode,
 } from "@/lib/i18n/languages";
 import {
@@ -45,23 +45,23 @@ const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
 const DELETE_CONFIRMATION_TEXT = "DELETE";
 
 const appearanceOptions = [
-  { value: "system", label: "System", icon: Monitor },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "light", label: "Light", icon: Sun },
+  { value: "system", labelKey: "settings.appearance.system", icon: Monitor },
+  { value: "dark", labelKey: "settings.appearance.dark", icon: Moon },
+  { value: "light", labelKey: "settings.appearance.light", icon: Sun },
 ] as const;
 
 const privatePanels = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "account", label: "Account", icon: CircleUserRound },
-  { id: "personalization", label: "Personalization", icon: GraduationCap },
-  { id: "privacy", label: "Privacy", icon: Shield },
-  { id: "notifications", label: "Notifications", icon: Megaphone },
-  { id: "data", label: "Data Controls", icon: Database },
+  { id: "general", labelKey: "settings.general", icon: Settings },
+  { id: "account", labelKey: "settings.account", icon: CircleUserRound },
+  { id: "personalization", labelKey: "settings.personalization", icon: GraduationCap },
+  { id: "privacy", labelKey: "settings.privacy", icon: Shield },
+  { id: "notifications", labelKey: "settings.notifications", icon: Megaphone },
+  { id: "data", labelKey: "settings.dataControls", icon: Database },
 ] as const;
 
 const publicPanels = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "data", label: "Data Controls", icon: Database },
+  { id: "general", labelKey: "settings.general", icon: Settings },
+  { id: "data", labelKey: "settings.dataControls", icon: Database },
 ] as const;
 
 type AppearanceValue = (typeof appearanceOptions)[number]["value"];
@@ -111,10 +111,6 @@ function applyAppearance(appearance: AppearanceValue) {
         : "light dark";
 }
 
-function getProviderLabel(user: { email: string | null } | null) {
-  return user?.email ? "Email / connected provider" : "Connected provider";
-}
-
 function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
   const selectedGoals =
     profile?.selectedGoals?.length
@@ -123,11 +119,12 @@ function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
         ? goals
         : [];
 
-  return selectedGoals.length ? selectedGoals.join(", ") : "Not set yet";
+  return selectedGoals.length ? selectedGoals.join(", ") : "";
 }
 
 export function SettingsHelpPopup() {
   const router = useRouter();
+  const { i18n, t } = useTranslation();
   const { authMode, changePassword, deleteAccount, user } = useAuth();
   const { answers, profile } = useUserProfile();
   const isPrivateUser = Boolean(user);
@@ -190,7 +187,8 @@ export function SettingsHelpPopup() {
 
   useEffect(() => {
     applyLanguage(language);
-  }, [language]);
+    void i18n.changeLanguage(getAppliedLanguage(language));
+  }, [i18n, language]);
 
   useEffect(() => {
     const profileLanguage = profile?.languagePreference || null;
@@ -202,8 +200,9 @@ export function SettingsHelpPopup() {
       window.setTimeout(() => setLanguage(profileLanguage), 0);
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, profileLanguage);
       applyLanguage(profileLanguage);
+      void i18n.changeLanguage(getAppliedLanguage(profileLanguage));
     }
-  }, [language, profile?.languagePreference]);
+  }, [i18n, language, profile?.languagePreference]);
 
   function selectAppearance(nextAppearance: AppearanceValue) {
     setAppearance(nextAppearance);
@@ -215,6 +214,7 @@ export function SettingsHelpPopup() {
   async function selectLanguage(nextLanguage: LanguageCode) {
     setLanguage(nextLanguage);
     applyLanguage(nextLanguage);
+    await i18n.changeLanguage(getAppliedLanguage(nextLanguage));
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
     setIsLanguageOpen(false);
 
@@ -247,14 +247,14 @@ export function SettingsHelpPopup() {
       await deleteAccount();
       setIsDeleteModalOpen(false);
       setIsOpen(false);
-      setToastMessage("Account deleted successfully");
+      setToastMessage(t("settings.delete.success"));
       await wait(900);
       router.replace("/");
     } catch (error) {
       setDeleteError(
         error instanceof Error
           ? error.message
-          : "We could not delete your account right now.",
+          : t("settings.delete.failed"),
       );
     } finally {
       setIsDeletingAccount(false);
@@ -265,17 +265,17 @@ export function SettingsHelpPopup() {
     setChangePasswordError("");
 
     if (!currentPassword) {
-      setChangePasswordError("Enter your current password.");
+      setChangePasswordError(t("settings.account.currentPasswordRequired"));
       return;
     }
 
     if (newPassword.length < 6) {
-      setChangePasswordError("Use a stronger password with at least 6 characters.");
+      setChangePasswordError(t("settings.account.weakPassword"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setChangePasswordError("New passwords do not match.");
+      setChangePasswordError(t("settings.account.passwordMismatch"));
       return;
     }
 
@@ -286,12 +286,12 @@ export function SettingsHelpPopup() {
       setNewPassword("");
       setConfirmPassword("");
       setIsChangePasswordOpen(false);
-      setToastMessage("Password changed successfully");
+      setToastMessage(t("settings.account.passwordChanged"));
     } catch (error) {
       setChangePasswordError(
         error instanceof Error
           ? error.message
-          : "We could not change your password right now.",
+          : t("settings.account.passwordChangeFailed"),
       );
     } finally {
       setIsChangingPassword(false);
@@ -345,10 +345,10 @@ export function SettingsHelpPopup() {
           >
             <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-3 md:border-b-0 md:border-r">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold">Settings</p>
+                <p className="text-sm font-semibold">{t("settings.title")}</p>
                 <button
                   type="button"
-                  aria-label="Close settings"
+                  aria-label={t("common.close")}
                   onClick={() => setIsOpen(false)}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-line)] md:hidden"
                 >
@@ -373,7 +373,7 @@ export function SettingsHelpPopup() {
                       }`}
                     >
                       <Icon className="h-4 w-4" aria-hidden="true" />
-                      {panel.label}
+                      {t(panel.labelKey)}
                     </button>
                   );
                 })}
@@ -384,7 +384,7 @@ export function SettingsHelpPopup() {
               <div className="mb-5 hidden items-center justify-end md:flex">
                 <button
                   type="button"
-                  aria-label="Close settings"
+                  aria-label={t("common.close")}
                   onClick={() => setIsOpen(false)}
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
                 >
@@ -409,8 +409,12 @@ export function SettingsHelpPopup() {
 
               {activePanel === "account" && isPrivateUser ? (
                 <AccountPanel
-                  email={user?.email || "No email available"}
-                  providerLabel={getProviderLabel(user)}
+                  email={user?.email || t("settings.account.noEmail")}
+                  providerLabel={
+                    user?.email
+                      ? t("settings.account.providerEmail")
+                      : t("settings.account.providerConnected")
+                  }
                   onChangePassword={() => {
                     setChangePasswordError("");
                     setCurrentPassword("");
@@ -424,7 +428,7 @@ export function SettingsHelpPopup() {
               {activePanel === "personalization" && isPrivateUser ? (
                 <PersonalizationPanel
                   goals={getGoalSummary(profile, answers?.selectedGoals)}
-                  level={profile?.role || answers?.role || "Not set yet"}
+                  level={profile?.role || answers?.role || ""}
                 />
               ) : null}
 
@@ -446,7 +450,11 @@ export function SettingsHelpPopup() {
               {activePanel === "data" ? (
                 <DataControlsPanel
                   isPrivateUser={isPrivateUser}
-                  languageLabel={selectedLanguage.label}
+                  languageLabel={
+                    selectedLanguage.code === "auto"
+                      ? t("settings.language.autoDetect")
+                      : selectedLanguage.label
+                  }
                 />
               ) : null}
             </div>
@@ -506,17 +514,24 @@ function GeneralPanel({
   selectedAppearance: (typeof appearanceOptions)[number];
   selectedLanguage: (typeof languages)[number];
 }) {
+  const { t } = useTranslation();
+  const selectedAppearanceLabel = t(selectedAppearance.labelKey);
+  const selectedLanguageLabel =
+    selectedLanguage.code === "auto"
+      ? t("settings.language.autoDetect")
+      : selectedLanguage.label;
+
   return (
     <div>
-      <PanelTitle title="General" />
+      <PanelTitle title={t("settings.general")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
         <SettingRow
-          description="Match your device or choose a fixed look."
-          title="Appearance"
+          description={t("settings.appearance.description")}
+          title={t("settings.appearance")}
         >
           <DropdownButton
             expanded={isAppearanceOpen}
-            label={selectedAppearance.label}
+            label={selectedAppearanceLabel}
             onClick={() => {
               onAppearanceOpenChange((value) => !value);
               onLanguageOpenChange(false);
@@ -531,7 +546,7 @@ function GeneralPanel({
                     key={option.value}
                     checked={appearance === option.value}
                     icon={<Icon className="h-4 w-4" aria-hidden="true" />}
-                    label={option.label}
+                    label={t(option.labelKey)}
                     onClick={() => onSelectAppearance(option.value)}
                   />
                 );
@@ -542,11 +557,11 @@ function GeneralPanel({
 
         <SettingRow
           description={t("settings.language.description")}
-          title={t("settings.language.title")}
+          title={t("settings.language")}
         >
           <DropdownButton
             expanded={isLanguageOpen}
-            label={selectedLanguage.label}
+            label={selectedLanguageLabel}
             onClick={() => {
               onLanguageOpenChange((value) => !value);
               onAppearanceOpenChange(false);
@@ -558,7 +573,11 @@ function GeneralPanel({
                 <DropdownOption
                   key={option.code}
                   checked={language === option.code}
-                  label={option.label}
+                  label={
+                    option.code === "auto"
+                      ? t("settings.language.autoDetect")
+                      : option.label
+                  }
                   onClick={() => onSelectLanguage(option.code)}
                 />
               ))}
@@ -567,11 +586,11 @@ function GeneralPanel({
         </SettingRow>
 
         <SettingRow
-          description="Keep readable contrast, keyboard focus, and clean motion."
-          title="Accessibility"
+          description={t("settings.accessibility.description")}
+          title={t("settings.accessibility")}
         >
           <span className="text-sm font-medium text-[color:var(--color-muted)]">
-            Optimized
+            {t("settings.accessibility.optimized")}
           </span>
         </SettingRow>
       </div>
@@ -588,19 +607,21 @@ function AccountPanel({
   onChangePassword: () => void;
   providerLabel: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <PanelTitle title="Account" />
+      <PanelTitle title={t("settings.account")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow icon={<FileText />} label="Email" value={email} />
+        <InfoRow icon={<FileText />} label={t("settings.account.email")} value={email} />
         <InfoRow
           icon={<Shield />}
-          label="Connected login providers"
+          label={t("settings.account.connectedProviders")}
           value={providerLabel}
         />
         <ActionRow
           icon={<Shield />}
-          label="Change password"
+          label={t("settings.account.changePassword")}
           onClick={onChangePassword}
         />
       </div>
@@ -615,26 +636,38 @@ function PersonalizationPanel({
   goals: string;
   level: string;
 }) {
+  const { t } = useTranslation();
+  const safeGoals = goals || t("settings.personalization.notSet");
+  const safeLevel = level || t("settings.personalization.notSet");
+
   return (
     <div>
-      <PanelTitle title="Personalization" />
+      <PanelTitle title={t("settings.personalization")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow icon={<BookOpen />} label="Learning goals" value={goals} />
+        <InfoRow
+          icon={<BookOpen />}
+          label={t("settings.personalization.learningGoals")}
+          value={safeGoals}
+        />
         <InfoRow
           icon={<GraduationCap />}
-          label="AI teacher style"
-          value="Step-by-step and practical"
+          label={t("settings.personalization.aiTeacherStyle")}
+          value={t("settings.personalization.aiTeacherStyleValue")}
         />
         <InfoRow
           icon={<Eye />}
-          label="Focus preferences"
-          value="One focused task at a time"
+          label={t("settings.personalization.focusPreferences")}
+          value={t("settings.personalization.focusPreferencesValue")}
         />
-        <InfoRow icon={<GraduationCap />} label="Experience level" value={level} />
+        <InfoRow
+          icon={<GraduationCap />}
+          label={t("settings.personalization.experienceLevel")}
+          value={safeLevel}
+        />
         <InfoRow
           icon={<BookOpen />}
-          label="Preferred learning style"
-          value="Practice with short explanations"
+          label={t("settings.personalization.learningStyle")}
+          value={t("settings.personalization.learningStyleValue")}
         />
       </div>
     </div>
@@ -648,25 +681,31 @@ function PrivacyPanel({
   onDeleteAccount: () => void;
   onExportData: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <PanelTitle title="Privacy" />
+      <PanelTitle title={t("settings.privacy")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
         <InfoRow
           icon={<Trash2 />}
-          label="Clear chat history"
-          value="Manage saved chats from the chat sidebar"
+          label={t("settings.privacy.clearChatHistory")}
+          value={t("settings.privacy.clearChatHistoryValue")}
         />
-        <ActionRow icon={<FileText />} label="Export data" onClick={onExportData} />
+        <ActionRow
+          icon={<FileText />}
+          label={t("settings.privacy.exportData")}
+          onClick={onExportData}
+        />
         <InfoRow
           icon={<Shield />}
-          label="AI memory controls"
-          value="Uses profile and onboarding context"
+          label={t("settings.privacy.aiMemoryControls")}
+          value={t("settings.privacy.aiMemoryControlsValue")}
         />
         <ActionRow
           danger
           icon={<Trash2 />}
-          label="Delete account"
+          label={t("settings.privacy.deleteAccount")}
           onClick={onDeleteAccount}
         />
       </div>
@@ -675,13 +714,27 @@ function PrivacyPanel({
 }
 
 function NotificationsPanel() {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <PanelTitle title="Notifications" />
+      <PanelTitle title={t("settings.notifications")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow icon={<FileText />} label="Email notifications" value="Off" />
-        <InfoRow icon={<Megaphone />} label="Study reminders" value="Off" />
-        <InfoRow icon={<HelpCircle />} label="Focus reminders" value="Off" />
+        <InfoRow
+          icon={<FileText />}
+          label={t("settings.notifications.email")}
+          value={t("settings.notifications.off")}
+        />
+        <InfoRow
+          icon={<Megaphone />}
+          label={t("settings.notifications.studyReminders")}
+          value={t("settings.notifications.off")}
+        />
+        <InfoRow
+          icon={<HelpCircle />}
+          label={t("settings.notifications.focusReminders")}
+          value={t("settings.notifications.off")}
+        />
       </div>
     </div>
   );
@@ -694,13 +747,15 @@ function DataControlsPanel({
   isPrivateUser: boolean;
   languageLabel: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div>
-      <PanelTitle title="Data Controls" />
+      <PanelTitle title={t("settings.dataControls")} />
       <div className="mt-7 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
-        <p className="text-sm font-semibold">Saved preferences</p>
+        <p className="text-sm font-semibold">{t("settings.data.savedPreferences")}</p>
         <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-          Appearance and language are saved in this browser. Current language:
+          {t("settings.data.savedPreferencesDescription")}
           {" "}
           <span className="font-semibold text-[color:var(--color-text)]">
             {languageLabel}
@@ -709,8 +764,7 @@ function DataControlsPanel({
         </p>
         {isPrivateUser ? (
           <p className="mt-3 text-sm leading-7 text-[color:var(--color-muted)]">
-            Your language preference is also saved to your profile when cloud
-            sync is available.
+            {t("settings.data.cloudSyncDescription")}
           </p>
         ) : null}
       </div>
@@ -733,22 +787,23 @@ function DeleteAccountModal({
   onConfirm: () => void;
   onConfirmTextChange: (value: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
       <section className="w-full max-w-md rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
-              Delete your account?
+              {t("settings.delete.title")}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-              This action cannot be undone. Your chats, profile, and saved data
-              will be permanently removed.
+              {t("settings.delete.description")}
             </p>
           </div>
           <button
             type="button"
-            aria-label="Close delete account modal"
+            aria-label={t("common.close")}
             onClick={onCancel}
             disabled={isDeleting}
             className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
@@ -759,7 +814,7 @@ function DeleteAccountModal({
 
         <label className="mt-5 block">
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-            Type DELETE to confirm
+            {t("settings.delete.typeDelete")}
           </span>
           <input
             type="text"
@@ -782,7 +837,7 @@ function DeleteAccountModal({
             disabled={isDeleting}
             className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -791,7 +846,7 @@ function DeleteAccountModal({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDeleting ? <LoadingSpinner /> : null}
-            Delete account
+            {t("settings.delete.confirm")}
           </button>
         </div>
       </section>
@@ -822,21 +877,23 @@ function ChangePasswordModal({
   onCurrentPasswordChange: (value: string) => void;
   onNewPasswordChange: (value: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
       <section className="w-full max-w-md rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
-              Change password
+              {t("settings.account.changePassword")}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-              Enter your current password, then choose a new one.
+              {t("settings.account.changePasswordDescription")}
             </p>
           </div>
           <button
             type="button"
-            aria-label="Close change password modal"
+            aria-label={t("common.close")}
             onClick={onCancel}
             disabled={isSaving}
             className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
@@ -847,17 +904,17 @@ function ChangePasswordModal({
 
         <div className="mt-5 space-y-3">
           <PasswordField
-            label="Current password"
+            label={t("settings.account.currentPassword")}
             value={currentPassword}
             onChange={onCurrentPasswordChange}
           />
           <PasswordField
-            label="New password"
+            label={t("settings.account.newPassword")}
             value={newPassword}
             onChange={onNewPasswordChange}
           />
           <PasswordField
-            label="Confirm new password"
+            label={t("settings.account.confirmNewPassword")}
             value={confirmPassword}
             onChange={onConfirmPasswordChange}
           />
@@ -876,7 +933,7 @@ function ChangePasswordModal({
             disabled={isSaving}
             className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -887,10 +944,10 @@ function ChangePasswordModal({
             {isSaving ? (
               <>
                 <LoadingSpinner />
-                Saving...
+                {t("common.saving")}
               </>
             ) : (
-              "Save password"
+              t("settings.account.savePassword")
             )}
           </button>
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/auth-provider";
 import { GlobalLoadingDelay } from "@/components/global-loading-delay";
+import { DsiqI18nProvider } from "@/components/i18n-provider";
 import { SettingsHelpPopup } from "@/components/settings-help-popup";
 import "./globals.css";
 
@@ -68,9 +69,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <GlobalLoadingDelay />
-          {children}
-          <SettingsHelpPopup />
+          <DsiqI18nProvider>
+            <GlobalLoadingDelay />
+            {children}
+            <SettingsHelpPopup />
+          </DsiqI18nProvider>
         </AuthProvider>
       </body>
     </html>

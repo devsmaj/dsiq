@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SquarePen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
 import { ChatComposer } from "@/components/chat-composer";
@@ -91,6 +92,7 @@ function readGuestMessages() {
 
 export function PublicChat() {
   useKeyboardOffset();
+  const { t } = useTranslation();
 
   const searchParams = useSearchParams();
   const initialQuestion = searchParams.get("q")?.trim() || "";
@@ -330,14 +332,14 @@ export function PublicChat() {
               className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] px-4 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
             >
               <SquarePen className="h-4 w-4" aria-hidden="true" />
-              New Chat
+              {t("sidebar.newChat")}
             </button>
             {!user ? (
               <Link
                 href="/login"
                 className="hidden h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black sm:inline-flex"
               >
-                Log in
+                {t("public.signIn")}
               </Link>
             ) : null}
           </div>
@@ -351,9 +353,9 @@ export function PublicChat() {
               href="/login"
               className="font-semibold text-[color:var(--color-text)] underline underline-offset-4"
             >
-              Sign in
+              {t("public.signIn")}
             </Link>{" "}
-            to save your chats, missions, and progress.
+            {t("public.signInToSaveSuffix")}
           </div>
         ) : null}
 
@@ -362,7 +364,7 @@ export function PublicChat() {
             <div className="flex min-h-full items-center justify-center pt-8 text-center sm:pt-0">
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-[#111111]">
-                  Ask DSIQ anything.
+                  {t("chat.askDsiq")}
                 </h1>
                 <p className="mt-3 text-sm text-[color:var(--color-muted)]">
                   Guest chats are temporary in this browser session.
@@ -432,7 +434,7 @@ export function PublicChat() {
           onVoiceInput={handleVoiceInput}
           isListening={isListening}
           isSending={isSending}
-          placeholder="Ask DSIQ"
+          placeholder={t("chat.askDsiq")}
         />
       </section>
     </main>

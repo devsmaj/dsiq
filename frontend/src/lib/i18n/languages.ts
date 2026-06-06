@@ -103,7 +103,3 @@ export function getAiLanguageInstruction(languageCodeInput?: string | null) {
   const languageName = language?.aiName || languageCode;
   return `Language preference: ${languageName}. Reply in ${languageName} unless the user's latest message clearly asks for a different language. If the user writes in another language, follow the user's latest message language.`;
 }
-
-export function t(key: keyof typeof enTranslations) {
-  return enTranslations[key];
-}

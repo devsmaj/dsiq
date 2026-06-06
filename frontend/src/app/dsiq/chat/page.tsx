@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
 import { ChatComposer, type ChatImageAttachment } from "@/components/chat-composer";
@@ -198,6 +199,7 @@ function getChatHref(chat: PrivateChatSummary) {
 
 export default function DsiqChatPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { authMode, logout } = useAuth();
   const { answers, isProfileLoading, profile, profileError, user } =
     useUserProfile();
@@ -279,20 +281,20 @@ export default function DsiqChatPage() {
   const hasPreviousProgress = privateChats.length > 0;
   const welcomeActions = [
     {
-      label: "Create my roadmap",
+      label: t("chat.action.createRoadmap"),
       prompt:
         "Create my learning roadmap with clear beginner, intermediate, and portfolio steps.",
     },
     {
-      label: "Continue my lesson",
+      label: t("chat.action.continueLesson"),
       prompt: "Continue my lesson from where I stopped. Keep it short and practical.",
     },
     {
-      label: "Give me today's mission",
+      label: t("chat.action.todayMission"),
       prompt: "Give me today's learning mission with one clear action and a quick check.",
     },
     {
-      label: "Test my knowledge",
+      label: t("chat.action.testKnowledge"),
       prompt: "Test my knowledge with a short quiz, then explain what I miss.",
     },
   ];
@@ -1244,7 +1246,7 @@ export default function DsiqChatPage() {
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
               >
                 <Settings className="h-4 w-4" aria-hidden="true" />
-                Settings
+                {t("chat.settings")}
               </button>
               <button
                 type="button"
@@ -1899,7 +1901,7 @@ export default function DsiqChatPage() {
                 onExpandedChange={setIsComposerExpanded}
                 isListening={isListening}
                 isSending={isSending}
-                placeholder="Ask DSIQ"
+                placeholder={t("chat.askDsiq")}
               />
             </div>
           </section>

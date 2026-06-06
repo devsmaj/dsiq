@@ -11,10 +11,12 @@
   "dependencies": {
     "@firebase/firestore": "^4.14.1",
     "firebase": "^12.13.0",
+    "i18next": "^26.3.1",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-i18next": "^17.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

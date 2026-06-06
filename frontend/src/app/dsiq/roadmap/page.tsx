@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Bot, Check, GraduationCap } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
@@ -11,6 +12,7 @@ import { listRoadmaps, type Roadmap } from "@/lib/roadmap-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 export default function DsiqRoadmapPage() {
+  const { t } = useTranslation();
   const { user } = useUserProfile();
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
   const [error, setError] = useState("");
@@ -52,7 +54,7 @@ export default function DsiqRoadmapPage() {
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--color-line)] pb-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                Learning Roadmap
+                {t("roadmap.title")}
               </p>
               <h1 className="mt-2 text-2xl font-semibold">Your learning path</h1>
             </div>

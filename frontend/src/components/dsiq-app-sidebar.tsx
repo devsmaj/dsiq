@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   deletePrivateChat,
@@ -25,10 +26,10 @@ import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
-  { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
-  { label: "Search Chats", href: "/dsiq/mentor?panel=search", icon: Search },
-  { label: "Learning Roadmap", href: "/dsiq/roadmap", icon: GraduationCap },
-  { label: "Saved Chats", href: "/dsiq/saved", icon: FileText },
+  { labelKey: "sidebar.newChat", href: "/dsiq/chat", icon: SquarePen },
+  { labelKey: "sidebar.searchChats", href: "/dsiq/mentor?panel=search", icon: Search },
+  { labelKey: "sidebar.learningRoadmap", href: "/dsiq/roadmap", icon: GraduationCap },
+  { labelKey: "sidebar.savedChats", href: "/dsiq/saved", icon: FileText },
 ] as const;
 
 function getRecentHref(chat: PrivateChatSummary) {
@@ -46,10 +47,6 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function getChatTypeLabel(chat: PrivateChatSummary) {
-  return chat.chatType === "teacher" ? "AI Teacher" : "Normal Chat";
-}
-
 function getChatTypeIcon(chat: PrivateChatSummary) {
   return chat.chatType === "teacher" ? "🎓" : "💬";
 }
@@ -61,6 +58,7 @@ export function DsiqAppSidebar({
   activeHref: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const { answers, profile, user } = useUserProfile();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [recentChats, setRecentChats] = useState<PrivateChatSummary[]>([]);
@@ -168,10 +166,11 @@ export function DsiqAppSidebar({
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href.split("?")[0] === activeHref;
+            const label = t(item.labelKey);
 
             return (
               <Link
-                key={item.label}
+                key={item.labelKey}
                 href={item.href}
                 onClick={() => {
                   if (mobile) {
@@ -185,17 +184,17 @@ export function DsiqAppSidebar({
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>{item.label}</span>
+                <span>{label}</span>
               </Link>
             );
           })}
 
           <div className="mt-5 border-t border-[color:var(--color-line)] pt-4">
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-              Recent
+              {t("sidebar.recent")}
             </p>
             <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
-              Latest 3 chats across DSIQ.
+              {t("sidebar.recentDescription")}
             </p>
             {recentChats.length ? (
               <div className="flex flex-col gap-1">
@@ -217,7 +216,10 @@ export function DsiqAppSidebar({
                         {chat.title}
                       </span>
                       <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
-                        {getChatTypeIcon(chat)} {getChatTypeLabel(chat)}
+                        {getChatTypeIcon(chat)}{" "}
+                        {chat.chatType === "teacher"
+                          ? t("sidebar.aiTeacher")
+                          : t("sidebar.normalChat")}
                       </span>
                       {chat.lastMessage ? (
                         <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
@@ -252,7 +254,7 @@ export function DsiqAppSidebar({
                                 onClick={() => setConfirmingRecentDeleteChatId(null)}
                                 className="h-8 flex-1 rounded-full border border-[color:var(--color-line)] text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
                               >
-                                Cancel
+                                {t("common.cancel")}
                               </button>
                               <button
                                 type="button"
