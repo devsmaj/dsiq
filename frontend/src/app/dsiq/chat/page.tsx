@@ -201,7 +201,7 @@ export default function DsiqChatPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { authMode, logout } = useAuth();
-  const { answers, isProfileLoading, profile, profileError, user } =
+  const { answers, isAuthLoading, isProfileLoading, profile, profileError, user } =
     useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -330,6 +330,10 @@ export default function DsiqChatPage() {
 
   useEffect(() => {
     async function loadChats() {
+      if (isAuthLoading) {
+        return;
+      }
+
       if (!user) {
         setPrivateChats([]);
         return;
@@ -356,10 +360,10 @@ export default function DsiqChatPage() {
     }
 
     void loadChats();
-  }, [user]);
+  }, [isAuthLoading, user]);
 
   useEffect(() => {
-    if (!user || isSending || currentChatId) {
+    if (isAuthLoading || !user || isSending || currentChatId) {
       return;
     }
 
@@ -367,10 +371,10 @@ export default function DsiqChatPage() {
     if (chatId) {
       void openPrivateChat(chatId);
     }
-  }, [currentChatId, isSending, user]);
+  }, [currentChatId, isAuthLoading, isSending, user]);
 
   async function refreshPrivateChats() {
-    if (!user) {
+    if (isAuthLoading || !user) {
       return;
     }
 
@@ -392,7 +396,7 @@ export default function DsiqChatPage() {
   }
 
   async function toggleChatBookmark(chatId: string, isBookmarked?: boolean) {
-    if (!user) {
+    if (isAuthLoading || !user) {
       setActionStatus("Send a message first, then save this chat.");
       return;
     }
@@ -430,7 +434,7 @@ export default function DsiqChatPage() {
       return;
     }
 
-    if (!user) {
+    if (isAuthLoading || !user) {
       setError("Sign in again to save and continue your chat.");
       return;
     }
@@ -515,7 +519,7 @@ export default function DsiqChatPage() {
   }
 
   async function openPrivateChat(chatId: string, mobile = false) {
-    if (!user || isSending) {
+    if (isAuthLoading || !user || isSending) {
       return;
     }
 
@@ -588,7 +592,7 @@ export default function DsiqChatPage() {
   }
 
   async function handleSaveSavedChatTitle(chatId: string) {
-    if (!user) {
+    if (isAuthLoading || !user) {
       setActionStatus("Sign in again to rename this chat.");
       return;
     }
@@ -605,7 +609,7 @@ export default function DsiqChatPage() {
   }
 
   async function exportSavedChat(chat: PrivateChatSummary) {
-    if (!user) {
+    if (isAuthLoading || !user) {
       setActionStatus("Sign in again to export this chat.");
       return;
     }
@@ -630,7 +634,7 @@ export default function DsiqChatPage() {
   }
 
   async function handleDeleteSavedChats(chatIds: string[]) {
-    if (!user || !chatIds.length) {
+    if (isAuthLoading || !user || !chatIds.length) {
       return;
     }
 

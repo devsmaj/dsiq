@@ -2,55 +2,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function ownsUserDocument(uid) {
-      return signedIn() && request.auth.uid == uid;
-    }
-
-    match /users/{uid} {
-      allow read, create, update, delete: if ownsUserDocument(uid);
-
-      match /chats/{chatId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-
-        match /messages/{messageId} {
-          allow read, create, update, delete: if ownsUserDocument(uid);
-        }
-      }
-
-      match /teacherChats/{chatId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-
-        match /messages/{messageId} {
-          allow read, create, update, delete: if ownsUserDocument(uid);
-        }
-      }
-
-      match /savedChats/{savedId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-      }
-
-      match /roadmaps/{roadmapId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-
-        match /steps/{stepId} {
-          allow read, create, update, delete: if ownsUserDocument(uid);
-        }
-      }
-
-      match /projects/{projectId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-      }
-
-      match /library/{itemId} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
-      }
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
 
       match /{document=**} {
-        allow read, create, update, delete: if ownsUserDocument(uid);
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
   }

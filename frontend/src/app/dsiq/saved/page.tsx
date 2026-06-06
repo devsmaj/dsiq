@@ -32,13 +32,17 @@ function getSavedChatHref(chat: PrivateChatSummary) {
 
 export default function DsiqSavedChatsPage() {
   const { t } = useTranslation();
-  const { user } = useUserProfile();
+  const { isAuthLoading, user } = useUserProfile();
   const [chats, setChats] = useState<PrivateChatSummary[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadSavedChats() {
+      if (isAuthLoading) {
+        return;
+      }
+
       if (!user) {
         setChats([]);
         setIsLoading(false);
@@ -62,7 +66,7 @@ export default function DsiqSavedChatsPage() {
     }
 
     void loadSavedChats();
-  }, [user]);
+  }, [isAuthLoading, user]);
 
   return (
     <PrivateRoute>

@@ -134,7 +134,7 @@ export default function DsiqMentorPage() {
   useKeyboardOffset();
   const { t } = useTranslation();
 
-  const { answers, profile, user } = useUserProfile();
+  const { answers, isAuthLoading, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(
@@ -234,6 +234,10 @@ export default function DsiqMentorPage() {
 
   useEffect(() => {
     async function loadTeacherChats() {
+      if (isAuthLoading) {
+        return;
+      }
+
       if (!user) {
         setTeacherChats([]);
         return;
@@ -255,10 +259,10 @@ export default function DsiqMentorPage() {
     }
 
     void loadTeacherChats();
-  }, [user]);
+  }, [isAuthLoading, user]);
 
   useEffect(() => {
-    if (!user || currentChatId) {
+    if (isAuthLoading || !user || currentChatId) {
       return;
     }
 
@@ -267,10 +271,10 @@ export default function DsiqMentorPage() {
     if (chatId) {
       void openTeacherChat(chatId);
     }
-  }, [currentChatId, user]);
+  }, [currentChatId, isAuthLoading, user]);
 
   async function refreshTeacherChats() {
-    if (!user) {
+    if (isAuthLoading || !user) {
       return;
     }
 
@@ -298,7 +302,7 @@ export default function DsiqMentorPage() {
   }
 
   async function openTeacherChat(chatId: string, mobile = false) {
-    if (!user || isSending) {
+    if (isAuthLoading || !user || isSending) {
       return;
     }
 
@@ -399,7 +403,7 @@ export default function DsiqMentorPage() {
     setMentorMessages(nextMessages);
 
     try {
-      if (!user) {
+      if (isAuthLoading || !user) {
         throw new Error("Sign in again to save and continue your AI Teacher chat.");
       }
 

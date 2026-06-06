@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!auth) {
-      setIsLoading(false);
+      window.setTimeout(() => setIsLoading(false), 0);
       return;
     }
 
@@ -261,6 +261,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(loadingTimeout);
       setUser(nextUser ? mapFirebaseUser(nextUser) : null);
       setIsLoading(false);
+
+      if (nextUser) {
+        void syncFirebaseUserRecordSafely({
+          uid: nextUser.uid,
+          email: nextUser.email,
+          emailVerified: nextUser.emailVerified,
+          displayName: nextUser.displayName,
+          photoURL: nextUser.photoURL,
+          reason: "login",
+          providerIds: nextUser.providerData.map((provider) => provider.providerId),
+        });
+      }
     });
 
     return () => {

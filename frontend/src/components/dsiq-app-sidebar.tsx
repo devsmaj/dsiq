@@ -59,7 +59,7 @@ export function DsiqAppSidebar({
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const { answers, profile, user } = useUserProfile();
+  const { answers, isAuthLoading, profile, user } = useUserProfile();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [recentChats, setRecentChats] = useState<PrivateChatSummary[]>([]);
   const [activeRecentChatMenuId, setActiveRecentChatMenuId] = useState<string | null>(null);
@@ -78,6 +78,10 @@ export function DsiqAppSidebar({
   } as CSSProperties;
 
   async function refreshRecentChats() {
+    if (isAuthLoading) {
+      return;
+    }
+
     if (!user) {
       setRecentChats([]);
       return;
@@ -92,7 +96,7 @@ export function DsiqAppSidebar({
   }
 
   async function toggleRecentChatBookmark(chat: PrivateChatSummary) {
-    if (!user) {
+    if (isAuthLoading || !user) {
       return;
     }
 
@@ -107,7 +111,7 @@ export function DsiqAppSidebar({
   }
 
   async function deleteRecentChat(chatId: string) {
-    if (!user) {
+    if (isAuthLoading || !user) {
       return;
     }
 
@@ -122,6 +126,10 @@ export function DsiqAppSidebar({
 
   useEffect(() => {
     async function loadRecentChats() {
+      if (isAuthLoading) {
+        return;
+      }
+
       if (!user) {
         setRecentChats([]);
         return;
@@ -136,7 +144,7 @@ export function DsiqAppSidebar({
     }
 
     void loadRecentChats();
-  }, [user]);
+  }, [isAuthLoading, user]);
 
   function renderSidebar(mobile = false) {
     return (

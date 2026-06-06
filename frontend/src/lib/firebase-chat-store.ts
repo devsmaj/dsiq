@@ -51,11 +51,87 @@ function getPrivateChatCollectionName(chatType: ChatType) {
 }
 
 function canUseFirestoreForUid(uid: string) {
-  return Boolean(db) && !uid.startsWith("local-");
+  return Boolean(db) && Boolean(uid?.trim()) && !uid.startsWith("local-");
 }
 
 function getPrivateChatDoc(uid: string, chatId: string, chatType: ChatType) {
   return doc(db!, "users", uid, getPrivateChatCollectionName(chatType), chatId);
+}
+
+function getUserDoc(uid: string) {
+  return doc(db!, "users", uid);
+}
+
+function getPrivateChatPath(uid: string, chatId: string, chatType: ChatType) {
+  return `users/${uid}/${getPrivateChatCollectionName(chatType)}/${chatId}`;
+}
+
+function isDevelopment() {
+  return process.env.NODE_ENV !== "production";
+}
+
+function debugFirestorePath(action: string, uid: string, path: string) {
+  if (!isDevelopment()) {
+    return;
+  }
+
+  console.info(`[Firestore private chat] ${action}`, {
+    path,
+    uid,
+  });
+}
+
+function debugFirestoreError(action: string, path: string, error: unknown) {
+  if (!isDevelopment()) {
+    return;
+  }
+
+  const code =
+    typeof error === "object" && error && "code" in error
+      ? String(error.code)
+      : "";
+  const message = error instanceof Error ? error.message : String(error);
+
+  console.error(`[Firestore private chat] ${action} failed`, {
+    code,
+    message,
+    path,
+  });
+}
+
+function assertValidUid(uid: string) {
+  if (!uid?.trim()) {
+    throw new Error("Cannot sync private chat before Firebase Auth provides a user UID.");
+  }
+}
+
+async function ensureFirebaseUserDocument(uid: string) {
+  if (!canUseFirestoreForUid(uid)) {
+    return;
+  }
+
+  assertValidUid(uid);
+
+  const path = `users/${uid}`;
+  debugFirestorePath("merge user document", uid, path);
+
+  try {
+    await withTimeout(
+      setDoc(
+        getUserDoc(uid),
+        {
+          uid,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      ),
+      undefined,
+      "User document sync timed out.",
+    );
+  } catch (error) {
+    debugFirestoreError("merge user document", path, error);
+    throw error;
+  }
 }
 
 async function findPrivateChatType(uid: string, chatId: string, preferredType?: ChatType) {
@@ -282,9 +358,13 @@ function deleteLocalPrivateChat(uid: string, chatId: string) {
 }
 
 export async function createFirebaseChat(uid: string) {
+  assertValidUid(uid);
+
   if (!canUseFirestoreForUid(uid)) {
     return null;
   }
+
+  await ensureFirebaseUserDocument(uid);
 
   const firestoreDb = db!;
   const chatRef = await withTimeout(
@@ -305,9 +385,13 @@ export async function saveFirebaseChatMessage(input: {
   message: GroqChatMessage;
   uid: string;
 }) {
+  assertValidUid(input.uid);
+
   if (!canUseFirestoreForUid(input.uid)) {
     return;
   }
+
+  await ensureFirebaseUserDocument(input.uid);
 
   const firestoreDb = db!;
   const chatRef = doc(firestoreDb, "users", input.uid, "chats", input.chatId);
@@ -342,6 +426,8 @@ export async function createPrivateChat(
   firstMessage: string,
   chatType: ChatType = "normal",
 ) {
+  assertValidUid(uid);
+
   const title = createChatTitle(firstMessage);
   const now = Date.now();
 
@@ -360,20 +446,31 @@ export async function createPrivateChat(
     return chat.id;
   }
 
+  await ensureFirebaseUserDocument(uid);
+
   const firestoreDb = db!;
-  const chatRef = await withTimeout(
-    addDoc(collection(firestoreDb, "users", uid, getPrivateChatCollectionName(chatType)), {
-      title,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      createdAtMs: now,
-      updatedAtMs: now,
-      chatType,
-      source: "private-chat",
-    }),
-    undefined,
-    getSyncErrorMessage("Chat"),
-  );
+  const collectionPath = `users/${uid}/${getPrivateChatCollectionName(chatType)}`;
+  debugFirestorePath("create private chat", uid, collectionPath);
+  let chatRef;
+
+  try {
+    chatRef = await withTimeout(
+      addDoc(collection(firestoreDb, "users", uid, getPrivateChatCollectionName(chatType)), {
+        title,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdAtMs: now,
+        updatedAtMs: now,
+        chatType,
+        source: "private-chat",
+      }),
+      undefined,
+      getSyncErrorMessage("Chat"),
+    );
+  } catch (error) {
+    debugFirestoreError("create private chat", collectionPath, error);
+    throw error;
+  }
 
   return chatRef.id;
 }
@@ -384,6 +481,8 @@ export async function savePrivateChatMessage(input: {
   message: GroqChatMessage & Partial<PrivateChatMessage>;
   uid: string;
 }): Promise<PrivateChatMessage> {
+  assertValidUid(input.uid);
+
   const now = Date.now();
   const chatType = input.chatType || "normal";
   const message: PrivateChatMessage = {
@@ -404,39 +503,55 @@ export async function savePrivateChatMessage(input: {
     );
   }
 
+  await ensureFirebaseUserDocument(input.uid);
+
   const collectionChatType = await findPrivateChatType(input.uid, input.chatId);
   const chatRef = getPrivateChatDoc(input.uid, input.chatId, collectionChatType);
   const messageRef = doc(collection(chatRef, "messages"), message.id);
+  const chatPath = getPrivateChatPath(input.uid, input.chatId, collectionChatType);
+  const messagePath = `${chatPath}/messages/${message.id}`;
 
-  await withTimeout(
-    setDoc(
-      chatRef,
-      {
-        updatedAt: serverTimestamp(),
-        updatedAtMs: message.createdAtMs,
-        lastMessage: message.text,
-        chatType,
-        source: "private-chat",
-      },
-      { merge: true },
-    ),
-    undefined,
-    getSyncErrorMessage("Chat"),
-  );
+  debugFirestorePath("write private chat", input.uid, chatPath);
+  try {
+    await withTimeout(
+      setDoc(
+        chatRef,
+        {
+          updatedAt: serverTimestamp(),
+          updatedAtMs: message.createdAtMs,
+          lastMessage: message.text,
+          chatType,
+          source: "private-chat",
+        },
+        { merge: true },
+      ),
+      undefined,
+      getSyncErrorMessage("Chat"),
+    );
+  } catch (error) {
+    debugFirestoreError("write private chat", chatPath, error);
+    throw error;
+  }
 
-  await withTimeout(
-    setDoc(messageRef, {
-      role: message.role,
-      text: message.text,
-      createdAt: serverTimestamp(),
-      createdAtMs: message.createdAtMs,
-      imageAttachments: message.imageAttachments,
-      imageDataUrl: message.imageDataUrl,
-      imageName: message.imageName,
-    }),
-    undefined,
-    getSyncErrorMessage("Chat message"),
-  );
+  debugFirestorePath("write private chat message", input.uid, messagePath);
+  try {
+    await withTimeout(
+      setDoc(messageRef, {
+        role: message.role,
+        text: message.text,
+        createdAt: serverTimestamp(),
+        createdAtMs: message.createdAtMs,
+        imageAttachments: message.imageAttachments,
+        imageDataUrl: message.imageDataUrl,
+        imageName: message.imageName,
+      }),
+      undefined,
+      getSyncErrorMessage("Chat message"),
+    );
+  } catch (error) {
+    debugFirestoreError("write private chat message", messagePath, error);
+    throw error;
+  }
 
   upsertLocalPrivateChat(input.uid, input.chatId, message.text, chatType, message);
 
@@ -444,6 +559,8 @@ export async function savePrivateChatMessage(input: {
 }
 
 export async function listPrivateChats(uid: string, chatType?: ChatType) {
+  assertValidUid(uid);
+
   if (!canUseFirestoreForUid(uid)) {
     return readLocalPrivateChats(uid)
       .filter(
@@ -463,16 +580,27 @@ export async function listPrivateChats(uid: string, chatType?: ChatType) {
       }));
   }
 
+  await ensureFirebaseUserDocument(uid);
+
   const firestoreDb = db!;
   const chatTypes = chatType ? [chatType] : (["normal", "teacher"] as const);
   const snapshots = await Promise.all(
     chatTypes.map(async (itemChatType) => ({
       chatType: itemChatType,
-      snapshot: await withTimeout(
-        getDocs(collection(firestoreDb, "users", uid, getPrivateChatCollectionName(itemChatType))),
-        undefined,
-        "Chats loading timed out.",
-      ),
+      snapshot: await (async () => {
+        const path = `users/${uid}/${getPrivateChatCollectionName(itemChatType)}`;
+        debugFirestorePath("read private chats", uid, path);
+        try {
+          return await withTimeout(
+            getDocs(collection(firestoreDb, "users", uid, getPrivateChatCollectionName(itemChatType))),
+            undefined,
+            "Chats loading timed out.",
+          );
+        } catch (error) {
+          debugFirestoreError("read private chats", path, error);
+          throw error;
+        }
+      })(),
     })),
   );
 
@@ -521,6 +649,8 @@ export async function updatePrivateChatTitle(input: {
   title: string;
   uid: string;
 }) {
+  assertValidUid(input.uid);
+
   const title = input.title.trim() || "New chat";
   const now = Date.now();
 
@@ -529,21 +659,30 @@ export async function updatePrivateChatTitle(input: {
     return;
   }
 
-  const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
+  await ensureFirebaseUserDocument(input.uid);
 
-  await withTimeout(
-    setDoc(
-      getPrivateChatDoc(input.uid, input.chatId, chatType),
-      {
-        title,
-        updatedAt: serverTimestamp(),
-        updatedAtMs: now,
-      },
-      { merge: true },
-    ),
-    undefined,
-    getSyncErrorMessage("Chat title"),
-  );
+  const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
+  const path = getPrivateChatPath(input.uid, input.chatId, chatType);
+  debugFirestorePath("rename private chat", input.uid, path);
+
+  try {
+    await withTimeout(
+      setDoc(
+        getPrivateChatDoc(input.uid, input.chatId, chatType),
+        {
+          title,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      getSyncErrorMessage("Chat title"),
+    );
+  } catch (error) {
+    debugFirestoreError("rename private chat", path, error);
+    throw error;
+  }
   updateLocalPrivateChatTitle(input.uid, input.chatId, title);
 }
 
@@ -553,6 +692,8 @@ export async function updatePrivateChatBookmark(input: {
   isBookmarked: boolean;
   uid: string;
 }) {
+  assertValidUid(input.uid);
+
   const now = Date.now();
 
   if (!canUseFirestoreForUid(input.uid)) {
@@ -564,22 +705,31 @@ export async function updatePrivateChatBookmark(input: {
     return;
   }
 
+  await ensureFirebaseUserDocument(input.uid);
+
   const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
   const chatRef = getPrivateChatDoc(input.uid, input.chatId, chatType);
+  const path = getPrivateChatPath(input.uid, input.chatId, chatType);
+  debugFirestorePath("bookmark private chat", input.uid, path);
 
-  await withTimeout(
-    setDoc(
-      chatRef,
-      {
-        isBookmarked: input.isBookmarked,
-        updatedAt: serverTimestamp(),
-        updatedAtMs: now,
-      },
-      { merge: true },
-    ),
-    undefined,
-    getSyncErrorMessage("Saved chat"),
-  );
+  try {
+    await withTimeout(
+      setDoc(
+        chatRef,
+        {
+          isBookmarked: input.isBookmarked,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      getSyncErrorMessage("Saved chat"),
+    );
+  } catch (error) {
+    debugFirestoreError("bookmark private chat", path, error);
+    throw error;
+  }
 
   const firestoreDb = db!;
   const savedChatRef = doc(firestoreDb, "users", input.uid, "savedChats", input.chatId);
@@ -629,6 +779,8 @@ export async function deletePrivateChat(input: {
   chatType?: ChatType;
   uid: string;
 }) {
+  assertValidUid(input.uid);
+
   const now = Date.now();
 
   if (!canUseFirestoreForUid(input.uid)) {
@@ -636,22 +788,31 @@ export async function deletePrivateChat(input: {
     return;
   }
 
-  const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
+  await ensureFirebaseUserDocument(input.uid);
 
-  await withTimeout(
-    setDoc(
-      getPrivateChatDoc(input.uid, input.chatId, chatType),
-      {
-        deletedAt: serverTimestamp(),
-        deletedAtMs: now,
-        updatedAt: serverTimestamp(),
-        updatedAtMs: now,
-      },
-      { merge: true },
-    ),
-    undefined,
-    getSyncErrorMessage("Chat delete"),
-  );
+  const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
+  const path = getPrivateChatPath(input.uid, input.chatId, chatType);
+  debugFirestorePath("delete private chat", input.uid, path);
+
+  try {
+    await withTimeout(
+      setDoc(
+        getPrivateChatDoc(input.uid, input.chatId, chatType),
+        {
+          deletedAt: serverTimestamp(),
+          deletedAtMs: now,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      getSyncErrorMessage("Chat delete"),
+    );
+  } catch (error) {
+    debugFirestoreError("delete private chat", path, error);
+    throw error;
+  }
 
   await withTimeout(
     deleteDoc(doc(db!, "users", input.uid, "savedChats", input.chatId)),
@@ -666,6 +827,8 @@ export async function loadPrivateChatMessages(
   chatId: string,
   chatTypeInput?: ChatType,
 ): Promise<PrivateChatMessage[]> {
+  assertValidUid(uid);
+
   if (!canUseFirestoreForUid(uid)) {
     return (
       readLocalPrivateChats(uid)
@@ -675,13 +838,24 @@ export async function loadPrivateChatMessages(
     );
   }
 
+  await ensureFirebaseUserDocument(uid);
+
   const chatType = await findPrivateChatType(uid, chatId, chatTypeInput);
   const chatRef = getPrivateChatDoc(uid, chatId, chatType);
-  const snapshot = await withTimeout(
-    getDocs(collection(chatRef, "messages")),
-    undefined,
-    "Chat messages could not load from Firestore. Check your connection and retry.",
-  );
+  const path = `${getPrivateChatPath(uid, chatId, chatType)}/messages`;
+  debugFirestorePath("read private chat messages", uid, path);
+  let snapshot;
+
+  try {
+    snapshot = await withTimeout(
+      getDocs(collection(chatRef, "messages")),
+      undefined,
+      "Chat messages could not load from Firestore. Check your connection and retry.",
+    );
+  } catch (error) {
+    debugFirestoreError("read private chat messages", path, error);
+    throw error;
+  }
 
   return snapshot.docs
     .map((messageDoc) => {
@@ -723,6 +897,8 @@ export async function deletePrivateChatMessage(input: {
   messageId: string;
   uid: string;
 }) {
+  assertValidUid(input.uid);
+
   const now = Date.now();
 
   if (!canUseFirestoreForUid(input.uid)) {
@@ -730,22 +906,31 @@ export async function deletePrivateChatMessage(input: {
     return;
   }
 
+  await ensureFirebaseUserDocument(input.uid);
+
   const chatType = await findPrivateChatType(input.uid, input.chatId, input.chatType);
   const chatRef = getPrivateChatDoc(input.uid, input.chatId, chatType);
   const messageRef = doc(chatRef, "messages", input.messageId);
+  const messagePath = `${getPrivateChatPath(input.uid, input.chatId, chatType)}/messages/${input.messageId}`;
+  debugFirestorePath("delete private chat message", input.uid, messagePath);
 
-  await withTimeout(
-    setDoc(
-      messageRef,
-      {
-        deletedAt: serverTimestamp(),
-        deletedAtMs: now,
-      },
-      { merge: true },
-    ),
-    undefined,
-    getSyncErrorMessage("Chat message delete"),
-  );
+  try {
+    await withTimeout(
+      setDoc(
+        messageRef,
+        {
+          deletedAt: serverTimestamp(),
+          deletedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      getSyncErrorMessage("Chat message delete"),
+    );
+  } catch (error) {
+    debugFirestoreError("delete private chat message", messagePath, error);
+    throw error;
+  }
 
   const snapshot = await withTimeout(
     getDocs(collection(chatRef, "messages")),

@@ -13,13 +13,17 @@ import { useUserProfile } from "@/lib/use-user-profile";
 
 export default function DsiqRoadmapPage() {
   const { t } = useTranslation();
-  const { user } = useUserProfile();
+  const { isAuthLoading, user } = useUserProfile();
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadRoadmaps() {
+      if (isAuthLoading) {
+        return;
+      }
+
       if (!user) {
         setRoadmaps([]);
         setIsLoading(false);
@@ -43,7 +47,7 @@ export default function DsiqRoadmapPage() {
     }
 
     void loadRoadmaps();
-  }, [user]);
+  }, [isAuthLoading, user]);
 
   const activeRoadmap = roadmaps[0];
 

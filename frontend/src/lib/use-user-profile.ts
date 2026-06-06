@@ -13,13 +13,18 @@ import { readLocalUserProfile, type StoredUserProfile } from "@/lib/user-profile
 type ProfileState = StoredUserProfile | FirebaseUserProfile | null;
 
 export function useUserProfile() {
-  const { authMode, authMessage, user } = useAuth();
+  const { authMode, authMessage, isLoading: isAuthLoading, user } = useAuth();
   const [profile, setProfile] = useState<ProfileState>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
+      if (isAuthLoading) {
+        setIsProfileLoading(true);
+        return;
+      }
+
       if (!user) {
         setProfile(null);
         setProfileError(null);
@@ -69,12 +74,13 @@ export function useUserProfile() {
     }
 
     void loadProfile();
-  }, [authMode, user]);
+  }, [authMode, isAuthLoading, user]);
 
   return {
     user,
     authMode,
     authMessage,
+    isAuthLoading,
     profile,
     answers: profile?.onboardingAnswers,
     hasAnswers: Boolean(profile?.onboardingAnswers),
