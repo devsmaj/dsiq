@@ -418,17 +418,16 @@ export function PublicChat() {
           ) : null}
         </div>
 
-        <div className="public-chat-composer mt-4 shrink-0 min-w-0 w-full">
-          <ChatComposer
-            value={input}
-            onChange={setInput}
-            onSubmit={(value) => void sendMessage(value)}
-            onVoiceInput={handleVoiceInput}
-            isListening={isListening}
-            isSending={isSending}
-            placeholder="Ask DSIQ"
-          />
-        </div>
+        <ChatComposer
+          docked
+          value={input}
+          onChange={setInput}
+          onSubmit={(value) => void sendMessage(value)}
+          onVoiceInput={handleVoiceInput}
+          isListening={isListening}
+          isSending={isSending}
+          placeholder="Ask DSIQ"
+        />
       </section>
     </main>
   );

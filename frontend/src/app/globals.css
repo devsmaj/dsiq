@@ -212,13 +212,13 @@ a {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
 }
 
 .teacher-input-area {
-  background: #ffffff;
-  padding: 12px;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
-  border-top: 1px solid var(--color-line);
+  background: transparent;
+  padding: 0;
+  border-top: 0;
 }
 
 .teacher-input-row {
@@ -502,15 +502,6 @@ a {
 
   .public-chat-messages {
     padding-bottom: 9rem;
-  }
-
-  .public-chat-composer {
-    position: fixed;
-    left: 1rem;
-    right: 1rem;
-    bottom: calc(1rem + env(safe-area-inset-bottom) + var(--dsiq-keyboard-offset, 0px));
-    z-index: 40;
-    margin-top: 0 !important;
   }
 
   .home-chat-composer {

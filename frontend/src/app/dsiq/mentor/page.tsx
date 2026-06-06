@@ -904,6 +904,7 @@ export default function DsiqMentorPage() {
 
                 <div className="teacher-input-area min-w-0 w-full">
                   <ChatComposer
+                    docked
                     value={prompt}
                     onChange={setPrompt}
                     onSubmit={(value) => void submitMentorPrompt(value)}

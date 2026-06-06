@@ -13,6 +13,7 @@ function resizeTextarea(textarea: HTMLTextAreaElement | null) {
 }
 
 export function ChatComposer({
+  docked = false,
   isListening = false,
   isSending,
   onSubmit,
@@ -21,6 +22,7 @@ export function ChatComposer({
   value,
   onChange,
 }: {
+  docked?: boolean;
   isListening?: boolean;
   isSending: boolean;
   onSubmit: (value: string) => void;
@@ -76,10 +78,17 @@ export function ChatComposer({
 
   return (
     <>
-      <form
-        onSubmit={submitValue}
-        className="w-full rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
+      <div
+        className={
+          docked
+            ? "fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none min-w-0 pb-[env(safe-area-inset-bottom)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:w-full lg:max-w-[760px] lg:pb-4"
+            : "w-full min-w-0"
+        }
       >
+        <form
+          onSubmit={submitValue}
+          className="w-full rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
+        >
         <div className="flex w-full items-end gap-2 sm:gap-3">
           <div className="relative shrink-0">
             <button
@@ -137,7 +146,7 @@ export function ChatComposer({
             disabled={isSending}
             placeholder={placeholder}
             rows={1}
-            className="max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
+            className="block max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
             style={{ width: "100%" }}
           />
 
@@ -185,7 +194,8 @@ export function ChatComposer({
             <Send className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-      </form>
+        </form>
+      </div>
 
       {isExpanded ? (
         <div className="fixed inset-0 z-[65] flex h-[100dvh] flex-col bg-white px-4 py-4 text-[color:var(--color-text)] sm:px-6">
