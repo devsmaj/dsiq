@@ -1,33 +1,50 @@
 # DSIQ
 
-Your AI teacher, mentor, coach, and accountability partner for student progress.
+Digital Student Intelligence Quotient.
+
+DSIQ is a personal AI teacher and learning companion that guides students step by step from beginner to professional.
 
 Powered by DSIQ  
 Part of the SMAJ Ecosystem
 
 ## Overview
 
-DSIQ is a student-focused AI Teacher and accountability platform for:
+DSIQ is an AI-powered learning platform that gives every student a personal AI teacher, structured learning roadmap, focus tools, quizzes, projects, saved chats, and progress tracking.
+
+DSIQ is built for:
 
 - Students
 - Developers
 - Freelancers
 - Entrepreneurs
 
-It helps users learn step by step, stay focused, and move toward real goals. It helps users answer practical questions like:
+It helps users learn step by step, stay focused, and move toward real goals. It helps students answer practical questions like:
 
 - What skill should I learn next?
 - Which opportunity fits me best?
 - What action should I take now?
 - How do I stay consistent over time?
 
+## Mission
+
+DSIQ makes quality education accessible to everyone by giving every student a personal AI teacher.
+
 ## AI Teacher Product Vision
 
-DSIQ is not a normal chatbot. DSIQ is a professional AI Teacher, Mentor, Coach, and Accountability Partner that guides students from where they are today to where they want to be.
+DSIQ is not just a chatbot. DSIQ should feel like an AI learning companion: a professional AI Teacher, Mentor, Coach, and Accountability Partner that guides students from where they are today to where they want to be.
 
 DSIQ should behave like a caring teacher and trusted guide: human, patient, thoughtful, clear, and professional. It should keep responses short and meaningful, avoid overwhelming users, and focus on one lesson, one mission, and one goal at a time.
 
 The goal is not to answer everything. The goal is to help the student master the current step before moving to the next one.
+
+### Platform Principles
+
+- AI Teacher teaches step by step.
+- Learning Roadmap guides the student.
+- Focus Mode helps the student study.
+- Saved Chats stores learning history.
+- Dashboard and Chat should present DSIQ as a serious education system.
+- DSIQ should stay free-first and student-focused.
 
 ### Core Teaching Rules
 

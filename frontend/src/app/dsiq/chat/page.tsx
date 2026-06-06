@@ -19,6 +19,7 @@ import {
   Search,
   Send,
   Settings,
+  Star,
   SquarePen,
   Target,
   Trash2,
@@ -34,9 +35,11 @@ import { getPostAuthPath } from "@/lib/auth-routing";
 import {
   createPrivateChat,
   deletePrivateChat,
+  listBookmarkedPrivateChats,
   listPrivateChats,
   loadPrivateChatMessages,
   savePrivateChatMessage,
+  updatePrivateChatBookmark,
   updatePrivateChatTitle,
   type PrivateChatMessage,
   type PrivateChatSummary,
@@ -52,11 +55,11 @@ const sidebarItems = [
   { label: "AI Teacher", href: "/dsiq/mentor", icon: Bot },
   {
     label: "Learning Roadmap",
-    href: "/dsiq/chat?panel=roadmap",
+    href: "/dsiq/roadmap",
     icon: GraduationCap,
   },
 
-  { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
+  { label: "Saved Chats", href: "/dsiq/saved", icon: FileText },
 ] as const;
 
 
@@ -238,6 +241,8 @@ export default function DsiqChatPage() {
       chat.lastMessage?.toLowerCase().includes(query)
     );
   });
+  const currentChat = privateChats.find((chat) => chat.id === currentChatId);
+  const isCurrentChatBookmarked = currentChat?.isBookmarked === true;
   useKeyboardOffset();
 
   useEffect(() => {
@@ -306,6 +311,23 @@ export default function DsiqChatPage() {
     } catch (loadError) {
       console.warn("Private chats refresh failed.", loadError);
     }
+  }
+
+  async function toggleCurrentChatBookmark() {
+    if (!user || !currentChatId) {
+      setActionStatus("Send a message first, then save this chat.");
+      return;
+    }
+
+    const nextBookmarked = !isCurrentChatBookmarked;
+    await updatePrivateChatBookmark({
+      chatId: currentChatId,
+      isBookmarked: nextBookmarked,
+      uid: user.uid,
+    });
+    await refreshPrivateChats();
+    setActionStatus(nextBookmarked ? "Chat saved." : "Chat removed from Saved Chats.");
+    setIsChatActionsOpen(false);
   }
 
   async function submitPrompt(event: FormEvent<HTMLFormElement>) {
@@ -1151,8 +1173,8 @@ export default function DsiqChatPage() {
 
   return (
     <PrivateRoute>
-      <main className="h-screen overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="flex h-full"> 
+      <main className="h-[100dvh] min-h-[100dvh] overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+        <div className="flex h-full min-h-0 overflow-hidden">
 
           <div className="hidden lg:block">
             <SidebarContent />
@@ -1493,13 +1515,13 @@ export default function DsiqChatPage() {
             </div>
           ) : null}
 
-          <section className="relative flex min-w-0 flex-1 flex-col bg-[color:var(--color-background)] h-full">
+          <section className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--color-background)]">
 
             <button
               type="button"
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="fixed left-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
+              className="fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -1565,16 +1587,18 @@ export default function DsiqChatPage() {
               </div>
             ) : null}
 
-            <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-5 pt-20 sm:px-8 lg:pt-8">
-              <div className="mx-auto flex w-full max-w-[900px] flex-1 flex-col">
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col px-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8 lg:px-10 lg:pt-8">
+              <div className="mx-auto flex min-h-0 w-full max-w-[900px] flex-1 flex-col">
 
-                <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
-                  DSIQ is ready to guide your skills, learning, missions, and
-                  opportunities.
-                </p>
+                {!messages.length ? (
+                  <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
+                    DSIQ is ready to guide your skills, learning, missions, and
+                    opportunities.
+                  </p>
+                ) : null}
 
                 {messages.length ? (
-                  <div className="mx-auto flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto text-left pb-28">
+                  <div className="mx-auto flex min-h-0 w-full max-w-[760px] flex-1 flex-col gap-4 overflow-y-auto px-1 pb-[calc(120px+env(safe-area-inset-bottom))] text-left lg:pb-28">
 
                     {messages.map((message, index) => (
                       <article
@@ -1630,12 +1654,12 @@ export default function DsiqChatPage() {
               </div>
 
               <div
-                className="sticky z-30 mx-auto w-full max-w-[900px] bottom-0"
+                className="fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none pb-[env(safe-area-inset-bottom)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:w-full lg:max-w-[760px] lg:pb-4"
               >
 
                 <form
                   onSubmit={submitPrompt}
-                  className="rounded-[30px] bg-white px-5 py-4 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)]"
+                  className="rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative shrink-0">
@@ -1855,4 +1879,3 @@ export default function DsiqChatPage() {
     </PrivateRoute>
   );
 }
-

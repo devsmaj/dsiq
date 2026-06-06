@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/components/auth-provider";
 import { GlobalLoadingDelay } from "@/components/global-loading-delay";
 import { SettingsHelpPopup } from "@/components/settings-help-popup";
@@ -41,6 +41,10 @@ export const metadata: Metadata = {
     description:
       "DSIQ helps students, developers, freelancers, and entrepreneurs discover the right path, take action, and stay consistent.",
   },
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

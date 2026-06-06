@@ -13,6 +13,7 @@ import type { GroqChatMessage } from "@/lib/groq";
 
 export type PrivateChatSummary = {
   id: string;
+  isBookmarked?: boolean;
   title: string;
   updatedAtMs: number;
   lastMessage?: string;
@@ -183,6 +184,27 @@ function updateLocalPrivateChatTitle(uid: string, chatId: string, title: string)
         ? {
             ...chat,
             title,
+            updatedAtMs: now,
+          }
+        : chat,
+    ),
+  );
+}
+
+function updateLocalPrivateChatBookmark(
+  uid: string,
+  chatId: string,
+  isBookmarked: boolean,
+) {
+  const now = Date.now();
+
+  writeLocalPrivateChats(
+    uid,
+    readLocalPrivateChats(uid).map((chat) =>
+      chat.id === chatId
+        ? {
+            ...chat,
+            isBookmarked,
             updatedAtMs: now,
           }
         : chat,
@@ -366,8 +388,9 @@ export async function listPrivateChats(uid: string) {
       .filter((chat) => !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, title, updatedAtMs, lastMessage }) => ({
+      .map(({ id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
         id,
+        isBookmarked,
         title,
         updatedAtMs,
         lastMessage,
@@ -394,6 +417,7 @@ export async function listPrivateChats(uid: string) {
             typeof data.updatedAtMs === "number" ? data.updatedAtMs : 0,
           lastMessage:
             typeof data.lastMessage === "string" ? data.lastMessage : undefined,
+          isBookmarked: data.isBookmarked === true,
           deletedAtMs:
             typeof data.deletedAtMs === "number" ? data.deletedAtMs : undefined,
           source: data.source,
@@ -402,8 +426,9 @@ export async function listPrivateChats(uid: string) {
       .filter((chat) => chat.source === "private-chat" && !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, title, updatedAtMs, lastMessage }) => ({
+      .map(({ id, title, updatedAtMs, lastMessage, isBookmarked }) => ({
         id,
+        isBookmarked,
         title,
         updatedAtMs,
         lastMessage,
@@ -414,13 +439,18 @@ export async function listPrivateChats(uid: string) {
       .filter((chat) => !chat.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, title, updatedAtMs, lastMessage }) => ({
+      .map(({ id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
         id,
+        isBookmarked,
         title,
         updatedAtMs,
         lastMessage,
       }));
   }
+}
+
+export async function listBookmarkedPrivateChats(uid: string) {
+  return (await listPrivateChats(uid)).filter((chat) => chat.isBookmarked);
 }
 
 export async function updatePrivateChatTitle(input: {
@@ -454,6 +484,54 @@ export async function updatePrivateChatTitle(input: {
   } catch (error) {
     console.warn("Firebase private chat title update failed; using local chat.", error);
     updateLocalPrivateChatTitle(input.uid, input.chatId, title);
+  }
+}
+
+export async function updatePrivateChatBookmark(input: {
+  chatId: string;
+  isBookmarked: boolean;
+  uid: string;
+}) {
+  const now = Date.now();
+
+  if (!db) {
+    updateLocalPrivateChatBookmark(
+      input.uid,
+      input.chatId,
+      input.isBookmarked,
+    );
+    return;
+  }
+
+  try {
+    await withTimeout(
+      setDoc(
+        doc(db, "users", input.uid, "chats", input.chatId),
+        {
+          isBookmarked: input.isBookmarked,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now,
+        },
+        { merge: true },
+      ),
+      undefined,
+      "Private chat bookmark update timed out.",
+    );
+    updateLocalPrivateChatBookmark(
+      input.uid,
+      input.chatId,
+      input.isBookmarked,
+    );
+  } catch (error) {
+    console.warn(
+      "Firebase private chat bookmark update failed; using local chat.",
+      error,
+    );
+    updateLocalPrivateChatBookmark(
+      input.uid,
+      input.chatId,
+      input.isBookmarked,
+    );
   }
 }
 
