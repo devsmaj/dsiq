@@ -85,7 +85,12 @@ export function DsiqAppSidebar({
       return;
     }
 
-    setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
+    try {
+      setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
+    } catch (error) {
+      console.warn("Recent chats could not sync.", error);
+      setRecentChats([]);
+    }
   }
 
   async function toggleRecentChatBookmark(chat: PrivateChatSummary) {
@@ -124,7 +129,12 @@ export function DsiqAppSidebar({
         return;
       }
 
-      setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
+      try {
+        setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
+      } catch (error) {
+        console.warn("Recent chats could not load.", error);
+        setRecentChats([]);
+      }
     }
 
     void loadRecentChats();

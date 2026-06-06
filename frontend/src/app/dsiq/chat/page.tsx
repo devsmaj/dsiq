@@ -30,6 +30,7 @@ import { ChatComposer, type ChatImageAttachment } from "@/components/chat-compos
 import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
+import { getFriendlyFirestoreError } from "@/lib/firestore-errors";
 import {
   createPrivateChat,
   deletePrivateChat,
@@ -341,6 +342,12 @@ export default function DsiqChatPage() {
         );
       } catch (loadError) {
         console.warn("Private chats loading failed.", loadError);
+        setError(
+          getFriendlyFirestoreError(
+            loadError,
+            "We could not sync your private chat. Please refresh or sign in again.",
+          ),
+        );
       } finally {
         setIsChatsLoading(false);
       }
@@ -373,6 +380,12 @@ export default function DsiqChatPage() {
       );
     } catch (loadError) {
       console.warn("Private chats refresh failed.", loadError);
+      setError(
+        getFriendlyFirestoreError(
+          loadError,
+          "We could not sync your private chat. Please refresh or sign in again.",
+        ),
+      );
     }
   }
 
@@ -476,9 +489,10 @@ export default function DsiqChatPage() {
       void refreshPrivateChats();
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error
-          ? submissionError.message
-          : "DSIQ could not answer right now. Please try again.",
+        getFriendlyFirestoreError(
+          submissionError,
+          "DSIQ could not answer right now. Please try again.",
+        ),
       );
     } finally {
       setIsSending(false);
@@ -520,9 +534,10 @@ export default function DsiqChatPage() {
     } catch (loadError) {
       console.warn("Private chat opening failed.", loadError);
       setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "We could not open that chat from Firestore right now. Please retry.",
+        getFriendlyFirestoreError(
+          loadError,
+          "We could not open that chat from Firestore right now. Please retry.",
+        ),
       );
     } finally {
       setIsChatsLoading(false);

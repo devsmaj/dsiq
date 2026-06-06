@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
+import { getFriendlyFirestoreError } from "@/lib/firestore-errors";
 import { listRoadmaps, type Roadmap } from "@/lib/roadmap-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -29,9 +30,10 @@ export default function DsiqRoadmapPage() {
         setRoadmaps(await listRoadmaps(user.uid));
       } catch (loadError) {
         setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Roadmaps could not load from Firestore. Please retry.",
+          getFriendlyFirestoreError(
+            loadError,
+            "Roadmaps could not load from Firestore. Please retry.",
+          ),
         );
       } finally {
         setIsLoading(false);

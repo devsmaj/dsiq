@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatComposer } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
+import { getFriendlyFirestoreError } from "@/lib/firestore-errors";
 import {
   createPrivateChat,
   deletePrivateChat,
@@ -239,6 +240,13 @@ export default function DsiqMentorPage() {
       try {
         setIsChatsLoading(true);
         setTeacherChats(await listPrivateChats(user.uid));
+      } catch (loadError) {
+        setError(
+          getFriendlyFirestoreError(
+            loadError,
+            "We could not sync your private chat. Please refresh or sign in again.",
+          ),
+        );
       } finally {
         setIsChatsLoading(false);
       }
@@ -264,7 +272,16 @@ export default function DsiqMentorPage() {
       return;
     }
 
-    setTeacherChats(await listPrivateChats(user.uid));
+    try {
+      setTeacherChats(await listPrivateChats(user.uid));
+    } catch (loadError) {
+      setError(
+        getFriendlyFirestoreError(
+          loadError,
+          "We could not sync your private chat. Please refresh or sign in again.",
+        ),
+      );
+    }
   }
 
   function startNewTeacherChat(mobile = false) {
@@ -295,9 +312,10 @@ export default function DsiqMentorPage() {
       }
     } catch (loadError) {
       setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "We could not open that AI Teacher chat from Firestore right now. Please retry.",
+        getFriendlyFirestoreError(
+          loadError,
+          "We could not open that AI Teacher chat from Firestore right now. Please retry.",
+        ),
       );
     } finally {
       setIsChatsLoading(false);
@@ -434,9 +452,10 @@ export default function DsiqMentorPage() {
       void refreshTeacherChats();
     } catch (mentorError) {
       setError(
-        mentorError instanceof Error
-          ? mentorError.message
-          : "DSIQ Mentor could not answer right now. Please try again.",
+        getFriendlyFirestoreError(
+          mentorError,
+          "DSIQ Mentor could not answer right now. Please try again.",
+        ),
       );
     } finally {
       setIsSending(false);

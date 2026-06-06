@@ -50,6 +50,10 @@ function getPrivateChatCollectionName(chatType: ChatType) {
   return chatType === "teacher" ? "teacherChats" : "chats";
 }
 
+function canUseFirestoreForUid(uid: string) {
+  return Boolean(db) && !uid.startsWith("local-");
+}
+
 function getPrivateChatDoc(uid: string, chatId: string, chatType: ChatType) {
   return doc(db!, "users", uid, getPrivateChatCollectionName(chatType), chatId);
 }
@@ -59,7 +63,7 @@ async function findPrivateChatType(uid: string, chatId: string, preferredType?: 
     return preferredType;
   }
 
-  if (!db) {
+  if (!canUseFirestoreForUid(uid)) {
     return "normal" as const;
   }
 
@@ -278,12 +282,13 @@ function deleteLocalPrivateChat(uid: string, chatId: string) {
 }
 
 export async function createFirebaseChat(uid: string) {
-  if (!db) {
+  if (!canUseFirestoreForUid(uid)) {
     return null;
   }
 
+  const firestoreDb = db!;
   const chatRef = await withTimeout(
-    addDoc(collection(db, "users", uid, "chats"), {
+    addDoc(collection(firestoreDb, "users", uid, "chats"), {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       source: "public-chat",
@@ -300,11 +305,12 @@ export async function saveFirebaseChatMessage(input: {
   message: GroqChatMessage;
   uid: string;
 }) {
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     return;
   }
 
-  const chatRef = doc(db, "users", input.uid, "chats", input.chatId);
+  const firestoreDb = db!;
+  const chatRef = doc(firestoreDb, "users", input.uid, "chats", input.chatId);
   const messagesRef = collection(chatRef, "messages");
 
   await withTimeout(
@@ -339,7 +345,7 @@ export async function createPrivateChat(
   const title = createChatTitle(firstMessage);
   const now = Date.now();
 
-  if (!db) {
+  if (!canUseFirestoreForUid(uid)) {
     const chat: LocalPrivateChat = {
       id: createLocalId(),
       title,
@@ -354,8 +360,9 @@ export async function createPrivateChat(
     return chat.id;
   }
 
+  const firestoreDb = db!;
   const chatRef = await withTimeout(
-    addDoc(collection(db, "users", uid, getPrivateChatCollectionName(chatType)), {
+    addDoc(collection(firestoreDb, "users", uid, getPrivateChatCollectionName(chatType)), {
       title,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -390,7 +397,7 @@ export async function savePrivateChatMessage(input: {
     imageName: input.message.imageName,
   };
 
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     return (
       upsertLocalPrivateChat(input.uid, input.chatId, message.text, chatType, message) ||
       message
@@ -437,7 +444,7 @@ export async function savePrivateChatMessage(input: {
 }
 
 export async function listPrivateChats(uid: string, chatType?: ChatType) {
-  if (!db) {
+  if (!canUseFirestoreForUid(uid)) {
     return readLocalPrivateChats(uid)
       .filter(
         (chat) =>
@@ -456,7 +463,7 @@ export async function listPrivateChats(uid: string, chatType?: ChatType) {
       }));
   }
 
-  const firestoreDb = db;
+  const firestoreDb = db!;
   const chatTypes = chatType ? [chatType] : (["normal", "teacher"] as const);
   const snapshots = await Promise.all(
     chatTypes.map(async (itemChatType) => ({
@@ -517,7 +524,7 @@ export async function updatePrivateChatTitle(input: {
   const title = input.title.trim() || "New chat";
   const now = Date.now();
 
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     updateLocalPrivateChatTitle(input.uid, input.chatId, title);
     return;
   }
@@ -548,7 +555,7 @@ export async function updatePrivateChatBookmark(input: {
 }) {
   const now = Date.now();
 
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     updateLocalPrivateChatBookmark(
       input.uid,
       input.chatId,
@@ -574,7 +581,8 @@ export async function updatePrivateChatBookmark(input: {
     getSyncErrorMessage("Saved chat"),
   );
 
-  const savedChatRef = doc(db, "users", input.uid, "savedChats", input.chatId);
+  const firestoreDb = db!;
+  const savedChatRef = doc(firestoreDb, "users", input.uid, "savedChats", input.chatId);
   if (input.isBookmarked) {
     const chatSnapshot = await withTimeout(
       getDoc(chatRef),
@@ -623,7 +631,7 @@ export async function deletePrivateChat(input: {
 }) {
   const now = Date.now();
 
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     deleteLocalPrivateChat(input.uid, input.chatId);
     return;
   }
@@ -646,7 +654,7 @@ export async function deletePrivateChat(input: {
   );
 
   await withTimeout(
-    deleteDoc(doc(db, "users", input.uid, "savedChats", input.chatId)),
+    deleteDoc(doc(db!, "users", input.uid, "savedChats", input.chatId)),
     undefined,
     getSyncErrorMessage("Saved chat cleanup"),
   ).catch(() => undefined);
@@ -658,7 +666,7 @@ export async function loadPrivateChatMessages(
   chatId: string,
   chatTypeInput?: ChatType,
 ): Promise<PrivateChatMessage[]> {
-  if (!db) {
+  if (!canUseFirestoreForUid(uid)) {
     return (
       readLocalPrivateChats(uid)
         .find((chat) => chat.id === chatId)
@@ -717,7 +725,7 @@ export async function deletePrivateChatMessage(input: {
 }) {
   const now = Date.now();
 
-  if (!db) {
+  if (!canUseFirestoreForUid(input.uid)) {
     deleteLocalPrivateChatMessage(input.uid, input.chatId, input.messageId);
     return;
   }

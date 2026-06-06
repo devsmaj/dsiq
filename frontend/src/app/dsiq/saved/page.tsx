@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
+import { getFriendlyFirestoreError } from "@/lib/firestore-errors";
 import {
   listBookmarkedPrivateChats,
   type PrivateChatSummary,
@@ -52,9 +53,10 @@ export default function DsiqSavedChatsPage() {
         setChats(await listBookmarkedPrivateChats(user.uid));
       } catch (loadError) {
         setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Saved chats could not load from Firestore. Please retry.",
+          getFriendlyFirestoreError(
+            loadError,
+            "Saved chats could not load from Firestore. Please retry.",
+          ),
         );
       } finally {
         setIsLoading(false);
