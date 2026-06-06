@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, GraduationCap, Menu, Search, SquarePen, X } from "lucide-react";
+import {
+  FileText,
+  GraduationCap,
+  Menu,
+  MoreHorizontal,
+  Save,
+  Search,
+  SquarePen,
+  Trash2,
+  X,
+} from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 import {
+  deletePrivateChat,
   listPrivateChats,
+  updatePrivateChatBookmark,
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { dsiqLogoSrc } from "@/lib/public-asset";
@@ -52,6 +64,8 @@ export function DsiqAppSidebar({
   const { answers, profile, user } = useUserProfile();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [recentChats, setRecentChats] = useState<PrivateChatSummary[]>([]);
+  const [activeRecentChatMenuId, setActiveRecentChatMenuId] = useState<string | null>(null);
+  const [confirmingRecentDeleteChatId, setConfirmingRecentDeleteChatId] = useState<string | null>(null);
 
   const displayName =
     profile?.fullName ||
@@ -64,6 +78,44 @@ export function DsiqAppSidebar({
   const shellStyle = {
     "--dsiq-sidebar-offset": "292px",
   } as CSSProperties;
+
+  async function refreshRecentChats() {
+    if (!user) {
+      setRecentChats([]);
+      return;
+    }
+
+    setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
+  }
+
+  async function toggleRecentChatBookmark(chat: PrivateChatSummary) {
+    if (!user) {
+      return;
+    }
+
+    await updatePrivateChatBookmark({
+      chatId: chat.id,
+      isBookmarked: !chat.isBookmarked,
+      uid: user.uid,
+    });
+    setActiveRecentChatMenuId(null);
+    setConfirmingRecentDeleteChatId(null);
+    await refreshRecentChats();
+  }
+
+  async function deleteRecentChat(chatId: string) {
+    if (!user) {
+      return;
+    }
+
+    await deletePrivateChat({
+      chatId,
+      uid: user.uid,
+    });
+    setActiveRecentChatMenuId(null);
+    setConfirmingRecentDeleteChatId(null);
+    await refreshRecentChats();
+  }
 
   useEffect(() => {
     async function loadRecentChats() {
@@ -138,28 +190,92 @@ export function DsiqAppSidebar({
             {recentChats.length ? (
               <div className="flex flex-col gap-1">
                 {recentChats.map((chat) => (
-                  <Link
+                  <div
                     key={chat.id}
-                    href={getRecentHref(chat)}
-                    onClick={() => {
-                      if (mobile) {
-                        setIsMobileSidebarOpen(false);
-                      }
-                    }}
-                    className="rounded-2xl px-3 py-2.5 text-left transition hover:bg-white"
+                    className="group relative rounded-2xl pr-10 transition hover:bg-white"
                   >
-                    <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
-                      {chat.title}
-                    </span>
-                    <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
-                      {getChatTypeIcon(chat)} {getChatTypeLabel(chat)}
-                    </span>
-                    {chat.lastMessage ? (
-                      <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
-                        {chat.lastMessage}
+                    <Link
+                      href={getRecentHref(chat)}
+                      onClick={() => {
+                        if (mobile) {
+                          setIsMobileSidebarOpen(false);
+                        }
+                      }}
+                      className="block w-full px-3 py-2.5 text-left"
+                    >
+                      <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
+                        {chat.title}
                       </span>
+                      <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                        {getChatTypeIcon(chat)} {getChatTypeLabel(chat)}
+                      </span>
+                      {chat.lastMessage ? (
+                        <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
+                          {chat.lastMessage}
+                        </span>
+                      ) : null}
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label={`More actions for ${chat.title}`}
+                      aria-expanded={activeRecentChatMenuId === chat.id}
+                      onClick={() => {
+                        setConfirmingRecentDeleteChatId(null);
+                        setActiveRecentChatMenuId((current) =>
+                          current === chat.id ? null : chat.id,
+                        );
+                      }}
+                      className="absolute right-1.5 top-2 flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--color-muted)] transition hover:bg-[color:var(--color-surface-strong)] hover:text-[color:var(--color-text)]"
+                    >
+                      <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    {activeRecentChatMenuId === chat.id ? (
+                      <div className="absolute right-2 top-10 z-50 w-48 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 text-left shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                        {confirmingRecentDeleteChatId === chat.id ? (
+                          <div className="space-y-2 px-1 py-1">
+                            <p className="px-2 text-xs font-medium text-[color:var(--color-text)]">
+                              Delete this chat?
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setConfirmingRecentDeleteChatId(null)}
+                                className="h-8 flex-1 rounded-full border border-[color:var(--color-line)] text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void deleteRecentChat(chat.id)}
+                                className="h-8 flex-1 rounded-full bg-red-600 text-xs font-semibold text-white transition hover:bg-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => void toggleRecentChatBookmark(chat)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                            >
+                              <Save className="h-4 w-4" aria-hidden="true" />
+                              {chat.isBookmarked ? "Remove saved chat" : "Save chat"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingRecentDeleteChatId(chat.id)}
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     ) : null}
-                  </Link>
+                  </div>
                 ))}
               </div>
             ) : (
