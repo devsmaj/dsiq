@@ -25,7 +25,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
-import { ChatComposer } from "@/components/chat-composer";
+import { ChatComposer, type ChatImageAttachment } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
@@ -220,10 +220,6 @@ export default function DsiqChatPage() {
   const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
-  const [selectedImage, setSelectedImage] = useState<{
-    dataUrl: string;
-    name: string;
-  } | null>(null);
   const [previewImage, setPreviewImage] = useState<{
     dataUrl: string;
     name: string;
@@ -401,10 +397,13 @@ export default function DsiqChatPage() {
     await toggleChatBookmark(currentChatId, isCurrentChatBookmarked);
   }
 
-  async function sendPromptText(rawMessage: string) {
+  async function sendPromptText(
+    rawMessage: string,
+    imageAttachments: ChatImageAttachment[] = [],
+  ) {
     const trimmedMessage = rawMessage.trim();
-    const message = selectedImage
-      ? `${trimmedMessage || "Please review this image."}\n\nAttached image: ${selectedImage.name}`
+    const message = imageAttachments.length
+      ? `${trimmedMessage || "Please review these images."}\n\nAttached images: ${imageAttachments.length}`
       : trimmedMessage;
     if (!message || isSending) {
       return;
@@ -420,14 +419,17 @@ export default function DsiqChatPage() {
     setIsChatActionsOpen(false);
     setActiveSavedChatMenuId(null);
     setPrompt("");
-    setSelectedImage(null);
     setIsSending(true);
 
     const userMessage: PrivateChatMessage = {
       createdAtMs: Date.now(),
       id: createClientMessageId(),
-      imageDataUrl: selectedImage?.dataUrl,
-      imageName: selectedImage?.name,
+      imageAttachments: imageAttachments.map((attachment) => ({
+        dataUrl: attachment.dataUrl,
+        name: attachment.name,
+      })),
+      imageDataUrl: imageAttachments[0]?.dataUrl,
+      imageName: imageAttachments[0]?.name,
       role: "user",
       text: message,
     };
@@ -482,7 +484,6 @@ export default function DsiqChatPage() {
     setCurrentChatId(null);
     setMessages([]);
     setPrompt("");
-    setSelectedImage(null);
     setError("");
     setActionStatus("");
     setIsChatActionsOpen(false);
@@ -1781,25 +1782,40 @@ export default function DsiqChatPage() {
                         <p className={message.role === "model" ? "ai-message" : "whitespace-pre-wrap"}>
                           {message.text}
                         </p>
-                        {message.imageDataUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPreviewImage({
-                                dataUrl: message.imageDataUrl || "",
-                                name: message.imageName || "Uploaded image",
-                              });
-                              setIsImagePreviewOpen(true);
-                            }}
-                            className="mt-2 block overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white"
-                            aria-label={`Open ${message.imageName || "uploaded image"}`}
-                          >
-                            <img
-                              src={message.imageDataUrl}
-                              alt={message.imageName || "Uploaded image"}
-                              className="h-28 w-28 object-cover"
-                            />
-                          </button>
+                        {(message.imageAttachments?.length || message.imageDataUrl) ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {(message.imageAttachments?.length
+                              ? message.imageAttachments
+                              : message.imageDataUrl
+                                ? [
+                                    {
+                                      dataUrl: message.imageDataUrl,
+                                      name: message.imageName || "Uploaded image",
+                                    },
+                                  ]
+                                : []
+                            ).map((attachment, attachmentIndex) => (
+                              <button
+                                key={`${message.id}-image-${attachmentIndex}`}
+                                type="button"
+                                onClick={() => {
+                                  setPreviewImage({
+                                    dataUrl: attachment.dataUrl,
+                                    name: attachment.name || "Uploaded image",
+                                  });
+                                  setIsImagePreviewOpen(true);
+                                }}
+                                className="block h-20 w-20 overflow-hidden rounded-xl border border-[color:var(--color-line)] bg-white"
+                                aria-label="Open uploaded image"
+                              >
+                                <img
+                                  src={attachment.dataUrl}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
+                            ))}
+                          </div>
                         ) : null}
                         {message.role === "model" ? (
                           <button
@@ -1848,7 +1864,7 @@ export default function DsiqChatPage() {
                 docked
                 value={prompt}
                 onChange={setPrompt}
-                onSubmit={(value) => void sendPromptText(value)}
+                onSubmit={(value, attachments) => void sendPromptText(value, attachments)}
                 onVoiceInput={handleVoiceInput}
                 isListening={isListening}
                 isSending={isSending}

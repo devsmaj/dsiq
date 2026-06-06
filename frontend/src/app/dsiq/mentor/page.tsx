@@ -907,7 +907,13 @@ export default function DsiqMentorPage() {
                     docked
                     value={prompt}
                     onChange={setPrompt}
-                    onSubmit={(value) => void submitMentorPrompt(value)}
+                    onSubmit={(value, attachments) =>
+                      void submitMentorPrompt(
+                        attachments.length
+                          ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
+                          : value,
+                      )
+                    }
                     onVoiceInput={handleVoiceInput}
                     isListening={isListening}
                     isSending={isSending}

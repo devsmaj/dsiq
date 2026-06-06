@@ -3,6 +3,12 @@
 import { FileText, ImageIcon, Maximize2, Mic, Minimize2, Plus, Send } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
+export type ChatImageAttachment = {
+  dataUrl: string;
+  id: string;
+  name: string;
+};
+
 function resizeTextarea(textarea: HTMLTextAreaElement | null) {
   if (!textarea) {
     return;
@@ -25,7 +31,7 @@ export function ChatComposer({
   docked?: boolean;
   isListening?: boolean;
   isSending: boolean;
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string, attachments: ChatImageAttachment[]) => void;
   onVoiceInput?: () => void;
   placeholder: string;
   value: string;
@@ -33,6 +39,7 @@ export function ChatComposer({
 }) {
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageAttachments, setImageAttachments] = useState<ChatImageAttachment[]>([]);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const expandedInputRef = useRef<HTMLTextAreaElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
@@ -45,11 +52,12 @@ export function ChatComposer({
 
   function submitValue(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    if (isSending || !value.trim()) {
+    if (isSending || (!value.trim() && !imageAttachments.length)) {
       return;
     }
 
-    onSubmit(value);
+    onSubmit(value, imageAttachments);
+    setImageAttachments([]);
     setIsExpanded(false);
   }
 
@@ -62,18 +70,50 @@ export function ChatComposer({
     submitValue();
   }
 
+  function createAttachmentId(file: File) {
+    return `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(16).slice(2)}`;
+  }
+
   function appendAttachmentNames(files: FileList | null) {
     if (!files?.length || isSending) {
       return;
     }
 
-    const names = Array.from(files)
-      .map((file) => file.name)
-      .join(", ");
+    const allFiles = Array.from(files);
+    const imageFiles = allFiles.filter((file) => file.type.startsWith("image/"));
+    const nonImageFiles = allFiles.filter((file) => !file.type.startsWith("image/"));
 
-    onChange(value.trim() ? `${value.trim()} Attached: ${names}` : `Attached: ${names}`);
+    imageFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        if (typeof dataUrl !== "string") {
+          return;
+        }
+
+        setImageAttachments((current) => [
+          ...current,
+          {
+            dataUrl,
+            id: createAttachmentId(file),
+            name: file.name,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (nonImageFiles.length) {
+      const names = nonImageFiles.map((file) => file.name).join(", ");
+      onChange(value.trim() ? `${value.trim()} Attached: ${names}` : `Attached: ${names}`);
+    }
+
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  function removeImageAttachment(id: string) {
+    setImageAttachments((current) => current.filter((attachment) => attachment.id !== id));
   }
 
   return (
@@ -89,6 +129,32 @@ export function ChatComposer({
           onSubmit={submitValue}
           className="w-full rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
         >
+        {imageAttachments.length ? (
+          <div className="mb-3 flex max-h-32 flex-wrap gap-2 overflow-y-auto">
+            {imageAttachments.map((attachment) => (
+              <div
+                key={attachment.id}
+                className="group relative h-14 w-14 overflow-hidden rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)]"
+              >
+                <img
+                  src={attachment.dataUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImageAttachment(attachment.id)}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-95 transition hover:bg-black"
+                  aria-label="Remove image"
+                >
+                  <span aria-hidden="true" className="text-xs leading-none">
+                    ×
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
         <div className="flex w-full items-end gap-2 sm:gap-3">
           <div className="relative shrink-0">
             <button
@@ -127,14 +193,20 @@ export function ChatComposer({
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(event) => appendAttachmentNames(event.target.files)}
+              onChange={(event) => {
+                appendAttachmentNames(event.target.files);
+                event.currentTarget.value = "";
+              }}
             />
             <input
               ref={fileInputRef}
               type="file"
               multiple
               className="hidden"
-              onChange={(event) => appendAttachmentNames(event.target.files)}
+              onChange={(event) => {
+                appendAttachmentNames(event.target.files);
+                event.currentTarget.value = "";
+              }}
             />
           </div>
 
@@ -188,7 +260,7 @@ export function ChatComposer({
           <button
             type="submit"
             aria-label="Send"
-            disabled={isSending || !value.trim()}
+            disabled={isSending || (!value.trim() && !imageAttachments.length)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:!text-gray-400"
           >
             <Send className="h-4 w-4" aria-hidden="true" />
@@ -211,6 +283,28 @@ export function ChatComposer({
             </button>
           </div>
           <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-4 py-4">
+            {imageAttachments.length ? (
+              <div className="flex flex-wrap gap-2">
+                {imageAttachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="relative h-16 w-16 overflow-hidden rounded-xl border border-[color:var(--color-line)]"
+                  >
+                    <img src={attachment.dataUrl} alt="" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImageAttachment(attachment.id)}
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white transition hover:bg-black"
+                      aria-label="Remove image"
+                    >
+                      <span aria-hidden="true" className="text-xs leading-none">
+                        ×
+                      </span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <textarea
               ref={expandedInputRef}
               value={value}
@@ -232,7 +326,7 @@ export function ChatComposer({
               <button
                 type="button"
                 onClick={() => submitValue()}
-                disabled={isSending || !value.trim()}
+                disabled={isSending || (!value.trim() && !imageAttachments.length)}
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />

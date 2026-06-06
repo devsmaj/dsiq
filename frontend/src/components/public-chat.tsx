@@ -422,7 +422,13 @@ export function PublicChat() {
           docked
           value={input}
           onChange={setInput}
-          onSubmit={(value) => void sendMessage(value)}
+          onSubmit={(value, attachments) =>
+            void sendMessage(
+              attachments.length
+                ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
+                : value,
+            )
+          }
           onVoiceInput={handleVoiceInput}
           isListening={isListening}
           isSending={isSending}

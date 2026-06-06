@@ -26,6 +26,10 @@ export type PrivateChatMessage = GroqChatMessage & {
   createdAtMs: number;
   deletedAtMs?: number;
   id: string;
+  imageAttachments?: Array<{
+    dataUrl: string;
+    name: string;
+  }>;
   imageDataUrl?: string;
   imageName?: string;
 };
@@ -356,6 +360,7 @@ export async function savePrivateChatMessage(input: {
     text: input.message.text,
     createdAtMs: input.message.createdAtMs || now,
     deletedAtMs: input.message.deletedAtMs,
+    imageAttachments: input.message.imageAttachments,
     imageDataUrl: input.message.imageDataUrl,
     imageName: input.message.imageName,
   };
@@ -393,6 +398,7 @@ export async function savePrivateChatMessage(input: {
         text: message.text,
         createdAt: serverTimestamp(),
         createdAtMs: message.createdAtMs,
+        imageAttachments: message.imageAttachments,
         imageDataUrl: message.imageDataUrl,
         imageName: message.imageName,
       }),
@@ -642,6 +648,20 @@ export async function loadPrivateChatMessages(
             typeof data.createdAtMs === "number" ? data.createdAtMs : 0,
           deletedAtMs:
             typeof data.deletedAtMs === "number" ? data.deletedAtMs : undefined,
+          imageAttachments: Array.isArray(data.imageAttachments)
+            ? data.imageAttachments
+                .map((attachment) => ({
+                  dataUrl:
+                    typeof attachment?.dataUrl === "string"
+                      ? attachment.dataUrl
+                      : "",
+                  name:
+                    typeof attachment?.name === "string"
+                      ? attachment.name
+                      : "Uploaded image",
+                }))
+                .filter((attachment) => attachment.dataUrl)
+            : undefined,
           imageDataUrl:
             typeof data.imageDataUrl === "string" ? data.imageDataUrl : undefined,
           imageName: typeof data.imageName === "string" ? data.imageName : undefined,
