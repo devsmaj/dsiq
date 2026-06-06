@@ -308,8 +308,8 @@ export function PublicChat() {
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-      <header className="shrink-0 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
+    <main className="min-h-[100dvh] bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+      <header className="sticky top-0 z-20 border-b border-[color:var(--color-line)] bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link
             href="/"
@@ -344,7 +344,7 @@ export function PublicChat() {
         </div>
       </header>
 
-      <section className="public-chat-layout mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6">
+      <section className="public-chat-layout mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col px-4 py-4 pb-[calc(150px+env(safe-area-inset-bottom))] sm:px-6">
         {isGuest ? (
           <div className="mb-4 shrink-0 rounded-[1.25rem] border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm text-[color:var(--color-muted)] shadow-[0_12px_35px_rgba(0,0,0,0.05)]">
             <Link
@@ -357,7 +357,7 @@ export function PublicChat() {
           </div>
         ) : null}
 
-        <div className="public-chat-messages min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="public-chat-messages flex-1 pr-1">
           {messages.length === 0 ? (
             <div className="flex min-h-full items-center justify-center pt-8 text-center sm:pt-0">
               <div>
