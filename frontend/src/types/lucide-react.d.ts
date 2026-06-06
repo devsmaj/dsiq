@@ -36,8 +36,10 @@ declare module "lucide-react" {
   export const LayoutList: LucideIcon;
   export const Lightbulb: LucideIcon;
   export const LogOut: LucideIcon;
+  export const Maximize2: LucideIcon;
   export const Megaphone: LucideIcon;
   export const Menu: LucideIcon;
+  export const Minimize2: LucideIcon;
   export const Mic: LucideIcon;
   export const Monitor: LucideIcon;
   export const Moon: LucideIcon;

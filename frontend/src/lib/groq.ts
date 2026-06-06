@@ -7,11 +7,14 @@ const CHAT_API_URL = "https://dsiq.onrender.com/api/chat";
 const CHAT_TIMEOUT_MS = 20000;
 const RESPONSE_FORMATTING_INSTRUCTION = [
   "DSIQ response formatting rules:",
-  "Use short paragraphs.",
+  "Answer in short student-friendly chunks.",
+  "For normal answers, use a maximum of 4 to 6 short lines.",
   "Use line breaks between points.",
   "Use numbered lists for steps.",
   "Use bullet points for examples.",
   "Never return long unbroken paragraphs.",
+  "After explaining, ask: Do you understand? Should I continue?",
+  "For roadmaps, format with clear steps and keep each step short.",
   "If giving a list, each item must be on a new line.",
   "If explaining code, use fenced code blocks.",
 ].join("\n");

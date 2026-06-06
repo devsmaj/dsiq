@@ -23,6 +23,8 @@ export type PrivateChatMessage = GroqChatMessage & {
   createdAtMs: number;
   deletedAtMs?: number;
   id: string;
+  imageDataUrl?: string;
+  imageName?: string;
 };
 
 type LocalPrivateChat = PrivateChatSummary & {
@@ -336,6 +338,8 @@ export async function savePrivateChatMessage(input: {
     text: input.message.text,
     createdAtMs: input.message.createdAtMs || now,
     deletedAtMs: input.message.deletedAtMs,
+    imageDataUrl: input.message.imageDataUrl,
+    imageName: input.message.imageName,
   };
 
   if (!db) {
@@ -370,6 +374,8 @@ export async function savePrivateChatMessage(input: {
         text: message.text,
         createdAt: serverTimestamp(),
         createdAtMs: message.createdAtMs,
+        imageDataUrl: message.imageDataUrl,
+        imageName: message.imageName,
       }),
       undefined,
       "Private chat message save timed out.",
@@ -600,6 +606,9 @@ export async function loadPrivateChatMessages(
             typeof data.createdAtMs === "number" ? data.createdAtMs : 0,
           deletedAtMs:
             typeof data.deletedAtMs === "number" ? data.deletedAtMs : undefined,
+          imageDataUrl:
+            typeof data.imageDataUrl === "string" ? data.imageDataUrl : undefined,
+          imageName: typeof data.imageName === "string" ? data.imageName : undefined,
         };
       })
       .filter((message) => message.text.trim() && !message.deletedAtMs)

@@ -12,7 +12,9 @@ import {
   HelpCircle,
   ImageIcon,
   LogOut,
+  Maximize2,
   Menu,
+  Minimize2,
   Mic,
   MoreHorizontal,
   Plus,
@@ -26,7 +28,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { PrivateRoute } from "@/components/private-route";
@@ -176,6 +178,32 @@ function formatChatUpdatedAt(updatedAtMs: number) {
   }).format(new Date(updatedAtMs));
 }
 
+function resizeTextarea(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) {
+    return;
+  }
+
+  textarea.style.height = "auto";
+  textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+}
+
+function getGreeting(name: string, isReturning: boolean) {
+  if (isReturning) {
+    return `Welcome back, ${name}`;
+  }
+
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return `Good morning, ${name}`;
+  }
+
+  if (hour < 17) {
+    return `Good afternoon, ${name}`;
+  }
+
+  return `Good evening, ${name}`;
+}
+
 export default function DsiqChatPage() {
   const router = useRouter();
   const { authMode, logout } = useAuth();
@@ -188,6 +216,8 @@ export default function DsiqChatPage() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -202,6 +232,14 @@ export default function DsiqChatPage() {
   const [messages, setMessages] = useState<PrivateChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [privateChats, setPrivateChats] = useState<PrivateChatSummary[]>([]);
+  const [selectedImage, setSelectedImage] = useState<{
+    dataUrl: string;
+    name: string;
+  } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{
+    dataUrl: string;
+    name: string;
+  } | null>(null);
   const [activeSavedChatMenuId, setActiveSavedChatMenuId] = useState<
     string | null
   >(null);
@@ -220,7 +258,8 @@ export default function DsiqChatPage() {
   );
   const [error, setError] = useState("");
   const [actionStatus, setActionStatus] = useState("");
-  const promptInputRef = useRef<HTMLInputElement | null>(null);
+  const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const expandedPromptRef = useRef<HTMLTextAreaElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
@@ -250,6 +289,26 @@ export default function DsiqChatPage() {
   const bookmarkedPrivateChats = privateChats.filter(
     (chat) => chat.isBookmarked,
   );
+  const hasPreviousProgress = privateChats.length > 0;
+  const welcomeActions = [
+    {
+      label: "Create my roadmap",
+      prompt:
+        "Create my learning roadmap with clear beginner, intermediate, and portfolio steps.",
+    },
+    {
+      label: "Continue my lesson",
+      prompt: "Continue my lesson from where I stopped. Keep it short and practical.",
+    },
+    {
+      label: "Give me today's mission",
+      prompt: "Give me today's learning mission with one clear action and a quick check.",
+    },
+    {
+      label: "Test my knowledge",
+      prompt: "Test my knowledge with a short quiz, then explain what I miss.",
+    },
+  ];
   useKeyboardOffset();
 
   useEffect(() => {
@@ -279,6 +338,11 @@ export default function DsiqChatPage() {
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  useEffect(() => {
+    resizeTextarea(promptInputRef.current);
+    resizeTextarea(expandedPromptRef.current);
+  }, [prompt, isComposerExpanded]);
 
   useEffect(() => {
     async function loadChats() {
@@ -331,27 +395,38 @@ export default function DsiqChatPage() {
     }
   }
 
-  async function toggleCurrentChatBookmark() {
-    if (!user || !currentChatId) {
+  async function toggleChatBookmark(chatId: string, isBookmarked?: boolean) {
+    if (!user) {
       setActionStatus("Send a message first, then save this chat.");
       return;
     }
 
-    const nextBookmarked = !isCurrentChatBookmarked;
+    const nextBookmarked = !isBookmarked;
     await updatePrivateChatBookmark({
-      chatId: currentChatId,
+      chatId,
       isBookmarked: nextBookmarked,
       uid: user.uid,
     });
     await refreshPrivateChats();
     setActionStatus(nextBookmarked ? "Chat saved." : "Chat removed from Saved Chats.");
     setIsChatActionsOpen(false);
+    setActiveSavedChatMenuId(null);
   }
 
-  async function submitPrompt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function toggleCurrentChatBookmark() {
+    if (!currentChatId) {
+      setActionStatus("Send a message first, then save this chat.");
+      return;
+    }
 
-    const message = prompt.trim();
+    await toggleChatBookmark(currentChatId, isCurrentChatBookmarked);
+  }
+
+  async function sendPromptText(rawMessage: string) {
+    const trimmedMessage = rawMessage.trim();
+    const message = selectedImage
+      ? `${trimmedMessage || "Please review this image."}\n\nAttached image: ${selectedImage.name}`
+      : trimmedMessage;
     if (!message || isSending) {
       return;
     }
@@ -366,11 +441,15 @@ export default function DsiqChatPage() {
     setIsChatActionsOpen(false);
     setActiveSavedChatMenuId(null);
     setPrompt("");
+    setSelectedImage(null);
+    setIsComposerExpanded(false);
     setIsSending(true);
 
     const userMessage: PrivateChatMessage = {
       createdAtMs: Date.now(),
       id: createClientMessageId(),
+      imageDataUrl: selectedImage?.dataUrl,
+      imageName: selectedImage?.name,
       role: "user",
       text: message,
     };
@@ -427,11 +506,26 @@ export default function DsiqChatPage() {
     }
   }
 
+  async function submitPrompt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await sendPromptText(prompt);
+  }
+
+  function handlePromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+    void sendPromptText(prompt);
+  }
+
   function startNewChat() {
     stopReadAloud();
     setCurrentChatId(null);
     setMessages([]);
     setPrompt("");
+    setSelectedImage(null);
     setError("");
     setActionStatus("");
     setIsChatActionsOpen(false);
@@ -712,15 +806,30 @@ export default function DsiqChatPage() {
       return;
     }
 
-    const names = Array.from(files)
-      .map((file) => file.name)
-      .join(", ");
-
-    setPrompt((current) =>
-      current.trim()
-        ? `${current.trim()} Attached: ${names}`
-        : `Attached: ${names}`,
+    const imageFile = Array.from(files).find((file) =>
+      file.type.startsWith("image/"),
     );
+
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setSelectedImage({ dataUrl: reader.result, name: imageFile.name });
+        }
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      const names = Array.from(files)
+        .map((file) => file.name)
+        .join(", ");
+
+      setPrompt((current) =>
+        current.trim()
+          ? `${current.trim()} Attached file: ${names}`
+          : `Attached file: ${names}`,
+      );
+    }
+
     setIsUploadPanelOpen(false);
     window.requestAnimationFrame(() => {
       promptInputRef.current?.focus();
@@ -830,10 +939,10 @@ export default function DsiqChatPage() {
     );
   };
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
+  const renderSidebarContent = (mobile = false) => {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
-    const recentChats = mobile ? privateChats.slice(0, 3) : privateChats;
+    const recentChats = privateChats.slice(0, 3);
 
     return (
       <aside
@@ -1027,6 +1136,10 @@ export default function DsiqChatPage() {
               </div>
 
               {recentChats.length ? (
+                <>
+                <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
+                  Latest 3 chats only. Use Search Chats for full history.
+                </p>
                 <div className={`flex flex-col ${mobile ? "gap-0.5" : "gap-1"}`}>
                   {recentChats.map((chat) => (
                     <div
@@ -1092,6 +1205,17 @@ export default function DsiqChatPage() {
                               </div>
                             </div>
                           ) : (
+                            <div className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void toggleChatBookmark(chat.id, chat.isBookmarked)
+                              }
+                              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                            >
+                              <Save className="h-4 w-4" aria-hidden="true" />
+                              {chat.isBookmarked ? "Remove saved chat" : "Save chat"}
+                            </button>
                             <button
                               type="button"
                               onClick={() => setConfirmingRecentDeleteChatId(chat.id)}
@@ -1100,15 +1224,17 @@ export default function DsiqChatPage() {
                               <Trash2 className="h-4 w-4" aria-hidden="true" />
                               Delete
                             </button>
+                            </div>
                           )}
                         </div>
                       ) : null}
                     </div>
                   ))}
                 </div>
+                </>
               ) : (
                 <p className="px-3 text-xs leading-5 text-[color:var(--color-muted)]">
-                  Your saved chats will appear here.
+                  Your latest chats will appear here.
                 </p>
               )}
             </div>
@@ -1211,7 +1337,7 @@ export default function DsiqChatPage() {
         <div className="flex h-full min-h-0 overflow-hidden">
 
           <div className="hidden lg:block">
-            <SidebarContent />
+            {renderSidebarContent()}
           </div>
 
           {isMobileSidebarOpen ? (
@@ -1223,7 +1349,7 @@ export default function DsiqChatPage() {
                 onClick={() => setIsMobileSidebarOpen(false)}
               />
               <div className="absolute inset-y-0 left-0">
-                <SidebarContent mobile />
+                {renderSidebarContent(true)}
               </div>
             </div>
           ) : null}
@@ -1250,6 +1376,9 @@ export default function DsiqChatPage() {
                 >
                   Search Chats
                 </h2>
+                <p className="mt-1 pr-10 text-xs leading-5 text-[color:var(--color-muted)]">
+                  Search all chat history, not just the latest three.
+                </p>
                 <div className="mt-4 flex h-12 items-center gap-3 rounded-2xl border border-[color:var(--color-line)] px-4">
                   <Search className="h-4 w-4 text-[color:var(--color-muted)]" />
                   <input
@@ -1351,7 +1480,7 @@ export default function DsiqChatPage() {
                         type="button"
                         disabled={!selectedSavedChatIds.length}
                         onClick={() => setDeleteSavedChatIds(selectedSavedChatIds)}
-                        className="inline-flex h-9 items-center justify-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex h-9 items-center justify-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                       >
                         Delete
                       </button>
@@ -1632,10 +1761,35 @@ export default function DsiqChatPage() {
               <div className="mx-auto flex min-h-0 w-full max-w-[900px] flex-1 flex-col">
 
                 {!messages.length ? (
-                  <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--color-muted)] sm:text-base">
-                    DSIQ is ready to guide your skills, learning, missions, and
-                    opportunities.
-                  </p>
+                  <div className="flex min-h-0 flex-1 items-center justify-center pb-[calc(140px+env(safe-area-inset-bottom))] pt-4 text-center">
+                    <div className="w-full max-w-2xl">
+                      <h1 className="text-2xl font-semibold tracking-normal text-[color:var(--color-text)] sm:text-3xl">
+                        {getGreeting(displayName, hasPreviousProgress)}
+                      </h1>
+                      {hasPreviousProgress ? (
+                        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)] sm:text-base">
+                          Continue your learning journey from where you stopped.
+                        </p>
+                      ) : (
+                        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)] sm:text-base">
+                          DSIQ is ready to guide your skills, lessons, missions, and opportunities.
+                        </p>
+                      )}
+                      <div className="mx-auto mt-6 grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                        {welcomeActions.map((action) => (
+                          <button
+                            key={action.label}
+                            type="button"
+                            onClick={() => void sendPromptText(action.prompt)}
+                            disabled={isSending}
+                            className="min-h-11 rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm font-semibold text-[color:var(--color-text)] shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition hover:border-[#111111]/30 hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
 
                 {messages.length ? (
@@ -1653,6 +1807,26 @@ export default function DsiqChatPage() {
                         <p className={message.role === "model" ? "ai-message" : "whitespace-pre-wrap"}>
                           {message.text}
                         </p>
+                        {message.imageDataUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewImage({
+                                dataUrl: message.imageDataUrl || "",
+                                name: message.imageName || "Uploaded image",
+                              });
+                              setIsImagePreviewOpen(true);
+                            }}
+                            className="mt-2 block overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white"
+                            aria-label={`Open ${message.imageName || "uploaded image"}`}
+                          >
+                            <img
+                              src={message.imageDataUrl}
+                              alt={message.imageName || "Uploaded image"}
+                              className="h-28 w-28 object-cover"
+                            />
+                          </button>
+                        ) : null}
                         {message.role === "model" ? (
                           <button
                             type="button"
@@ -1704,7 +1878,37 @@ export default function DsiqChatPage() {
                   onSubmit={submitPrompt}
                   className="rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
                 >
-                  <div className="flex items-center gap-3">
+                  {selectedImage ? (
+                    <div className="mb-3 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreviewImage(selectedImage);
+                          setIsImagePreviewOpen(true);
+                        }}
+                        className="relative h-16 w-16 overflow-hidden rounded-2xl border border-[color:var(--color-line)]"
+                        aria-label="Open image preview"
+                      >
+                        <img
+                          src={selectedImage.dataUrl}
+                          alt={selectedImage.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-[color:var(--color-muted)]">
+                        {selectedImage.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedImage(null)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-[color:var(--color-text)] transition hover:bg-gray-200"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <div className="flex items-end gap-2 sm:gap-3">
                     <div className="relative shrink-0">
                       <button
                         type="button"
@@ -1752,15 +1956,25 @@ export default function DsiqChatPage() {
                         onChange={(event) => appendAttachmentNames(event.target.files)}
                       />
                     </div>
-                    <input
+                    <textarea
                       ref={promptInputRef}
-                      type="text"
                       value={prompt}
                       onChange={(event) => setPrompt(event.target.value)}
+                      onKeyDown={handlePromptKeyDown}
                       disabled={isSending}
                       placeholder="Ask DSIQ"
-                      className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
+                      rows={1}
+                      className="max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setIsComposerExpanded(true)}
+                      disabled={isSending}
+                      aria-label="Expand composer"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
+                    >
+                      <Maximize2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
                     <button
                       type="button"
                       onClick={handleVoiceInput}
@@ -1786,8 +2000,8 @@ export default function DsiqChatPage() {
                     <button
                       type="submit"
                       aria-label="Send"
-                      disabled={isSending || !prompt.trim()}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={isSending || (!prompt.trim() && !selectedImage)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:!text-gray-400"
                     >
                       <Send className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -1797,6 +2011,116 @@ export default function DsiqChatPage() {
             </div>
           </section>
         </div>
+
+        {isComposerExpanded ? (
+          <div className="fixed inset-0 z-[65] flex h-[100dvh] flex-col bg-white px-4 py-4 text-[color:var(--color-text)] sm:px-6">
+            <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 border-b border-[color:var(--color-line)] pb-4">
+              <p className="text-sm font-semibold">Write your prompt</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsComposerExpanded(false);
+                  window.requestAnimationFrame(() => {
+                    promptInputRef.current?.focus();
+                  });
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white transition hover:bg-[color:var(--color-surface-strong)]"
+                aria-label="Collapse composer"
+              >
+                <Minimize2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-4 py-4">
+              {selectedImage ? (
+                <div className="flex items-center gap-3 rounded-2xl border border-[color:var(--color-line)] p-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewImage(selectedImage);
+                      setIsImagePreviewOpen(true);
+                    }}
+                    className="h-14 w-14 overflow-hidden rounded-xl"
+                    aria-label="Open image preview"
+                  >
+                    <img
+                      src={selectedImage.dataUrl}
+                      alt={selectedImage.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[color:var(--color-muted)]">
+                    {selectedImage.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedImage(null)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200"
+                    aria-label="Remove image"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              ) : null}
+
+              <textarea
+                ref={expandedPromptRef}
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={handlePromptKeyDown}
+                disabled={isSending}
+                placeholder="Write clearly. Shift + Enter adds a new line."
+                autoFocus
+                className="min-h-0 flex-1 resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-background)] p-4 text-base leading-7 outline-none transition focus:border-[#111111] disabled:cursor-not-allowed disabled:opacity-70"
+              />
+
+              <div className="flex items-center justify-between gap-3 pb-[env(safe-area-inset-bottom)]">
+                <button
+                  type="button"
+                  onClick={() => setIsComposerExpanded(false)}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  Collapse
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void sendPromptText(prompt)}
+                  disabled={isSending || (!prompt.trim() && !selectedImage)}
+                  className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                >
+                  <Send className="h-4 w-4" aria-hidden="true" />
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {isImagePreviewOpen && previewImage ? (
+          <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/80 p-4">
+            <button
+              type="button"
+              aria-label="Close image preview"
+              className="absolute inset-0"
+              onClick={() => setIsImagePreviewOpen(false)}
+            />
+            <div className="relative max-h-full w-full max-w-4xl">
+              <button
+                type="button"
+                onClick={() => setIsImagePreviewOpen(false)}
+                className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[color:var(--color-text)] transition hover:bg-gray-100"
+                aria-label="Close image preview"
+              >
+                <X className="h-5 w-5" aria-hidden="true" />
+              </button>
+              <img
+                src={previewImage.dataUrl}
+                alt={previewImage.name}
+                className="mx-auto max-h-[calc(100dvh-2rem)] max-w-full rounded-2xl object-contain"
+              />
+            </div>
+          </div>
+        ) : null}
 
         {isLogoutConfirmOpen ? (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-4">
