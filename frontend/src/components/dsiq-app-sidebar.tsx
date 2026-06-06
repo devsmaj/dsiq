@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FileText, GraduationCap, Menu, Search, SquarePen, X } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 import {
@@ -60,6 +61,9 @@ export function DsiqAppSidebar({
     "there";
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
+  const shellStyle = {
+    "--dsiq-sidebar-offset": "292px",
+  } as CSSProperties;
 
   useEffect(() => {
     async function loadRecentChats() {
@@ -189,9 +193,12 @@ export function DsiqAppSidebar({
   }
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-      <div className="flex min-h-[100dvh]">
-        <div className="hidden lg:sticky lg:top-0 lg:block lg:h-[100dvh] lg:shrink-0">{renderSidebar()}</div>
+    <main
+      className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]"
+      style={shellStyle}
+    >
+      <div className="min-h-[100dvh]">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block lg:h-[100dvh]">{renderSidebar()}</div>
         {isMobileSidebarOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button
@@ -203,7 +210,7 @@ export function DsiqAppSidebar({
             <div className="absolute inset-y-0 left-0">{renderSidebar(true)}</div>
           </div>
         ) : null}
-        <section className="relative min-w-0 flex-1">
+        <section className="relative min-w-0 lg:pl-[var(--dsiq-sidebar-offset)]">
           <button
             type="button"
             aria-label="Open menu"

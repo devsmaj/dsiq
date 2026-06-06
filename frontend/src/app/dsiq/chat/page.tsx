@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import {
   CircleUserRound,
   Check,
@@ -253,6 +254,10 @@ export default function DsiqChatPage() {
   const profileImageUrl =
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
   const profileRoleLabel = getProfileRoleLabel(profile?.role || answers?.role);
+  const desktopSidebarWidth = isSidebarOpen ? "292px" : "76px";
+  const chatShellStyle = {
+    "--dsiq-sidebar-offset": desktopSidebarWidth,
+  } as CSSProperties;
   const filteredPrivateChats = privateChats.filter((chat) => {
     const query = chatSearchQuery.trim().toLowerCase();
     if (!query) {
@@ -1273,10 +1278,13 @@ export default function DsiqChatPage() {
 
   return (
     <PrivateRoute>
-      <main className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="flex min-h-[100dvh] overflow-x-hidden">
+      <main
+        className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]"
+        style={chatShellStyle}
+      >
+        <div className="min-h-[100dvh] overflow-x-hidden">
 
-          <div className="hidden lg:sticky lg:top-0 lg:block lg:h-[100dvh] lg:shrink-0">
+          <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block lg:h-[100dvh]">
             {renderSidebarContent()}
           </div>
 
@@ -1640,7 +1648,7 @@ export default function DsiqChatPage() {
             </div>
           ) : null}
 
-          <section className="relative min-w-0 flex-1 bg-[color:var(--color-background)]">
+          <section className="relative min-w-0 bg-[color:var(--color-background)] lg:pl-[var(--dsiq-sidebar-offset)]">
 
             <button
               type="button"
@@ -1653,7 +1661,7 @@ export default function DsiqChatPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 lg:right-8 lg:top-6">
+            <div className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-30 flex items-center gap-2 sm:right-6 lg:right-8">
               <Link
                 href="/dsiq/mentor"
                 aria-label="Turn AI Teacher on"

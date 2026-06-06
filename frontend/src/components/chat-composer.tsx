@@ -121,7 +121,7 @@ export function ChatComposer({
       <div
         className={
           docked
-            ? "fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none min-w-0 pb-[env(safe-area-inset-bottom)] lg:inset-x-0 lg:w-full lg:max-w-[760px]"
+            ? "chat-composer-docked"
             : "w-full min-w-0"
         }
       >

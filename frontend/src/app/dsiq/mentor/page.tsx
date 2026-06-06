@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import {
   Bot,
   FileText,
@@ -156,6 +157,10 @@ export default function DsiqMentorPage() {
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
   const role = profile?.role || answers?.role || "student";
   const profileRoleLabel = getProfileRoleLabel(profile?.role || answers?.role);
+  const desktopSidebarWidth = isSidebarOpen ? "292px" : "76px";
+  const mentorShellStyle = {
+    "--dsiq-sidebar-offset": desktopSidebarWidth,
+  } as CSSProperties;
   const goals = useMemo(
     () =>
       profile?.selectedGoals?.length
@@ -703,9 +708,12 @@ export default function DsiqMentorPage() {
 
   return (
     <PrivateRoute>
-      <main className="ai-teacher-page text-[color:var(--color-text)]">
-        <div className="flex min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden">
-          <div className="hidden lg:sticky lg:top-0 lg:block lg:h-[100dvh] lg:shrink-0">
+      <main
+        className="ai-teacher-page text-[color:var(--color-text)]"
+        style={mentorShellStyle}
+      >
+        <div className="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden">
+          <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block lg:h-[100dvh]">
             {renderSidebarContent()}
           </div>
 
@@ -808,7 +816,7 @@ export default function DsiqMentorPage() {
             </div>
           ) : null}
 
-          <section className="ai-teacher-content flex-1">
+          <section className="ai-teacher-content lg:pl-[var(--dsiq-sidebar-offset)]">
             <button
               type="button"
               aria-label="Open menu"
