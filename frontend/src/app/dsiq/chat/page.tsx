@@ -1927,7 +1927,7 @@ export default function DsiqChatPage() {
               </div>
 
               <div
-                className="fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none pb-[env(safe-area-inset-bottom)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:w-full lg:max-w-[760px] lg:pb-4"
+                className="fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none min-w-0 pb-[env(safe-area-inset-bottom)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:w-full lg:max-w-[760px] lg:pb-4"
               >
 
                 <ChatComposer

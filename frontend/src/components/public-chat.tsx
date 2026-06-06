@@ -418,7 +418,7 @@ export function PublicChat() {
           ) : null}
         </div>
 
-        <div className="public-chat-composer mt-4 shrink-0">
+        <div className="public-chat-composer mt-4 shrink-0 min-w-0 w-full">
           <ChatComposer
             value={input}
             onChange={setInput}

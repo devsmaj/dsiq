@@ -902,7 +902,7 @@ export default function DsiqMentorPage() {
                   ) : null}
                 </div>
 
-                <div className="teacher-input-area">
+                <div className="teacher-input-area min-w-0 w-full">
                   <ChatComposer
                     value={prompt}
                     onChange={setPrompt}
