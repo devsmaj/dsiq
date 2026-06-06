@@ -45,6 +45,11 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
+import {
+  createRoadmapFromAiResponse,
+  isRoadmapRequest,
+  saveRoadmap,
+} from "@/lib/roadmap-store";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -399,6 +404,17 @@ export default function DsiqChatPage() {
         message: modelMessage,
         uid: user.uid,
       });
+
+      if (isRoadmapRequest(message)) {
+        await saveRoadmap(
+          user.uid,
+          createRoadmapFromAiResponse({
+            answer: response,
+            prompt: message,
+          }),
+        );
+      }
+
       void refreshPrivateChats();
     } catch (submissionError) {
       setError(
@@ -941,11 +957,16 @@ export default function DsiqChatPage() {
 
             if (isSavedChats) {
               return (
-                <button
+                <Link
                   key={item.label}
-                  type="button"
                   aria-label={item.label}
-                  onClick={() => openSavedChatsPanel(mobile)}
+                  href={item.href}
+                  onClick={() => {
+                    closeSavedChatsPanel();
+                    if (mobile) {
+                      setIsMobileSidebarOpen(false);
+                    }
+                  }}
                   className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
                     expanded ? "gap-3 px-3" : "justify-center px-0"
                   }`}
@@ -955,7 +976,7 @@ export default function DsiqChatPage() {
                   {!expanded ? (
                     <span className={collapsedTooltipClass}>{item.label}</span>
                   ) : null}
-                </button>
+                </Link>
               );
             }
 
