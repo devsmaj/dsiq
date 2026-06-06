@@ -56,7 +56,7 @@ const collapsedItems = [
 
 
 const collapsedTooltipClass =
-  "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_1[...]
+  "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
 
 const CHAT_TYPE = "teacher" as const;
 
@@ -801,7 +801,7 @@ export default function DsiqMentorPage() {
               type="button"
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="mobile-menu-button flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transiti[...]
+              className="mobile-menu-button flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -809,7 +809,7 @@ export default function DsiqMentorPage() {
             <Link
               href="/dsiq/chat"
               aria-label="Turn AI Teacher off"
-              className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-x[...]
+              className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-xs font-semibold text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] sm:right-6 lg:right-8"
             >
               <span>AI Teacher</span>
               <span className="rounded-full bg-[#111111] px-2 py-0.5 text-[10px] text-white">
@@ -851,7 +851,7 @@ export default function DsiqMentorPage() {
                     <button
                       type="button"
                       onClick={() => void toggleCurrentTeacherChatBookmark()}
-                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[color:var(--color-line)] px-3 text-xs font-semibold transition hover:bg-[color:var(--colo[...]
+                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[color:var(--color-line)] px-3 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
                     >
                       <Save className="h-4 w-4" aria-hidden="true" />
                       {isCurrentChatBookmarked ? "Saved" : "Save"}
