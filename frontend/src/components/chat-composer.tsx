@@ -24,6 +24,7 @@ export function ChatComposer({
   isSending,
   onSubmit,
   onVoiceInput,
+  onExpandedChange,
   placeholder,
   value,
   onChange,
@@ -33,6 +34,7 @@ export function ChatComposer({
   isSending: boolean;
   onSubmit: (value: string, attachments: ChatImageAttachment[]) => void;
   onVoiceInput?: () => void;
+  onExpandedChange?: (isExpanded: boolean) => void;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
@@ -49,6 +51,10 @@ export function ChatComposer({
     resizeTextarea(inputRef.current);
     resizeTextarea(expandedInputRef.current);
   }, [isExpanded, value]);
+
+  useEffect(() => {
+    onExpandedChange?.(isExpanded);
+  }, [isExpanded, onExpandedChange]);
 
   function submitValue(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();

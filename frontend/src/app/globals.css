@@ -157,6 +157,24 @@ a {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.primary-button,
+.black-button {
+  background: #111111 !important;
+  color: #ffffff !important;
+}
+
+.primary-button svg,
+.black-button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.primary-button:disabled,
+.black-button:disabled {
+  opacity: 0.55;
+  color: #ffffff !important;
+}
+
 .ai-teacher-page {
   display: flex;
   min-height: 100dvh;

@@ -210,6 +210,7 @@ export default function DsiqChatPage() {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [isReadingAloud, setIsReadingAloud] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
@@ -1655,7 +1656,7 @@ export default function DsiqChatPage() {
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
               className={`fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden ${
-                isMobileSidebarOpen ? "hidden" : "flex"
+                isMobileSidebarOpen || isComposerExpanded ? "hidden" : "flex"
               }`}
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
@@ -1876,6 +1877,7 @@ export default function DsiqChatPage() {
                 onChange={setPrompt}
                 onSubmit={(value, attachments) => void sendPromptText(value, attachments)}
                 onVoiceInput={handleVoiceInput}
+                onExpandedChange={setIsComposerExpanded}
                 isListening={isListening}
                 isSending={isSending}
                 placeholder="Ask DSIQ"

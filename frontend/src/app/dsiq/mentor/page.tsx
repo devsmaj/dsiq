@@ -143,6 +143,7 @@ export default function DsiqMentorPage() {
   const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [error, setError] = useState("");
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
@@ -822,7 +823,7 @@ export default function DsiqMentorPage() {
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
               className={`mobile-menu-button h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden ${
-                isMobileSidebarOpen ? "hidden" : "flex"
+                isMobileSidebarOpen || isComposerExpanded ? "hidden" : "flex"
               }`}
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
@@ -938,6 +939,7 @@ export default function DsiqMentorPage() {
                       )
                     }
                     onVoiceInput={handleVoiceInput}
+                    onExpandedChange={setIsComposerExpanded}
                     isListening={isListening}
                     isSending={isSending}
                     placeholder="Ask your AI Teacher anything..."

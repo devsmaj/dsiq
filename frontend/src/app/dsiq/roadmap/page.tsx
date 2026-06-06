@@ -45,7 +45,7 @@ export default function DsiqRoadmapPage() {
             </div>
             <Link
               href="/dsiq/mentor"
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+              className="primary-button inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
             >
               <Bot className="h-4 w-4" aria-hidden="true" />
               Create roadmap with AI Teacher
@@ -132,7 +132,7 @@ export default function DsiqRoadmapPage() {
               </p>
               <Link
                 href="/dsiq/mentor"
-                className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+                className="primary-button mt-5 inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
               >
                 <Bot className="h-4 w-4" aria-hidden="true" />
                 Create roadmap with AI Teacher

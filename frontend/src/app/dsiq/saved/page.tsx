@@ -66,7 +66,7 @@ export default function DsiqSavedChatsPage() {
             </div>
             <Link
               href="/dsiq/chat"
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+              className="primary-button inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
               Back to chat
@@ -121,7 +121,7 @@ export default function DsiqSavedChatsPage() {
               </p>
               <Link
                 href="/dsiq/chat"
-                className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black"
+                className="primary-button mt-5 inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
                 Back to chat
