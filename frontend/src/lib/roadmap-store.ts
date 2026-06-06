@@ -1,11 +1,4 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  getDocs,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { withTimeout } from "@/lib/async-timeout";
 import { db } from "@/lib/firebase";
@@ -151,7 +144,9 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
     updatedAtMs: now,
   };
 
-  if (!db) {
+  const firestoreDb = db;
+
+  if (!firestoreDb) {
     writeLocalRoadmaps(
       uid,
       [nextRoadmap, ...readLocalRoadmaps(uid).filter((item) => item.id !== roadmap.id)]
@@ -162,7 +157,7 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
   }
 
   try {
-    const roadmapRef = doc(collection(db, "users", uid, "roadmaps"), roadmap.id);
+    const roadmapRef = doc(collection(firestoreDb, "users", uid, "roadmaps"), roadmap.id);
     await withTimeout(
       setDoc(
         roadmapRef,
@@ -210,7 +205,9 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
 }
 
 export async function listRoadmaps(uid: string) {
-  if (!db) {
+  const firestoreDb = db;
+
+  if (!firestoreDb) {
     return readLocalRoadmaps(uid)
       .filter((roadmap) => !roadmap.deletedAtMs)
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
@@ -219,7 +216,7 @@ export async function listRoadmaps(uid: string) {
 
   try {
     const snapshot = await withTimeout(
-      getDocs(collection(db, "users", uid, "roadmaps")),
+      getDocs(collection(firestoreDb, "users", uid, "roadmaps")),
       undefined,
       "Roadmaps loading timed out.",
     );
@@ -228,7 +225,12 @@ export async function listRoadmaps(uid: string) {
       snapshot.docs.map(async (roadmapDoc) => {
         const data = roadmapDoc.data();
         const stepsSnapshot = await withTimeout(
-          getDocs(collection(doc(db, "users", uid, "roadmaps", roadmapDoc.id), "steps")),
+          getDocs(
+            collection(
+              doc(firestoreDb, "users", uid, "roadmaps", roadmapDoc.id),
+              "steps",
+            ),
+          ),
           undefined,
           "Roadmap steps loading timed out.",
         );

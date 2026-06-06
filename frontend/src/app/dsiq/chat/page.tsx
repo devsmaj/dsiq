@@ -19,7 +19,7 @@ import {
   Search,
   Send,
   Settings,
-  Star,
+  Save,
   SquarePen,
   Target,
   Trash2,
@@ -35,7 +35,6 @@ import { getPostAuthPath } from "@/lib/auth-routing";
 import {
   createPrivateChat,
   deletePrivateChat,
-  listBookmarkedPrivateChats,
   listPrivateChats,
   loadPrivateChatMessages,
   savePrivateChatMessage,
@@ -243,6 +242,9 @@ export default function DsiqChatPage() {
   });
   const currentChat = privateChats.find((chat) => chat.id === currentChatId);
   const isCurrentChatBookmarked = currentChat?.isBookmarked === true;
+  const bookmarkedPrivateChats = privateChats.filter(
+    (chat) => chat.isBookmarked,
+  );
   useKeyboardOffset();
 
   useEffect(() => {
@@ -296,6 +298,17 @@ export default function DsiqChatPage() {
 
     void loadChats();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || isSending || currentChatId) {
+      return;
+    }
+
+    const chatId = new URLSearchParams(window.location.search).get("chatId");
+    if (chatId) {
+      void openPrivateChat(chatId);
+    }
+  }, [currentChatId, isSending, user]);
 
   async function refreshPrivateChats() {
     if (!user) {
@@ -1291,7 +1304,7 @@ export default function DsiqChatPage() {
                       Open, rename, export, or delete saved chats.
                     </p>
                   </div>
-                  {privateChats.length ? (
+                  {bookmarkedPrivateChats.length ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1355,9 +1368,9 @@ export default function DsiqChatPage() {
                 ) : null}
 
                 <div className="mt-4 max-h-[430px] overflow-y-auto">
-                  {privateChats.length ? (
+                  {bookmarkedPrivateChats.length ? (
                     <div className="flex flex-col gap-2">
-                      {privateChats.map((chat) => {
+                      {bookmarkedPrivateChats.map((chat) => {
                         const isSelected = selectedSavedChatIds.includes(chat.id);
                         const isRenaming = renamingSavedChatId === chat.id;
 
@@ -1506,8 +1519,7 @@ export default function DsiqChatPage() {
                     </div>
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
-                      No saved chats yet. Send a message and DSIQ will save the
-                      chat here.
+                      No saved chats yet. Open a chat and choose Save chat.
                     </p>
                   )}
                 </div>
@@ -1559,6 +1571,14 @@ export default function DsiqChatPage() {
                       </button>
                       <button
                         type="button"
+                        onClick={() => void toggleCurrentChatBookmark()}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                      >
+                        <Save className="h-4 w-4" aria-hidden="true" />
+                        {isCurrentChatBookmarked ? "Remove saved chat" : "Save chat"}
+                      </button>
+                      <button
+                        type="button"
                         onClick={draftToEmail}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                       >
@@ -1606,10 +1626,12 @@ export default function DsiqChatPage() {
                         className={`max-w-[82%] text-sm leading-7 text-[color:var(--color-text)] ${
                           message.role === "user"
                             ? "ml-auto text-right"
-                            : "mr-auto text-left"
+                            : "ai-message mr-auto text-left"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap">{message.text}</p>
+                        <p className={message.role === "model" ? "ai-message" : "whitespace-pre-wrap"}>
+                          {message.text}
+                        </p>
                         {message.role === "model" ? (
                           <button
                             type="button"

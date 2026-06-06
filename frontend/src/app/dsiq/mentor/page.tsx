@@ -16,8 +16,17 @@ import {
 import { FormEvent, useMemo, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
+import {
+  createPrivateChat,
+  savePrivateChatMessage,
+} from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
+import {
+  createRoadmapFromAiResponse,
+  isRoadmapRequest,
+  saveRoadmap,
+} from "@/lib/roadmap-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
@@ -26,11 +35,11 @@ const sidebarItems = [
   { label: "AI Teacher", href: "/dsiq/mentor", icon: Bot },
   {
     label: "Learning Roadmap",
-    href: "/dsiq/chat?panel=roadmap",
+    href: "/dsiq/roadmap",
     icon: GraduationCap,
   },
 
-  { label: "Saved Chats", href: "/dsiq/chat?panel=saved", icon: FileText },
+  { label: "Saved Chats", href: "/dsiq/saved", icon: FileText },
 ] as const;
 
 const collapsedItems = [
@@ -92,12 +101,21 @@ function getProfileRoleLabel(role?: string | null) {
   return trimmedRole || "Member";
 }
 
+function createClientMessageId() {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `message-${window.crypto.randomUUID()}`;
+  }
+
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export default function DsiqMentorPage() {
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
@@ -137,6 +155,12 @@ export default function DsiqMentorPage() {
         `Current mission: ${currentMission}.`,
         `Current lesson: ${currentLesson}.`,
         "Keep responses clear, supportive, and action-focused.",
+        "Always format answers cleanly.",
+        "Use short paragraphs with line breaks between points.",
+        "Use numbered lists for steps and bullet points for examples.",
+        "Never return long unbroken paragraphs.",
+        "If giving a list, each item must be on a new line.",
+        "If explaining code, use fenced code blocks.",
       ].join("\n"),
     [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, role],
   );
@@ -160,6 +184,22 @@ export default function DsiqMentorPage() {
     setMentorMessages(nextMessages);
 
     try {
+      if (!user) {
+        throw new Error("Sign in again to save and continue your AI Teacher chat.");
+      }
+
+      const chatId = currentChatId || (await createPrivateChat(user.uid, question));
+      setCurrentChatId(chatId);
+      await savePrivateChatMessage({
+        chatId,
+        message: {
+          ...userMessage,
+          createdAtMs: Date.now(),
+          id: createClientMessageId(),
+        },
+        uid: user.uid,
+      });
+
       const answer = await askGroq([
         {
           role: "user",
@@ -173,6 +213,26 @@ export default function DsiqMentorPage() {
           text: answer,
         },
       ]);
+      await savePrivateChatMessage({
+        chatId,
+        message: {
+          role: "model",
+          text: answer,
+          createdAtMs: Date.now(),
+          id: createClientMessageId(),
+        },
+        uid: user.uid,
+      });
+
+      if (isRoadmapRequest(question)) {
+        await saveRoadmap(
+          user.uid,
+          createRoadmapFromAiResponse({
+            answer,
+            prompt: question,
+          }),
+        );
+      }
     } catch (mentorError) {
       setError(
         mentorError instanceof Error
@@ -458,7 +518,7 @@ export default function DsiqMentorPage() {
                         className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
                           message.role === "user"
                             ? "ml-auto bg-[#111111] text-white"
-                            : "mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                            : "ai-message mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
                         }`}
                       >
                         {message.text}

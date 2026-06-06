@@ -5,6 +5,16 @@ export type GroqChatMessage = {
 
 const CHAT_API_URL = "https://dsiq.onrender.com/api/chat";
 const CHAT_TIMEOUT_MS = 20000;
+const RESPONSE_FORMATTING_INSTRUCTION = [
+  "DSIQ response formatting rules:",
+  "Use short paragraphs.",
+  "Use line breaks between points.",
+  "Use numbered lists for steps.",
+  "Use bullet points for examples.",
+  "Never return long unbroken paragraphs.",
+  "If giving a list, each item must be on a new line.",
+  "If explaining code, use fenced code blocks.",
+].join("\n");
 
 export async function askGroq(messages: GroqChatMessage[]) {
   const latestUserMessage = [...messages]
@@ -15,9 +25,16 @@ export async function askGroq(messages: GroqChatMessage[]) {
   const timeoutId = window.setTimeout(() => {
     controller.abort();
   }, CHAT_TIMEOUT_MS);
+  const formattedMessages = [
+    {
+      role: "user" as const,
+      text: RESPONSE_FORMATTING_INSTRUCTION,
+    },
+    ...messages,
+  ];
   const body = {
     message: userMessage,
-    messages,
+    messages: formattedMessages,
   };
 
   try {
