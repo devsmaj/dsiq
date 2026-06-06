@@ -195,11 +195,10 @@ a {
   width: 100%;
   max-width: 100%;
   min-height: 420px;
-  height: calc(100dvh - 230px);
   box-sizing: border-box;
   flex: 1;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .teacher-header,
@@ -211,8 +210,7 @@ a {
   flex: 1;
   min-height: 0;
   overflow-x: hidden;
-  overflow-y: auto;
-  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  padding-bottom: calc(180px + env(safe-area-inset-bottom));
 }
 
 .teacher-input-area {
@@ -251,7 +249,6 @@ a {
 
   .ai-teacher-card {
     min-height: 620px;
-    height: calc(100dvh - 210px);
   }
 
   .teacher-input-area {

@@ -1273,8 +1273,8 @@ export default function DsiqChatPage() {
 
   return (
     <PrivateRoute>
-      <main className="h-[100dvh] min-h-[100dvh] overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="flex h-full min-h-0 overflow-hidden">
+      <main className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+        <div className="flex min-h-[100dvh] overflow-x-hidden">
 
           <div className="hidden lg:block">
             {renderSidebarContent()}
@@ -1640,7 +1640,7 @@ export default function DsiqChatPage() {
             </div>
           ) : null}
 
-          <section className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--color-background)]">
+          <section className="relative min-w-0 flex-1 bg-[color:var(--color-background)]">
 
             <button
               type="button"
@@ -1732,11 +1732,11 @@ export default function DsiqChatPage() {
               ) : null}
             </div>
 
-            <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col px-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8 lg:px-10 lg:pt-8">
-              <div className="mx-auto flex min-h-0 w-full max-w-[900px] flex-1 flex-col">
+            <div className="mx-auto min-h-[100dvh] w-full max-w-6xl px-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8 lg:px-10 lg:pt-8">
+              <div className="mx-auto w-full max-w-[900px]">
 
                 {!messages.length ? (
-                  <div className="flex min-h-0 flex-1 items-center justify-center pb-[calc(140px+env(safe-area-inset-bottom))] pt-4 text-center">
+                  <div className="flex min-h-[calc(100dvh-7rem)] items-center justify-center pb-[calc(160px+env(safe-area-inset-bottom))] pt-4 text-center lg:min-h-[calc(100dvh-5rem)]">
                     <div className="w-full max-w-2xl">
                       <h1 className="text-2xl font-semibold tracking-normal text-[color:var(--color-text)] sm:text-3xl">
                         {getGreeting(displayName, hasPreviousProgress)}
@@ -1768,7 +1768,7 @@ export default function DsiqChatPage() {
                 ) : null}
 
                 {messages.length ? (
-                  <div className="mx-auto flex min-h-0 w-full max-w-[760px] flex-1 flex-col gap-4 overflow-y-auto px-1 pb-[calc(120px+env(safe-area-inset-bottom))] text-left lg:pb-28">
+                  <div className="mx-auto flex w-full max-w-[760px] flex-col gap-4 px-1 pb-[calc(180px+env(safe-area-inset-bottom))] text-left lg:pb-[calc(170px+env(safe-area-inset-bottom))]">
 
                     {messages.map((message, index) => (
                       <article

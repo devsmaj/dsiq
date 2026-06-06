@@ -31,6 +31,7 @@ import {
   isRoadmapRequest,
   saveRoadmap,
 } from "@/lib/roadmap-store";
+import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
@@ -123,6 +124,8 @@ function getChatHref(chat: PrivateChatSummary) {
 }
 
 export default function DsiqMentorPage() {
+  useKeyboardOffset();
+
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -141,6 +144,7 @@ export default function DsiqMentorPage() {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const latestMessageRef = useRef<HTMLDivElement | null>(null);
 
   const displayName =
     profile?.fullName ||
@@ -191,16 +195,24 @@ export default function DsiqMentorPage() {
         `Age: ${profile?.age || answers?.age || "Not provided"}.`,
         `Current mission: ${currentMission}.`,
         `Current lesson: ${currentLesson}.`,
-        "Keep responses clear, supportive, and action-focused.",
-        "Always format answers cleanly.",
-        "Use short paragraphs with line breaks between points.",
-        "Use numbered lists for steps and bullet points for examples.",
-        "Never return long unbroken paragraphs.",
+        "Answer in short student-friendly chunks.",
+        "For normal answers, use a maximum of 4 to 6 short lines.",
+        "Use bullets and line breaks.",
+        "Do not write long paragraphs.",
+        "After explaining, ask exactly: Do you understand? Should I continue?",
+        "For roadmaps, format with clear numbered steps and keep the roadmap content separate from the normal answer.",
         "If giving a list, each item must be on a new line.",
         "If explaining code, use fenced code blocks.",
       ].join("\n"),
     [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, role],
   );
+
+  useEffect(() => {
+    latestMessageRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [mentorMessages, isSending, error]);
 
   useEffect(() => {
     async function loadTeacherChats() {
@@ -900,6 +912,7 @@ export default function DsiqMentorPage() {
                       {error}
                     </p>
                   ) : null}
+                  <div ref={latestMessageRef} />
                 </div>
 
                 <div className="teacher-input-area min-w-0 w-full">
