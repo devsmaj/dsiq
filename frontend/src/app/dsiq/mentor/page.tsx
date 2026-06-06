@@ -6,16 +6,15 @@ import {
   FileText,
   GraduationCap,
   Menu,
-  Mic,
   Save,
   Search,
-  Send,
   SquarePen,
   X,
 } from "lucide-react";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { ChatComposer } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
 import {
   createPrivateChat,
@@ -116,6 +115,15 @@ function createClientMessageId() {
   return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function getChatTypeLabel(chat: PrivateChatSummary) {
+  return chat.chatType === "teacher" ? "🎓 AI Teacher" : "💬 Normal Chat";
+}
+
+function getChatHref(chat: PrivateChatSummary) {
+  const path = chat.chatType === "teacher" ? "/dsiq/mentor" : "/dsiq/chat";
+  return `${path}?chatId=${encodeURIComponent(chat.id)}`;
+}
+
 export default function DsiqMentorPage() {
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -205,7 +213,7 @@ export default function DsiqMentorPage() {
 
       try {
         setIsChatsLoading(true);
-        setTeacherChats(await listPrivateChats(user.uid, CHAT_TYPE));
+        setTeacherChats(await listPrivateChats(user.uid));
       } finally {
         setIsChatsLoading(false);
       }
@@ -231,7 +239,7 @@ export default function DsiqMentorPage() {
       return;
     }
 
-    setTeacherChats(await listPrivateChats(user.uid, CHAT_TYPE));
+    setTeacherChats(await listPrivateChats(user.uid));
   }
 
   function startNewTeacherChat(mobile = false) {
@@ -290,9 +298,8 @@ export default function DsiqMentorPage() {
     await refreshTeacherChats();
   }
 
-  async function submitMentorPrompt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const question = prompt.trim();
+  async function submitMentorPrompt(value: string) {
+    const question = value.trim();
     if (!question || isSending) {
       return;
     }
@@ -600,33 +607,61 @@ export default function DsiqMentorPage() {
                 ) : null}
               </div>
               <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
-                Latest 3 AI Teacher chats.
+                Latest 3 chats across DSIQ.
               </p>
               {recentChats.length ? (
                 <div className="flex flex-col gap-1">
-                  {recentChats.map((chat) => (
-                    <button
-                      key={chat.id}
-                      type="button"
-                      onClick={() => void openTeacherChat(chat.id, mobile)}
-                      className={`rounded-2xl px-3 py-2.5 text-left transition hover:bg-white ${
-                        currentChatId === chat.id ? "bg-white" : ""
-                      }`}
-                    >
+                  {recentChats.map((chat) =>
+                    chat.chatType === CHAT_TYPE ? (
+                      <button
+                        key={chat.id}
+                        type="button"
+                        onClick={() => void openTeacherChat(chat.id, mobile)}
+                        className={`rounded-2xl px-3 py-2.5 text-left transition hover:bg-white ${
+                          currentChatId === chat.id ? "bg-white" : ""
+                        }`}
+                      >
                       <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
                         {chat.title}
+                      </span>
+                      <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                        {getChatTypeLabel(chat)}
                       </span>
                       {chat.lastMessage ? (
                         <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
                           {chat.lastMessage}
                         </span>
                       ) : null}
-                    </button>
-                  ))}
+                      </button>
+                    ) : (
+                      <Link
+                        key={chat.id}
+                        href={getChatHref(chat)}
+                        onClick={() => {
+                          if (mobile) {
+                            setIsMobileSidebarOpen(false);
+                          }
+                        }}
+                        className="rounded-2xl px-3 py-2.5 text-left transition hover:bg-white"
+                      >
+                        <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
+                          {chat.title}
+                        </span>
+                        <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                          {getChatTypeLabel(chat)}
+                        </span>
+                        {chat.lastMessage ? (
+                          <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
+                            {chat.lastMessage}
+                          </span>
+                        ) : null}
+                      </Link>
+                    ),
+                  )}
                 </div>
               ) : (
                 <p className="px-3 text-xs leading-5 text-[color:var(--color-muted)]">
-                  AI Teacher chats will appear here.
+                  Recent chats will appear here.
                 </p>
               )}
             </div>
@@ -703,7 +738,7 @@ export default function DsiqMentorPage() {
                   Search AI Teacher Chats
                 </h2>
                 <p className="mt-1 pr-10 text-xs leading-5 text-[color:var(--color-muted)]">
-                  Search AI Teacher history only.
+                  Search normal and AI Teacher history.
                 </p>
                 <div className="mt-4 flex h-12 items-center gap-3 rounded-2xl border border-[color:var(--color-line)] px-4">
                   <Search className="h-4 w-4 text-[color:var(--color-muted)]" />
@@ -720,23 +755,43 @@ export default function DsiqMentorPage() {
                 <div className="mt-4 max-h-80 overflow-y-auto">
                   {filteredTeacherChats.length ? (
                     <div className="flex flex-col gap-1">
-                      {filteredTeacherChats.map((chat) => (
-                        <button
-                          key={chat.id}
-                          type="button"
-                          onClick={() => void openTeacherChat(chat.id)}
-                          className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
-                        >
+                      {filteredTeacherChats.map((chat) => {
+                        const content = (
+                          <>
                           <span className="block truncate text-sm font-semibold">
                             {chat.title}
+                          </span>
+                          <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                            {getChatTypeLabel(chat)}
                           </span>
                           {chat.lastMessage ? (
                             <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
                               {chat.lastMessage}
                             </span>
                           ) : null}
-                        </button>
-                      ))}
+                          </>
+                        );
+
+                        return chat.chatType === CHAT_TYPE ? (
+                          <button
+                            key={chat.id}
+                            type="button"
+                            onClick={() => void openTeacherChat(chat.id)}
+                            className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            {content}
+                          </button>
+                        ) : (
+                          <Link
+                            key={chat.id}
+                            href={getChatHref(chat)}
+                            onClick={() => setIsSearchPanelOpen(false)}
+                            className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            {content}
+                          </Link>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
@@ -844,38 +899,15 @@ export default function DsiqMentorPage() {
                 </div>
 
                 <div className="teacher-input-area">
-                  <form
-                    onSubmit={submitMentorPrompt}
-                    className="teacher-input-row rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-4 py-3 focus-within:border-[#111111]"
-                  >
-                    <input
-                      type="text"
-                      value={prompt}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      placeholder="Ask your AI Teacher anything..."
-                      className="min-h-10 bg-transparent text-sm outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVoiceInput}
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
-                        isListening
-                          ? "bg-[color:var(--color-surface-strong)] text-[#111111]"
-                          : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface-strong)] hover:text-[#111111]"
-                      }`}
-                      aria-label={isListening ? "Stop voice input" : "Start voice input"}
-                    >
-                      <Mic className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!prompt.trim() || isSending}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Send teacher question"
-                    >
-                      <Send className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </form>
+                  <ChatComposer
+                    value={prompt}
+                    onChange={setPrompt}
+                    onSubmit={(value) => void submitMentorPrompt(value)}
+                    onVoiceInput={handleVoiceInput}
+                    isListening={isListening}
+                    isSending={isSending}
+                    placeholder="Ask your AI Teacher anything..."
+                  />
                 </div>
               </article>
             </div>

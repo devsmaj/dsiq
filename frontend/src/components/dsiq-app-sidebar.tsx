@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 
 import {
   listPrivateChats,
-  type ChatType,
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { dsiqLogoSrc } from "@/lib/public-asset";
@@ -35,14 +34,20 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function getChatTypeLabel(chat: PrivateChatSummary) {
+  return chat.chatType === "teacher" ? "AI Teacher" : "Normal Chat";
+}
+
+function getChatTypeIcon(chat: PrivateChatSummary) {
+  return chat.chatType === "teacher" ? "🎓" : "💬";
+}
+
 export function DsiqAppSidebar({
   activeHref,
   children,
-  recentChatType = "teacher",
 }: {
   activeHref: string;
   children: React.ReactNode;
-  recentChatType?: ChatType;
 }) {
   const { answers, profile, user } = useUserProfile();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -64,11 +69,11 @@ export function DsiqAppSidebar({
         return;
       }
 
-      setRecentChats((await listPrivateChats(user.uid, recentChatType)).slice(0, 3));
+      setRecentChats((await listPrivateChats(user.uid)).slice(0, 3));
     }
 
     void loadRecentChats();
-  }, [recentChatType, user]);
+  }, [user]);
 
   function renderSidebar(mobile = false) {
     return (
@@ -125,7 +130,7 @@ export function DsiqAppSidebar({
               Recent
             </p>
             <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
-              Latest 3 AI Teacher chats.
+              Latest 3 chats across DSIQ.
             </p>
             {recentChats.length ? (
               <div className="flex flex-col gap-1">
@@ -143,6 +148,9 @@ export function DsiqAppSidebar({
                     <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
                       {chat.title}
                     </span>
+                    <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                      {getChatTypeIcon(chat)} {getChatTypeLabel(chat)}
+                    </span>
                     {chat.lastMessage ? (
                       <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
                         {chat.lastMessage}
@@ -153,7 +161,7 @@ export function DsiqAppSidebar({
               </div>
             ) : (
               <p className="px-3 text-xs leading-5 text-[color:var(--color-muted)]">
-                AI Teacher chats will appear here.
+                Recent chats will appear here.
               </p>
             )}
           </div>

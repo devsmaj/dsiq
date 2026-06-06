@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { FileText, ImageIcon, Mic, Plus, Send, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 
 import { useAuth } from "@/components/auth-provider";
+import { ChatComposer } from "@/components/chat-composer";
 import {
   createFirebaseChat,
   saveFirebaseChatMessage,
@@ -100,14 +101,10 @@ export function PublicChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [error, setError] = useState("");
   const handledInitialQuestion = useRef(false);
   const chatIdRef = useRef<string | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -235,11 +232,6 @@ export function PublicChat() {
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void sendMessage(input);
-  }
-
   function handleNewChat() {
     setMessages([]);
     setInput("");
@@ -260,29 +252,6 @@ export function PublicChat() {
     }
 
     setInput(promptText);
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
-  }
-
-  function appendAttachmentNames(files: FileList | null) {
-    if (!files?.length || isSending) {
-      return;
-    }
-
-    const names = Array.from(files)
-      .map((file) => file.name)
-      .join(", ");
-
-    setInput((current) =>
-      current.trim()
-        ? `${current.trim()} Attached: ${names}`
-        : `Attached: ${names}`,
-    );
-    setIsUploadPanelOpen(false);
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
   }
 
   function handleVoiceInput() {
@@ -325,9 +294,6 @@ export function PublicChat() {
       setInput((current) =>
         current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
       );
-      window.requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
     };
     recognition.onerror = () => {
       setError("Voice input could not start. Please try again.");
@@ -452,101 +418,17 @@ export function PublicChat() {
           ) : null}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="public-chat-composer mt-4 shrink-0 rounded-[30px] bg-white px-5 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
-        >
-          <div className="flex items-center gap-3">
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsUploadPanelOpen((value) => !value)}
-                aria-label="Add attachment"
-                aria-expanded={isUploadPanelOpen}
-                disabled={isSending}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Plus className="h-5 w-5" aria-hidden="true" />
-              </button>
-              {isUploadPanelOpen ? (
-                <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={isSending}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                    Upload photos
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isSending}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <FileText className="h-4 w-4" aria-hidden="true" />
-                    Upload files
-                  </button>
-                </div>
-              ) : null}
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(event) => appendAttachmentNames(event.target.files)}
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(event) => appendAttachmentNames(event.target.files)}
-              />
-            </div>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={isSending}
-              placeholder="Ask DSIQ"
-              className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
-            />
-            <button
-              type="button"
-              onClick={handleVoiceInput}
-              disabled={isSending}
-              className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                isListening
-                  ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
-                  : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
-              }`}
-              aria-label={isListening ? "Stop voice input" : "Start voice input"}
-            >
-              {isListening ? (
-                <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
-                  <span className="recording-wave" />
-                  <span className="recording-wave [animation-delay:110ms]" />
-                  <span className="recording-wave [animation-delay:220ms]" />
-                  <span className="recording-wave [animation-delay:330ms]" />
-                </span>
-              ) : (
-                <Mic className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-            <button
-              type="submit"
-              disabled={isSending || !input.trim()}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Send message"
-            >
-              <Send className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        </form>
+        <div className="public-chat-composer mt-4 shrink-0">
+          <ChatComposer
+            value={input}
+            onChange={setInput}
+            onSubmit={(value) => void sendMessage(value)}
+            onVoiceInput={handleVoiceInput}
+            isListening={isListening}
+            isSending={isSending}
+            placeholder="Ask DSIQ"
+          />
+        </div>
       </section>
     </main>
   );

@@ -201,6 +201,15 @@ function getGreeting(name: string, isReturning: boolean) {
   return `Good evening, ${name}`;
 }
 
+function getChatTypeLabel(chat: PrivateChatSummary) {
+  return chat.chatType === "teacher" ? "🎓 AI Teacher" : "💬 Normal Chat";
+}
+
+function getChatHref(chat: PrivateChatSummary) {
+  const path = chat.chatType === "teacher" ? "/dsiq/mentor" : "/dsiq/chat";
+  return `${path}?chatId=${encodeURIComponent(chat.id)}`;
+}
+
 export default function DsiqChatPage() {
   const router = useRouter();
   const { authMode, logout } = useAuth();
@@ -350,7 +359,7 @@ export default function DsiqChatPage() {
 
       try {
         setIsChatsLoading(true);
-        const nextChats = await listPrivateChats(user.uid, CHAT_TYPE);
+        const nextChats = await listPrivateChats(user.uid);
         setPrivateChats(nextChats);
         setSavedChatDraftTitles(
           Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
@@ -382,7 +391,7 @@ export default function DsiqChatPage() {
     }
 
     try {
-      const nextChats = await listPrivateChats(user.uid, CHAT_TYPE);
+      const nextChats = await listPrivateChats(user.uid);
       setPrivateChats(nextChats);
       setSavedChatDraftTitles(
         Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
@@ -1128,7 +1137,7 @@ export default function DsiqChatPage() {
               {recentChats.length ? (
                 <>
                 <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
-                  Latest 3 chats only. Use Search Chats for full history.
+                  Latest 3 chats. Use Search Chats for full history.
                 </p>
                 <div className={`flex flex-col ${mobile ? "gap-0.5" : "gap-1"}`}>
                   {recentChats.map((chat) => (
@@ -1138,22 +1147,51 @@ export default function DsiqChatPage() {
                         currentChatId === chat.id ? "bg-white" : ""
                       } ${mobile ? "pr-8" : "pr-10"}`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => void openPrivateChat(chat.id, mobile)}
-                        className={`block w-full text-left ${
-                          mobile ? "px-2 py-2" : "px-3 py-2.5"
-                        }`}
-                      >
+                      {chat.chatType === CHAT_TYPE ? (
+                        <button
+                          type="button"
+                          onClick={() => void openPrivateChat(chat.id, mobile)}
+                          className={`block w-full text-left ${
+                            mobile ? "px-2 py-2" : "px-3 py-2.5"
+                          }`}
+                        >
+                          <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
+                            {chat.title}
+                          </span>
+                          <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                            {getChatTypeLabel(chat)}
+                          </span>
+                          {chat.lastMessage ? (
+                            <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
+                              {chat.lastMessage}
+                            </span>
+                          ) : null}
+                        </button>
+                      ) : (
+                        <Link
+                          href={getChatHref(chat)}
+                          onClick={() => {
+                            if (mobile) {
+                              setIsMobileSidebarOpen(false);
+                            }
+                          }}
+                          className={`block w-full text-left ${
+                            mobile ? "px-2 py-2" : "px-3 py-2.5"
+                          }`}
+                        >
                         <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
                           {chat.title}
+                        </span>
+                        <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                          {getChatTypeLabel(chat)}
                         </span>
                         {chat.lastMessage ? (
                           <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
                             {chat.lastMessage}
                           </span>
                         ) : null}
-                      </button>
+                        </Link>
+                      )}
                       <button
                         type="button"
                         aria-label={`More actions for ${chat.title}`}
@@ -1367,7 +1405,7 @@ export default function DsiqChatPage() {
                   Search Chats
                 </h2>
                 <p className="mt-1 pr-10 text-xs leading-5 text-[color:var(--color-muted)]">
-                  Search all chat history, not just the latest three.
+                  Search all normal and AI Teacher chat history.
                 </p>
                 <div className="mt-4 flex h-12 items-center gap-3 rounded-2xl border border-[color:var(--color-line)] px-4">
                   <Search className="h-4 w-4 text-[color:var(--color-muted)]" />
@@ -1384,26 +1422,46 @@ export default function DsiqChatPage() {
                 <div className="mt-4 max-h-80 overflow-y-auto">
                   {filteredPrivateChats.length ? (
                     <div className="flex flex-col gap-1">
-                      {filteredPrivateChats.map((chat) => (
-                        <button
-                          key={chat.id}
-                          type="button"
-                          onClick={() => {
-                            setIsSearchPanelOpen(false);
-                            void openPrivateChat(chat.id);
-                          }}
-                          className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
-                        >
+                      {filteredPrivateChats.map((chat) => {
+                        const content = (
+                          <>
                           <span className="block truncate text-sm font-semibold">
                             {chat.title}
+                          </span>
+                          <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                            {getChatTypeLabel(chat)}
                           </span>
                           {chat.lastMessage ? (
                             <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
                               {chat.lastMessage}
                             </span>
                           ) : null}
-                        </button>
-                      ))}
+                          </>
+                        );
+
+                        return chat.chatType === CHAT_TYPE ? (
+                          <button
+                            key={chat.id}
+                            type="button"
+                            onClick={() => {
+                              setIsSearchPanelOpen(false);
+                              void openPrivateChat(chat.id);
+                            }}
+                            className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            {content}
+                          </button>
+                        ) : (
+                          <Link
+                            key={chat.id}
+                            href={getChatHref(chat)}
+                            onClick={() => setIsSearchPanelOpen(false)}
+                            className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            {content}
+                          </Link>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
@@ -1586,6 +1644,9 @@ export default function DsiqChatPage() {
                                   >
                                     <span className="block truncate text-sm font-semibold">
                                       {chat.title}
+                                    </span>
+                                    <span className="mt-1 block text-[11px] font-semibold text-[color:var(--color-muted)]">
+                                      {getChatTypeLabel(chat)}
                                     </span>
                                     {chat.lastMessage ? (
                                       <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
