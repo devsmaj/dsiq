@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Bot,
   CircleUserRound,
   Check,
   Copy,
@@ -31,6 +30,7 @@ import {
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
+import { ChatComposer } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { getPostAuthPath } from "@/lib/auth-routing";
@@ -55,7 +55,6 @@ const CHAT_TYPE = "normal" as const;
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
   { label: "Search Chats", href: "/dsiq/chat?panel=search", icon: Search },
-  { label: "AI Teacher", href: "/dsiq/mentor", icon: Bot },
   {
     label: "Learning Roadmap",
     href: "/dsiq/roadmap",
@@ -71,7 +70,6 @@ const collapsedItems = [
   sidebarItems[1],
   sidebarItems[2],
   sidebarItems[3],
-  sidebarItems[4],
 ] as const;
 
 const appVersion = "0.1.0";
@@ -1015,7 +1013,6 @@ export default function DsiqChatPage() {
             const Icon = item.icon;
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
-            const isAiTeacher = item.label === "AI Teacher";
             const isSavedChats = item.label === "Saved Chats";
 
             if (isNewChat) {
@@ -1100,11 +1097,7 @@ export default function DsiqChatPage() {
                 }}
                 className={`group relative flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
                   expanded ? "gap-3 px-3" : "justify-center px-0"
-                } ${
-                  isAiTeacher
-                    ? "border border-[#111111]/10 bg-white font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.04)]"
-                    : "font-medium"
-                }`}
+                } font-medium`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {expanded ? <span>{item.label}</span> : null}
@@ -1739,8 +1732,19 @@ export default function DsiqChatPage() {
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            {messages.length ? (
-              <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 lg:right-8 lg:top-6">
+            <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 lg:right-8 lg:top-6">
+              <Link
+                href="/dsiq/mentor"
+                aria-label="Turn AI Teacher on"
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-xs font-semibold text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
+              >
+                <span>AI Teacher</span>
+                <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] text-gray-600">
+                  OFF
+                </span>
+              </Link>
+              {messages.length ? (
+                <>
                 <button
                   type="button"
                   aria-label="New chat"
@@ -1805,8 +1809,9 @@ export default function DsiqChatPage() {
                     </div>
                   ) : null}
                 </div>
-              </div>
-            ) : null}
+                </>
+              ) : null}
+            </div>
 
             <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col px-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8 lg:px-10 lg:pt-8">
               <div className="mx-auto flex min-h-0 w-full max-w-[900px] flex-1 flex-col">
@@ -1925,139 +1930,15 @@ export default function DsiqChatPage() {
                 className="fixed inset-x-4 z-30 bottom-[calc(env(safe-area-inset-bottom)+var(--dsiq-keyboard-offset,0px)+16px)] mx-auto w-auto max-w-none pb-[env(safe-area-inset-bottom)] lg:sticky lg:inset-x-auto lg:bottom-0 lg:w-full lg:max-w-[760px] lg:pb-4"
               >
 
-                <form
-                  onSubmit={submitPrompt}
-                  className="rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
-                >
-                  {selectedImage ? (
-                    <div className="mb-3 flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewImage(selectedImage);
-                          setIsImagePreviewOpen(true);
-                        }}
-                        className="relative h-16 w-16 overflow-hidden rounded-2xl border border-[color:var(--color-line)]"
-                        aria-label="Open image preview"
-                      >
-                        <img
-                          src={selectedImage.dataUrl}
-                          alt={selectedImage.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-[color:var(--color-muted)]">
-                        {selectedImage.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedImage(null)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-[color:var(--color-text)] transition hover:bg-gray-200"
-                        aria-label="Remove image"
-                      >
-                        <X className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </div>
-                  ) : null}
-                  <div className="flex items-end gap-2 sm:gap-3">
-                    <div className="relative shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setIsUploadPanelOpen((value) => !value)}
-                        aria-label="Add attachment"
-                        aria-expanded={isUploadPanelOpen}
-                        disabled={isSending}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
-                      >
-                        <Plus className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                      {isUploadPanelOpen ? (
-                        <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
-                          <button
-                            type="button"
-                            onClick={() => photoInputRef.current?.click()}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                          >
-                            <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                            Upload photos
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                          >
-                            <FileText className="h-4 w-4" aria-hidden="true" />
-                            Upload files
-                          </button>
-                        </div>
-                      ) : null}
-                      <input
-                        ref={photoInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(event) => appendAttachmentNames(event.target.files)}
-                      />
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={(event) => appendAttachmentNames(event.target.files)}
-                      />
-                    </div>
-                    <textarea
-                      ref={promptInputRef}
-                      value={prompt}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      onKeyDown={handlePromptKeyDown}
-                      disabled={isSending}
-                      placeholder="Ask DSIQ"
-                      rows={1}
-                      className="max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsComposerExpanded(true)}
-                      disabled={isSending}
-                      aria-label="Expand composer"
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
-                    >
-                      <Maximize2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleVoiceInput}
-                      disabled={isSending}
-                      aria-label={isListening ? "Stop voice input" : "Start voice input"}
-                      className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        isListening
-                          ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
-                          : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
-                      }`}
-                    >
-                      {isListening ? (
-                        <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
-                          <span className="recording-wave" />
-                          <span className="recording-wave [animation-delay:110ms]" />
-                          <span className="recording-wave [animation-delay:220ms]" />
-                          <span className="recording-wave [animation-delay:330ms]" />
-                        </span>
-                      ) : (
-                        <Mic className="h-4 w-4" aria-hidden="true" />
-                      )}
-                    </button>
-                    <button
-                      type="submit"
-                      aria-label="Send"
-                      disabled={isSending || (!prompt.trim() && !selectedImage)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:!text-gray-400"
-                    >
-                      <Send className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                </form>
+                <ChatComposer
+                  value={prompt}
+                  onChange={setPrompt}
+                  onSubmit={(value) => void sendPromptText(value)}
+                  onVoiceInput={handleVoiceInput}
+                  isListening={isListening}
+                  isSending={isSending}
+                  placeholder="Ask DSIQ"
+                />
               </div>
             </div>
           </section>

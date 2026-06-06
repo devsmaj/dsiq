@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, FileText, GraduationCap, Menu, Search, SquarePen, X } from "lucide-react";
+import { FileText, GraduationCap, Menu, Search, SquarePen, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -14,7 +14,6 @@ import { useUserProfile } from "@/lib/use-user-profile";
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
   { label: "Search Chats", href: "/dsiq/mentor?panel=search", icon: Search },
-  { label: "AI Teacher", href: "/dsiq/mentor", icon: Bot },
   { label: "Learning Roadmap", href: "/dsiq/roadmap", icon: GraduationCap },
   { label: "Saved Chats", href: "/dsiq/saved", icon: FileText },
 ] as const;

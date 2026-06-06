@@ -36,7 +36,6 @@ import { useUserProfile } from "@/lib/use-user-profile";
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
   { label: "Search Chats", href: "/dsiq/chat?panel=search", icon: Search },
-  { label: "AI Teacher", href: "/dsiq/mentor", icon: Bot },
   {
     label: "Learning Roadmap",
     href: "/dsiq/roadmap",
@@ -51,7 +50,6 @@ const collapsedItems = [
   sidebarItems[1],
   sidebarItems[2],
   sidebarItems[3],
-  sidebarItems[4],
 ] as const;
 
 
@@ -527,7 +525,6 @@ export default function DsiqMentorPage() {
             const isActive = item.href === "/dsiq/mentor";
             const isNewChat = item.label === "New Chat";
             const isSearchChats = item.label === "Search Chats";
-            const isAiTeacher = item.label === "AI Teacher";
 
             if (isNewChat) {
               return (
@@ -581,11 +578,7 @@ export default function DsiqMentorPage() {
                 }}
                 className={`group relative flex min-h-11 items-center rounded-2xl text-sm text-[color:var(--color-text)] transition hover:bg-white ${
                   expanded ? "gap-3 px-3" : "justify-center px-0"
-                } ${
-                  isAiTeacher
-                    ? "border border-[#111111]/10 bg-white font-semibold shadow-[0_8px_20px_rgba(0,0,0,0.04)]"
-                    : "font-medium"
-                } ${isActive ? "bg-white" : ""}`}
+                } font-medium ${isActive ? "bg-white" : ""}`}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {expanded ? <span>{item.label}</span> : null}
@@ -812,6 +805,17 @@ export default function DsiqMentorPage() {
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
+
+            <Link
+              href="/dsiq/chat"
+              aria-label="Turn AI Teacher off"
+              className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-xs font-semibold text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] sm:right-6 lg:right-8"
+            >
+              <span>AI Teacher</span>
+              <span className="rounded-full bg-[#111111] px-2 py-0.5 text-[10px] text-white">
+                ON
+              </span>
+            </Link>
 
             <div className="ai-teacher-shell">
               <section className="ai-teacher-summary flex flex-col gap-1 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">

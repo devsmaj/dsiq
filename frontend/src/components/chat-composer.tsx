@@ -78,9 +78,9 @@ export function ChatComposer({
     <>
       <form
         onSubmit={submitValue}
-        className="rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
+        className="w-full rounded-[28px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.08)] sm:px-5 sm:py-4"
       >
-        <div className="flex items-end gap-2 sm:gap-3">
+        <div className="flex w-full items-end gap-2 sm:gap-3">
           <div className="relative shrink-0">
             <button
               type="button"
@@ -138,6 +138,7 @@ export function ChatComposer({
             placeholder={placeholder}
             rows={1}
             className="max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
+            style={{ width: "100%" }}
           />
 
           <button
