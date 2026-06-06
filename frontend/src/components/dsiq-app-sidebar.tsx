@@ -76,7 +76,7 @@ export function DsiqAppSidebar({
 
   function renderSidebar(mobile = false) {
     return (
-      <aside className="flex h-full w-[292px] max-w-[calc(100vw-24px)] flex-col border-r border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] px-3 py-4">
+      <aside className="flex h-[100dvh] w-[292px] max-w-[calc(100vw-24px)] flex-col border-r border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] px-3 py-4">
         <div className="flex items-center justify-between">
           <Link
             href="/dsiq/chat"
@@ -189,9 +189,9 @@ export function DsiqAppSidebar({
   }
 
   return (
-    <main className="min-h-[100dvh] overflow-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
+    <main className="min-h-[100dvh] overflow-x-hidden bg-[color:var(--color-background)] text-[color:var(--color-text)]">
       <div className="flex min-h-[100dvh]">
-        <div className="hidden lg:block">{renderSidebar()}</div>
+        <div className="hidden lg:sticky lg:top-0 lg:block lg:h-[100dvh] lg:shrink-0">{renderSidebar()}</div>
         {isMobileSidebarOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <button
@@ -208,7 +208,9 @@ export function DsiqAppSidebar({
             type="button"
             aria-label="Open menu"
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
+            className={`fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-40 h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden ${
+              isMobileSidebarOpen ? "hidden" : "flex"
+            }`}
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>

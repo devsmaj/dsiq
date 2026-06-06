@@ -705,7 +705,7 @@ export default function DsiqMentorPage() {
     <PrivateRoute>
       <main className="ai-teacher-page text-[color:var(--color-text)]">
         <div className="flex min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden">
-          <div className="hidden lg:block">
+          <div className="hidden lg:sticky lg:top-0 lg:block lg:h-[100dvh] lg:shrink-0">
             {renderSidebarContent()}
           </div>
 
@@ -813,7 +813,9 @@ export default function DsiqMentorPage() {
               type="button"
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="mobile-menu-button flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
+              className={`mobile-menu-button h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden ${
+                isMobileSidebarOpen ? "hidden" : "flex"
+              }`}
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
