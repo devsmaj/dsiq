@@ -1,3 +1,5 @@
+import { getAiLanguageInstruction } from "@/lib/i18n/languages";
+
 export type GroqChatMessage = {
   role: "model" | "user";
   text: string;
@@ -33,7 +35,7 @@ export async function askGroq(messages: GroqChatMessage[]) {
   const formattedMessages = [
     {
       role: "user" as const,
-      text: RESPONSE_FORMATTING_INSTRUCTION,
+      text: [RESPONSE_FORMATTING_INSTRUCTION, getAiLanguageInstruction()].join("\n"),
     },
     ...messages,
   ];

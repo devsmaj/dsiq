@@ -30,6 +30,7 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
+import { getAiLanguageInstruction } from "@/lib/i18n/languages";
 import {
   createRoadmapFromAiResponse,
   isRoadmapRequest,
@@ -211,13 +212,14 @@ export default function DsiqMentorPage() {
         "Use bullets and line breaks.",
         "Do not write long paragraphs.",
         "Always respond in the same language as the user's latest message. Do not force English unless the user asks for English.",
+        getAiLanguageInstruction(profile?.languagePreference),
         "Never end every response with the same phrase. Do not repeatedly say 'Do you understand?' or 'Should I continue?'. End naturally based on the user's message, lesson stage, and next best action.",
         "Ask a follow-up only when useful, and make it match the user's message and context.",
         "For roadmaps, format with clear numbered steps and keep the roadmap content separate from the normal answer.",
         "If giving a list, each item must be on a new line.",
         "If explaining code, use fenced code blocks.",
       ].join("\n"),
-    [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, role],
+    [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, profile?.languagePreference, role],
   );
 
   useEffect(() => {

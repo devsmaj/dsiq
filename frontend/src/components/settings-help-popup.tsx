@@ -10,7 +10,6 @@ import {
   FileText,
   GraduationCap,
   HelpCircle,
-  LogOut,
   Megaphone,
   Monitor,
   Moon,
@@ -26,50 +25,24 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
 import {
+  getAppliedLanguage,
+  getLanguageDirection,
+  getStoredLanguagePreference,
+  isLanguageCode,
+  LANGUAGE_STORAGE_KEY,
+  languages,
+  t,
+  type LanguageCode,
+} from "@/lib/i18n/languages";
+import {
   updateLocalUserLanguage,
   type StoredUserProfile,
 } from "@/lib/user-profile-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
 const OPEN_SETTINGS_EVENT = "dsiq:open-settings-help";
-const LANGUAGE_STORAGE_KEY = "dsiq-language";
 const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
 const DELETE_CONFIRMATION_TEXT = "DELETE";
-
-const languages = [
-  { code: "auto", label: "Auto-detect" },
-  { code: "en", label: "English (US)" },
-  { code: "ar", label: "Arabic" },
-  { code: "it", label: "Italian" },
-  { code: "fr", label: "French" },
-  { code: "es", label: "Spanish" },
-  { code: "de", label: "German" },
-  { code: "pt", label: "Portuguese" },
-  { code: "hi", label: "Hindi" },
-  { code: "zh-CN", label: "Chinese (Simplified)" },
-  { code: "ja", label: "Japanese" },
-  { code: "ko", label: "Korean" },
-  { code: "ru", label: "Russian" },
-  { code: "tr", label: "Turkish" },
-  { code: "nl", label: "Dutch" },
-  { code: "sv", label: "Swedish" },
-  { code: "pl", label: "Polish" },
-  { code: "uk", label: "Ukrainian" },
-  { code: "id", label: "Indonesian" },
-  { code: "vi", label: "Vietnamese" },
-  { code: "th", label: "Thai" },
-  { code: "fa", label: "Persian" },
-  { code: "he", label: "Hebrew" },
-  { code: "el", label: "Greek" },
-  { code: "ro", label: "Romanian" },
-  { code: "cs", label: "Czech" },
-  { code: "hu", label: "Hungarian" },
-  { code: "da", label: "Danish" },
-  { code: "fi", label: "Finnish" },
-  { code: "no", label: "Norwegian" },
-  { code: "ha", label: "Hausa" },
-  { code: "sw", label: "Swahili" },
-] as const;
 
 const appearanceOptions = [
   { value: "system", label: "System", icon: Monitor },
@@ -91,7 +64,6 @@ const publicPanels = [
   { id: "data", label: "Data Controls", icon: Database },
 ] as const;
 
-type LanguageCode = (typeof languages)[number]["code"];
 type AppearanceValue = (typeof appearanceOptions)[number]["value"];
 type PanelId = (typeof privatePanels)[number]["id"];
 
@@ -101,10 +73,6 @@ export function openSettingsHelpPopup() {
 
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function isLanguageCode(value: string | null): value is LanguageCode {
-  return languages.some((item) => item.code === value);
 }
 
 function getInitialAppearance(): AppearanceValue {
@@ -123,34 +91,13 @@ function getInitialLanguage(): LanguageCode {
     return "auto";
   }
 
-  const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  return isLanguageCode(savedLanguage) ? savedLanguage : "auto";
-}
-
-function getBrowserLanguage(): LanguageCode {
-  if (typeof navigator === "undefined") {
-    return "en";
-  }
-
-  const deviceLanguage = navigator.language || "en";
-  const exactMatch = languages.find((item) => item.code === deviceLanguage);
-  const baseMatch = languages.find(
-    (item) => item.code === deviceLanguage.split("-")[0],
-  );
-
-  return (exactMatch || baseMatch)?.code || "en";
-}
-
-function getAppliedLanguage(languageCode: LanguageCode): LanguageCode {
-  return languageCode === "auto" ? getBrowserLanguage() : languageCode;
+  return getStoredLanguagePreference();
 }
 
 function applyLanguage(languageCode: LanguageCode) {
   const appliedLanguage = getAppliedLanguage(languageCode);
   document.documentElement.lang = appliedLanguage;
-  document.documentElement.dir = ["ar", "fa", "he"].includes(appliedLanguage)
-    ? "rtl"
-    : "ltr";
+  document.documentElement.dir = getLanguageDirection(languageCode);
 }
 
 function applyAppearance(appearance: AppearanceValue) {
@@ -181,7 +128,7 @@ function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
 
 export function SettingsHelpPopup() {
   const router = useRouter();
-  const { authMode, changePassword, deleteAccount, logout, user } = useAuth();
+  const { authMode, changePassword, deleteAccount, user } = useAuth();
   const { answers, profile } = useUserProfile();
   const isPrivateUser = Boolean(user);
   const visiblePanels = isPrivateUser ? privatePanels : publicPanels;
@@ -233,7 +180,7 @@ export function SettingsHelpPopup() {
       activePanel !== "general" &&
       !visiblePanels.some((panel) => panel.id === activePanel)
     ) {
-      setActivePanel("general");
+      window.setTimeout(() => setActivePanel("general"), 0);
     }
   }, [activePanel, visiblePanels]);
 
@@ -252,7 +199,7 @@ export function SettingsHelpPopup() {
     }
 
     if (profileLanguage !== language) {
-      setLanguage(profileLanguage);
+      window.setTimeout(() => setLanguage(profileLanguage), 0);
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, profileLanguage);
       applyLanguage(profileLanguage);
     }
@@ -287,12 +234,6 @@ export function SettingsHelpPopup() {
         console.warn("Language preference sync failed.", error);
       }
     }
-  }
-
-  async function handleLogout() {
-    await logout();
-    setIsOpen(false);
-    router.replace("/");
   }
 
   async function handleDeleteAccount() {
@@ -600,8 +541,8 @@ function GeneralPanel({
         </SettingRow>
 
         <SettingRow
-          description="Use one language preference across public and private pages."
-          title="Language"
+          description={t("settings.language.description")}
+          title={t("settings.language.title")}
         >
           <DropdownButton
             expanded={isLanguageOpen}
