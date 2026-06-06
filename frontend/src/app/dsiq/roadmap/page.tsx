@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Check, GraduationCap, Menu } from "lucide-react";
+import { Bot, Check, GraduationCap } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
 import { listRoadmaps, type Roadmap } from "@/lib/roadmap-store";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -33,16 +34,8 @@ export default function DsiqRoadmapPage() {
 
   return (
     <PrivateRoute>
-      <main className="min-h-[100dvh] bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-5 py-6 pt-20 sm:px-8 lg:py-10">
-          <Link
-            href="/dsiq/chat"
-            className="fixed left-4 top-[calc(env(safe-area-inset-top)+1rem)] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
-            aria-label="Back to chat"
-          >
-            <Menu className="h-5 w-5" aria-hidden="true" />
-          </Link>
-
+      <DsiqAppSidebar activeHref="/dsiq/roadmap">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-5 py-20 sm:px-8 lg:py-10">
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--color-line)] pb-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
@@ -147,7 +140,7 @@ export default function DsiqRoadmapPage() {
             </section>
           )}
         </div>
-      </main>
+      </DsiqAppSidebar>
     </PrivateRoute>
   );
 }

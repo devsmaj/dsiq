@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FileText, Save, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { DsiqAppSidebar } from "@/components/dsiq-app-sidebar";
 import { PrivateRoute } from "@/components/private-route";
 import {
   listBookmarkedPrivateChats,
@@ -20,6 +21,15 @@ function formatUpdatedAt(updatedAtMs: number) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(updatedAtMs));
+}
+
+function getChatTypeLabel(chat: PrivateChatSummary) {
+  return chat.chatType === "teacher" ? "AI Teacher" : "Normal Chat";
+}
+
+function getSavedChatHref(chat: PrivateChatSummary) {
+  const path = chat.chatType === "teacher" ? "/dsiq/mentor" : "/dsiq/chat";
+  return `${path}?chatId=${encodeURIComponent(chat.id)}`;
 }
 
 export default function DsiqSavedChatsPage() {
@@ -45,8 +55,8 @@ export default function DsiqSavedChatsPage() {
 
   return (
     <PrivateRoute>
-      <main className="min-h-[100dvh] bg-[color:var(--color-background)] text-[color:var(--color-text)]">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-5 py-6 sm:px-8 lg:py-10">
+      <DsiqAppSidebar activeHref="/dsiq/saved">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-5 py-20 sm:px-8 lg:py-10">
           <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--color-line)] pb-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
@@ -72,7 +82,7 @@ export default function DsiqSavedChatsPage() {
               {chats.map((chat) => (
                 <Link
                   key={chat.id}
-                  href={`/dsiq/chat?chatId=${encodeURIComponent(chat.id)}`}
+                  href={getSavedChatHref(chat)}
                   className="rounded-2xl border border-[color:var(--color-line)] bg-white p-4 transition hover:border-[#111111]/30 hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)]"
                 >
                   <div className="flex items-start gap-3">
@@ -80,6 +90,9 @@ export default function DsiqSavedChatsPage() {
                       <Save className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
+                      <span className="mb-2 inline-flex rounded-full bg-[color:var(--color-surface-strong)] px-2.5 py-1 text-[11px] font-semibold text-[color:var(--color-muted)]">
+                        {getChatTypeLabel(chat)}
+                      </span>
                       <h2 className="truncate text-sm font-semibold">
                         {chat.title}
                       </h2>
@@ -116,7 +129,7 @@ export default function DsiqSavedChatsPage() {
             </section>
           )}
         </div>
-      </main>
+      </DsiqAppSidebar>
     </PrivateRoute>
   );
 }

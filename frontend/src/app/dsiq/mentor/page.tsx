@@ -7,18 +7,23 @@ import {
   GraduationCap,
   Menu,
   Mic,
+  Save,
   Search,
   Send,
   SquarePen,
   X,
 } from "lucide-react";
 
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { PrivateRoute } from "@/components/private-route";
 import {
   createPrivateChat,
+  listPrivateChats,
+  loadPrivateChatMessages,
   savePrivateChatMessage,
+  updatePrivateChatBookmark,
+  type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
@@ -55,6 +60,8 @@ const collapsedItems = [
 
 const collapsedTooltipClass =
   "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
+
+const CHAT_TYPE = "teacher" as const;
 
 type SpeechRecognitionResultLike = {
   0?: {
@@ -113,9 +120,17 @@ export default function DsiqMentorPage() {
   const { answers, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("panel") === "search",
+  );
   const [prompt, setPrompt] = useState("");
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [teacherChats, setTeacherChats] = useState<PrivateChatSummary[]>([]);
+  const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
@@ -144,6 +159,19 @@ export default function DsiqMentorPage() {
   const currentMission = answers?.skills || "HTML Fundamentals";
   const currentLesson = currentMission;
   const roadmapProgress = 25;
+  const filteredTeacherChats = teacherChats.filter((chat) => {
+    const query = chatSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return true;
+    }
+
+    return (
+      chat.title.toLowerCase().includes(query) ||
+      chat.lastMessage?.toLowerCase().includes(query)
+    );
+  });
+  const currentChat = teacherChats.find((chat) => chat.id === currentChatId);
+  const isCurrentChatBookmarked = currentChat?.isBookmarked === true;
 
 
   const mentorContext = useMemo(
@@ -168,6 +196,100 @@ export default function DsiqMentorPage() {
     [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, role],
   );
 
+  useEffect(() => {
+    async function loadTeacherChats() {
+      if (!user) {
+        setTeacherChats([]);
+        return;
+      }
+
+      try {
+        setIsChatsLoading(true);
+        setTeacherChats(await listPrivateChats(user.uid, CHAT_TYPE));
+      } finally {
+        setIsChatsLoading(false);
+      }
+    }
+
+    void loadTeacherChats();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || currentChatId) {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const chatId = searchParams.get("chatId");
+    if (chatId) {
+      void openTeacherChat(chatId);
+    }
+  }, [currentChatId, user]);
+
+  async function refreshTeacherChats() {
+    if (!user) {
+      return;
+    }
+
+    setTeacherChats(await listPrivateChats(user.uid, CHAT_TYPE));
+  }
+
+  function startNewTeacherChat(mobile = false) {
+    setCurrentChatId(null);
+    setMentorMessages([]);
+    setPrompt("");
+    setError("");
+    setIsSearchPanelOpen(false);
+    if (mobile) {
+      setIsMobileSidebarOpen(false);
+    }
+  }
+
+  async function openTeacherChat(chatId: string, mobile = false) {
+    if (!user || isSending) {
+      return;
+    }
+
+    try {
+      setIsChatsLoading(true);
+      setError("");
+      setIsSearchPanelOpen(false);
+      setCurrentChatId(chatId);
+      const messages = await loadPrivateChatMessages(user.uid, chatId);
+      setMentorMessages(messages.map(({ role, text }) => ({ role, text })));
+      if (mobile) {
+        setIsMobileSidebarOpen(false);
+      }
+    } catch {
+      setError("We could not open that AI Teacher chat right now.");
+    } finally {
+      setIsChatsLoading(false);
+    }
+  }
+
+  function openTeacherSearch(mobile = false) {
+    setIsSearchPanelOpen(true);
+    setChatSearchQuery("");
+    if (mobile) {
+      setIsMobileSidebarOpen(false);
+    }
+    void refreshTeacherChats();
+  }
+
+  async function toggleCurrentTeacherChatBookmark() {
+    if (!user || !currentChatId) {
+      setError("Send a message first, then save this AI Teacher chat.");
+      return;
+    }
+
+    await updatePrivateChatBookmark({
+      chatId: currentChatId,
+      isBookmarked: !isCurrentChatBookmarked,
+      uid: user.uid,
+    });
+    await refreshTeacherChats();
+  }
+
   async function submitMentorPrompt(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = prompt.trim();
@@ -191,10 +313,12 @@ export default function DsiqMentorPage() {
         throw new Error("Sign in again to save and continue your AI Teacher chat.");
       }
 
-      const chatId = currentChatId || (await createPrivateChat(user.uid, question));
+      const chatId =
+        currentChatId || (await createPrivateChat(user.uid, question, CHAT_TYPE));
       setCurrentChatId(chatId);
       await savePrivateChatMessage({
         chatId,
+        chatType: CHAT_TYPE,
         message: {
           ...userMessage,
           createdAtMs: Date.now(),
@@ -218,6 +342,7 @@ export default function DsiqMentorPage() {
       ]);
       await savePrivateChatMessage({
         chatId,
+        chatType: CHAT_TYPE,
         message: {
           role: "model",
           text: answer,
@@ -236,6 +361,7 @@ export default function DsiqMentorPage() {
           }),
         );
       }
+      void refreshTeacherChats();
     } catch (mentorError) {
       setError(
         mentorError instanceof Error
@@ -319,6 +445,7 @@ export default function DsiqMentorPage() {
   function renderSidebarContent(mobile = false) {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
+    const recentChats = teacherChats.slice(0, 3);
 
     return (
       <aside
@@ -391,7 +518,49 @@ export default function DsiqMentorPage() {
           {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href === "/dsiq/mentor";
+            const isNewChat = item.label === "New Chat";
+            const isSearchChats = item.label === "Search Chats";
             const isAiTeacher = item.label === "AI Teacher";
+
+            if (isNewChat) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  aria-label={item.label}
+                  onClick={() => startNewTeacherChat(mobile)}
+                  className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                  {!expanded ? (
+                    <span className={collapsedTooltipClass}>{item.label}</span>
+                  ) : null}
+                </button>
+              );
+            }
+
+            if (isSearchChats) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  aria-label={item.label}
+                  onClick={() => openTeacherSearch(mobile)}
+                  className={`group relative flex min-h-11 items-center rounded-2xl text-left text-sm font-medium text-[color:var(--color-text)] transition hover:bg-white ${
+                    expanded ? "gap-3 px-3" : "justify-center px-0"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {expanded ? <span>{item.label}</span> : null}
+                  {!expanded ? (
+                    <span className={collapsedTooltipClass}>{item.label}</span>
+                  ) : null}
+                </button>
+              );
+            }
 
             return (
               <Link
@@ -419,6 +588,49 @@ export default function DsiqMentorPage() {
               </Link>
             );
           })}
+
+          {expanded ? (
+            <div className="mt-5 border-t border-[color:var(--color-line)] pt-4">
+              <div className="mb-2 flex items-center justify-between px-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                  Recent
+                </p>
+                {isChatsLoading ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-[color:var(--color-muted)] border-t-transparent" />
+                ) : null}
+              </div>
+              <p className="mb-2 px-3 text-[11px] leading-4 text-[color:var(--color-muted)]">
+                Latest 3 AI Teacher chats.
+              </p>
+              {recentChats.length ? (
+                <div className="flex flex-col gap-1">
+                  {recentChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      type="button"
+                      onClick={() => void openTeacherChat(chat.id, mobile)}
+                      className={`rounded-2xl px-3 py-2.5 text-left transition hover:bg-white ${
+                        currentChatId === chat.id ? "bg-white" : ""
+                      }`}
+                    >
+                      <span className="block truncate text-sm font-medium text-[color:var(--color-text)]">
+                        {chat.title}
+                      </span>
+                      {chat.lastMessage ? (
+                        <span className="mt-0.5 block truncate text-xs text-[color:var(--color-muted)]">
+                          {chat.lastMessage}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-3 text-xs leading-5 text-[color:var(--color-muted)]">
+                  AI Teacher chats will appear here.
+                </p>
+              )}
+            </div>
+          ) : null}
         </nav>
 
         <div className="border-t border-[color:var(--color-line)] pt-3">
@@ -471,6 +683,71 @@ export default function DsiqMentorPage() {
             </div>
           ) : null}
 
+          {isSearchPanelOpen ? (
+            <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 px-4 py-20 sm:items-center sm:py-8">
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="teacher-search-title"
+                className="relative w-full max-w-md rounded-2xl border border-[color:var(--color-line)] bg-white p-4 text-[color:var(--color-text)] shadow-[0_24px_70px_rgba(0,0,0,0.18)]"
+              >
+                <button
+                  type="button"
+                  aria-label="Close search chats"
+                  onClick={() => setIsSearchPanelOpen(false)}
+                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <h2 id="teacher-search-title" className="pr-10 text-base font-semibold">
+                  Search AI Teacher Chats
+                </h2>
+                <p className="mt-1 pr-10 text-xs leading-5 text-[color:var(--color-muted)]">
+                  Search AI Teacher history only.
+                </p>
+                <div className="mt-4 flex h-12 items-center gap-3 rounded-2xl border border-[color:var(--color-line)] px-4">
+                  <Search className="h-4 w-4 text-[color:var(--color-muted)]" />
+                  <input
+                    type="text"
+                    value={chatSearchQuery}
+                    onChange={(event) => setChatSearchQuery(event.target.value)}
+                    placeholder="Search AI Teacher chats"
+                    autoFocus
+                    className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[color:var(--color-muted)]"
+                  />
+                </div>
+
+                <div className="mt-4 max-h-80 overflow-y-auto">
+                  {filteredTeacherChats.length ? (
+                    <div className="flex flex-col gap-1">
+                      {filteredTeacherChats.map((chat) => (
+                        <button
+                          key={chat.id}
+                          type="button"
+                          onClick={() => void openTeacherChat(chat.id)}
+                          className="rounded-2xl px-3 py-3 text-left transition hover:bg-[color:var(--color-surface-strong)]"
+                        >
+                          <span className="block truncate text-sm font-semibold">
+                            {chat.title}
+                          </span>
+                          {chat.lastMessage ? (
+                            <span className="mt-1 block truncate text-xs text-[color:var(--color-muted)]">
+                              {chat.lastMessage}
+                            </span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-4 text-sm text-[color:var(--color-muted)]">
+                      No AI Teacher chats found.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
           <section className="ai-teacher-content flex-1">
             <button
               type="button"
@@ -500,7 +777,8 @@ export default function DsiqMentorPage() {
 
               <article className="ai-teacher-card rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
                 <div className="teacher-header border-b border-[color:var(--color-line)] px-5 py-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111111] text-white">
                       <Bot className="h-5 w-5" aria-hidden="true" />
                     </span>
@@ -510,6 +788,15 @@ export default function DsiqMentorPage() {
                         Ask, practice, and continue your lesson.
                       </p>
                     </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void toggleCurrentTeacherChatBookmark()}
+                      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[color:var(--color-line)] px-3 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                    >
+                      <Save className="h-4 w-4" aria-hidden="true" />
+                      {isCurrentChatBookmarked ? "Saved" : "Save"}
+                    </button>
                   </div>
                 </div>
 

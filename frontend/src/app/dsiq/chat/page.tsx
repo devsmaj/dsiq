@@ -47,13 +47,10 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
-import {
-  createRoadmapFromAiResponse,
-  isRoadmapRequest,
-  saveRoadmap,
-} from "@/lib/roadmap-store";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
+
+const CHAT_TYPE = "normal" as const;
 
 const sidebarItems = [
   { label: "New Chat", href: "/dsiq/chat", icon: SquarePen },
@@ -353,7 +350,7 @@ export default function DsiqChatPage() {
 
       try {
         setIsChatsLoading(true);
-        const nextChats = await listPrivateChats(user.uid);
+        const nextChats = await listPrivateChats(user.uid, CHAT_TYPE);
         setPrivateChats(nextChats);
         setSavedChatDraftTitles(
           Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
@@ -385,7 +382,7 @@ export default function DsiqChatPage() {
     }
 
     try {
-      const nextChats = await listPrivateChats(user.uid);
+      const nextChats = await listPrivateChats(user.uid, CHAT_TYPE);
       setPrivateChats(nextChats);
       setSavedChatDraftTitles(
         Object.fromEntries(nextChats.map((chat) => [chat.id, chat.title])),
@@ -457,10 +454,12 @@ export default function DsiqChatPage() {
     setMessages(nextMessages);
 
     try {
-      const chatId = currentChatId || (await createPrivateChat(user.uid, message));
+      const chatId =
+        currentChatId || (await createPrivateChat(user.uid, message, CHAT_TYPE));
       setCurrentChatId(chatId);
       await savePrivateChatMessage({
         chatId,
+        chatType: CHAT_TYPE,
         message: userMessage,
         uid: user.uid,
       });
@@ -480,19 +479,10 @@ export default function DsiqChatPage() {
       ]);
       await savePrivateChatMessage({
         chatId,
+        chatType: CHAT_TYPE,
         message: modelMessage,
         uid: user.uid,
       });
-
-      if (isRoadmapRequest(message)) {
-        await saveRoadmap(
-          user.uid,
-          createRoadmapFromAiResponse({
-            answer: response,
-            prompt: message,
-          }),
-        );
-      }
 
       void refreshPrivateChats();
     } catch (submissionError) {

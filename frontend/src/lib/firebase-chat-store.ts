@@ -12,12 +12,15 @@ import { withTimeout } from "@/lib/async-timeout";
 import type { GroqChatMessage } from "@/lib/groq";
 
 export type PrivateChatSummary = {
+  chatType: ChatType;
   id: string;
   isBookmarked?: boolean;
   title: string;
   updatedAtMs: number;
   lastMessage?: string;
 };
+
+export type ChatType = "normal" | "teacher";
 
 export type PrivateChatMessage = GroqChatMessage & {
   createdAtMs: number;
@@ -36,6 +39,10 @@ type LocalPrivateChat = PrivateChatSummary & {
 
 const PRIVATE_CHAT_LIMIT = 30;
 const LOCAL_PRIVATE_CHATS_PREFIX = "dsiq.private-chats.";
+
+function normalizeChatType(value: unknown): ChatType {
+  return value === "teacher" ? "teacher" : "normal";
+}
 
 function getLocalPrivateChatsKey(uid: string) {
   return `${LOCAL_PRIVATE_CHATS_PREFIX}${uid}`;
@@ -102,6 +109,7 @@ function upsertLocalPrivateChat(
   uid: string,
   chatId: string,
   titleSeed: string,
+  chatType: ChatType,
   message?: GroqChatMessage & Partial<PrivateChatMessage>,
 ) {
   const now = Date.now();
@@ -118,6 +126,7 @@ function upsertLocalPrivateChat(
     ? {
         ...existingChat,
         updatedAtMs: now,
+        chatType: existingChat.chatType || chatType,
         lastMessage: message?.text || existingChat.lastMessage,
         messages: nextMessage
           ? [...existingChat.messages, nextMessage]
@@ -126,6 +135,7 @@ function upsertLocalPrivateChat(
     : {
         id: chatId,
         title: createChatTitle(titleSeed),
+        chatType,
         createdAtMs: now,
         updatedAtMs: now,
         lastMessage: message?.text,
@@ -285,7 +295,11 @@ export async function saveFirebaseChatMessage(input: {
   );
 }
 
-export async function createPrivateChat(uid: string, firstMessage: string) {
+export async function createPrivateChat(
+  uid: string,
+  firstMessage: string,
+  chatType: ChatType = "normal",
+) {
   const title = createChatTitle(firstMessage);
   const now = Date.now();
 
@@ -293,6 +307,7 @@ export async function createPrivateChat(uid: string, firstMessage: string) {
     const chat: LocalPrivateChat = {
       id: createLocalId(),
       title,
+      chatType,
       createdAtMs: now,
       updatedAtMs: now,
       messages: [],
@@ -311,6 +326,7 @@ export async function createPrivateChat(uid: string, firstMessage: string) {
         updatedAt: serverTimestamp(),
         createdAtMs: now,
         updatedAtMs: now,
+        chatType,
         source: "private-chat",
       }),
       undefined,
@@ -321,17 +337,19 @@ export async function createPrivateChat(uid: string, firstMessage: string) {
   } catch (error) {
     console.warn("Firebase private chat creation failed; using local chat.", error);
     const chatId = createLocalId();
-    upsertLocalPrivateChat(uid, chatId, firstMessage);
+    upsertLocalPrivateChat(uid, chatId, firstMessage, chatType);
     return chatId;
   }
 }
 
 export async function savePrivateChatMessage(input: {
   chatId: string;
+  chatType?: ChatType;
   message: GroqChatMessage & Partial<PrivateChatMessage>;
   uid: string;
 }): Promise<PrivateChatMessage> {
   const now = Date.now();
+  const chatType = input.chatType || "normal";
   const message: PrivateChatMessage = {
     id: input.message.id || createMessageId(),
     role: input.message.role,
@@ -344,7 +362,7 @@ export async function savePrivateChatMessage(input: {
 
   if (!db) {
     return (
-      upsertLocalPrivateChat(input.uid, input.chatId, message.text, message) ||
+      upsertLocalPrivateChat(input.uid, input.chatId, message.text, chatType, message) ||
       message
     );
   }
@@ -360,6 +378,7 @@ export async function savePrivateChatMessage(input: {
           updatedAt: serverTimestamp(),
           updatedAtMs: message.createdAtMs,
           lastMessage: message.text,
+          chatType,
           source: "private-chat",
         },
         { merge: true },
@@ -382,19 +401,24 @@ export async function savePrivateChatMessage(input: {
     );
   } catch (error) {
     console.warn("Firebase private chat save failed; using local chat.", error);
-    upsertLocalPrivateChat(input.uid, input.chatId, message.text, message);
+    upsertLocalPrivateChat(input.uid, input.chatId, message.text, chatType, message);
   }
 
   return message;
 }
 
-export async function listPrivateChats(uid: string) {
+export async function listPrivateChats(uid: string, chatType?: ChatType) {
   if (!db) {
     return readLocalPrivateChats(uid)
-      .filter((chat) => !chat.deletedAtMs)
+      .filter(
+        (chat) =>
+          !chat.deletedAtMs &&
+          (!chatType || normalizeChatType(chat.chatType) === chatType),
+      )
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
+      .map(({ chatType: itemChatType, id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
+        chatType: normalizeChatType(itemChatType),
         id,
         isBookmarked,
         title,
@@ -427,12 +451,19 @@ export async function listPrivateChats(uid: string) {
           deletedAtMs:
             typeof data.deletedAtMs === "number" ? data.deletedAtMs : undefined,
           source: data.source,
+          chatType: normalizeChatType(data.chatType),
         };
       })
-      .filter((chat) => chat.source === "private-chat" && !chat.deletedAtMs)
+      .filter(
+        (chat) =>
+          chat.source === "private-chat" &&
+          !chat.deletedAtMs &&
+          (!chatType || chat.chatType === chatType),
+      )
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, title, updatedAtMs, lastMessage, isBookmarked }) => ({
+      .map(({ chatType, id, title, updatedAtMs, lastMessage, isBookmarked }) => ({
+        chatType,
         id,
         isBookmarked,
         title,
@@ -442,10 +473,15 @@ export async function listPrivateChats(uid: string) {
   } catch (error) {
     console.warn("Firebase private chats loading failed; using local chats.", error);
     return readLocalPrivateChats(uid)
-      .filter((chat) => !chat.deletedAtMs)
+      .filter(
+        (chat) =>
+          !chat.deletedAtMs &&
+          (!chatType || normalizeChatType(chat.chatType) === chatType),
+      )
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, PRIVATE_CHAT_LIMIT)
-      .map(({ id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
+      .map(({ chatType: itemChatType, id, isBookmarked, title, updatedAtMs, lastMessage }) => ({
+        chatType: normalizeChatType(itemChatType),
         id,
         isBookmarked,
         title,
