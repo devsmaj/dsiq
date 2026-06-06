@@ -131,12 +131,15 @@ export default function DsiqMentorPage() {
     profile?.profileImageUrl || answers?.profileImageUrl || user?.photoURL || "";
   const role = profile?.role || answers?.role || "student";
   const profileRoleLabel = getProfileRoleLabel(profile?.role || answers?.role);
-  const goals =
-    profile?.selectedGoals?.length
-      ? profile.selectedGoals
-      : answers?.selectedGoals?.length
-        ? answers.selectedGoals
-        : [];
+  const goals = useMemo(
+    () =>
+      profile?.selectedGoals?.length
+        ? profile.selectedGoals
+        : answers?.selectedGoals?.length
+          ? answers.selectedGoals
+          : [],
+    [answers, profile],
+  );
   const primaryGoal = goals[0] || answers?.goal || answers?.interest || "Learn Programming";
   const currentMission = answers?.skills || "HTML Fundamentals";
   const currentLesson = currentMission;
@@ -291,7 +294,7 @@ export default function DsiqMentorPage() {
     recognition.start();
   }
 
-  const ProfileAvatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
+  function renderProfileAvatar(size: "sm" | "md" = "md") {
     const sizeClass = size === "sm" ? "h-8 w-8 text-xs" : "h-9 w-9 text-xs";
 
     if (profileImageUrl) {
@@ -311,9 +314,9 @@ export default function DsiqMentorPage() {
         {getInitials(displayName) || "D"}
       </span>
     );
-  };
+  }
 
-  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => {
+  function renderSidebarContent(mobile = false) {
     const expanded = mobile || isSidebarOpen;
     const visibleItems = expanded ? sidebarItems : collapsedItems;
 
@@ -426,7 +429,7 @@ export default function DsiqMentorPage() {
               expanded ? "gap-3 px-3 py-3" : "justify-center px-0 py-3"
             }`}
           >
-            <ProfileAvatar />
+            {renderProfileAvatar()}
             {expanded ? (
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-[color:var(--color-text)]">
@@ -444,14 +447,14 @@ export default function DsiqMentorPage() {
         </div>
       </aside>
     );
-  };
+  }
 
   return (
     <PrivateRoute>
-      <main className="min-h-screen bg-white text-[color:var(--color-text)]">
-        <div className="flex min-h-screen">
+      <main className="ai-teacher-page text-[color:var(--color-text)]">
+        <div className="flex min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden">
           <div className="hidden lg:block">
-            <SidebarContent />
+            {renderSidebarContent()}
           </div>
 
           {isMobileSidebarOpen ? (
@@ -462,27 +465,27 @@ export default function DsiqMentorPage() {
                 className="absolute inset-0 bg-black/25"
                 onClick={() => setIsMobileSidebarOpen(false)}
               />
-              <div className="absolute inset-y-0 left-0">
-                <SidebarContent mobile />
+              <div className="absolute inset-y-0 left-0 max-w-[calc(100vw-24px)] overflow-x-hidden">
+                {renderSidebarContent(true)}
               </div>
             </div>
           ) : null}
 
-          <section className="min-w-0 flex-1 bg-white">
+          <section className="ai-teacher-content flex-1">
             <button
               type="button"
               aria-label="Open menu"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="fixed left-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
+              className="mobile-menu-button flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
 
-            <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 px-5 py-6 pt-20 sm:px-8 lg:px-10 lg:pt-8">
-              <section className="flex flex-col gap-1 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+            <div className="ai-teacher-shell">
+              <section className="ai-teacher-summary flex flex-col gap-1 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
                 <div className="flex items-center gap-3">
-                  <ProfileAvatar size="sm" />
-                  <div>
+                  {renderProfileAvatar("sm")}
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">Good to see you, {displayName}.</p>
                     <p className="mt-1 text-xs text-[color:var(--color-muted)]">
                       Current goal: {primaryGoal}
@@ -495,13 +498,13 @@ export default function DsiqMentorPage() {
               </section>
 
 
-              <article className="flex min-h-[620px] flex-1 flex-col rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-                <div className="border-b border-[color:var(--color-line)] px-5 py-4">
+              <article className="ai-teacher-card rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+                <div className="teacher-header border-b border-[color:var(--color-line)] px-5 py-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#111111] text-white">
                       <Bot className="h-5 w-5" aria-hidden="true" />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <h2 className="text-base font-semibold">AI Teacher</h2>
                       <p className="text-xs text-[color:var(--color-muted)]">
                         Ask, practice, and continue your lesson.
@@ -510,12 +513,12 @@ export default function DsiqMentorPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-5">
+                <div className="teacher-messages flex flex-col gap-4 px-4 py-5 sm:px-5">
                   {mentorMessages.length ? (
                     mentorMessages.map((message, index) => (
                       <div
                         key={`${message.role}-${index}`}
-                        className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
+                        className={`max-w-[86%] break-words rounded-2xl px-4 py-3 text-sm leading-7 ${
                           message.role === "user"
                             ? "ml-auto bg-[#111111] text-white"
                             : "ai-message mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
@@ -553,17 +556,17 @@ export default function DsiqMentorPage() {
                   ) : null}
                 </div>
 
-                <div className="border-t border-[color:var(--color-line)] p-4">
+                <div className="teacher-input-area">
                   <form
                     onSubmit={submitMentorPrompt}
-                    className="flex items-center gap-2 rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-4 py-3 focus-within:border-[#111111]"
+                    className="teacher-input-row rounded-[1.5rem] border border-[color:var(--color-line)] bg-white px-4 py-3 focus-within:border-[#111111]"
                   >
                     <input
                       type="text"
                       value={prompt}
                       onChange={(event) => setPrompt(event.target.value)}
                       placeholder="Ask your AI Teacher anything..."
-                      className="min-h-10 flex-1 bg-transparent text-sm outline-none"
+                      className="min-h-10 bg-transparent text-sm outline-none"
                     />
                     <button
                       type="button"
