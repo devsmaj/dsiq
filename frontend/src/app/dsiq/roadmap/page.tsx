@@ -12,6 +12,7 @@ import { useUserProfile } from "@/lib/use-user-profile";
 export default function DsiqRoadmapPage() {
   const { user } = useUserProfile();
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,9 +23,19 @@ export default function DsiqRoadmapPage() {
         return;
       }
 
-      setIsLoading(true);
-      setRoadmaps(await listRoadmaps(user.uid));
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        setError("");
+        setRoadmaps(await listRoadmaps(user.uid));
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Roadmaps could not load from Firestore. Please retry.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     void loadRoadmaps();
@@ -55,6 +66,10 @@ export default function DsiqRoadmapPage() {
           {isLoading ? (
             <p className="rounded-2xl bg-white px-5 py-4 text-sm text-[color:var(--color-muted)]">
               Loading roadmap...
+            </p>
+          ) : error ? (
+            <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-700">
+              {error}
             </p>
           ) : activeRoadmap ? (
             <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">

@@ -35,6 +35,7 @@ function getSavedChatHref(chat: PrivateChatSummary) {
 export default function DsiqSavedChatsPage() {
   const { user } = useUserProfile();
   const [chats, setChats] = useState<PrivateChatSummary[]>([]);
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -45,9 +46,19 @@ export default function DsiqSavedChatsPage() {
         return;
       }
 
-      setIsLoading(true);
-      setChats(await listBookmarkedPrivateChats(user.uid));
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        setError("");
+        setChats(await listBookmarkedPrivateChats(user.uid));
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Saved chats could not load from Firestore. Please retry.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     void loadSavedChats();
@@ -76,6 +87,10 @@ export default function DsiqSavedChatsPage() {
           {isLoading ? (
             <p className="rounded-2xl bg-white px-5 py-4 text-sm text-[color:var(--color-muted)]">
               Loading saved chats...
+            </p>
+          ) : error ? (
+            <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-700">
+              {error}
             </p>
           ) : chats.length ? (
             <section className="flex flex-col gap-3">

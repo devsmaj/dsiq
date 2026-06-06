@@ -291,8 +291,12 @@ export default function DsiqMentorPage() {
       if (mobile) {
         setIsMobileSidebarOpen(false);
       }
-    } catch {
-      setError("We could not open that AI Teacher chat right now.");
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "We could not open that AI Teacher chat from Firestore right now. Please retry.",
+      );
     } finally {
       setIsChatsLoading(false);
     }

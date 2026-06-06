@@ -519,7 +519,11 @@ export default function DsiqChatPage() {
       }
     } catch (loadError) {
       console.warn("Private chat opening failed.", loadError);
-      setError("We could not open that saved chat right now.");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "We could not open that chat from Firestore right now. Please retry.",
+      );
     } finally {
       setIsChatsLoading(false);
     }

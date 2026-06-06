@@ -285,22 +285,38 @@ export async function deleteFirebaseUserRecord(uid: string) {
 
   const firestore = db;
   const userRef = doc(firestore, "users", uid);
-  const chatsSnapshot = await getDocs(collection(userRef, "chats"));
 
-  for (const chatDocument of chatsSnapshot.docs) {
-    const chatRef = doc(userRef, "chats", chatDocument.id);
-    const messagesSnapshot = await getDocs(collection(chatRef, "messages"));
+  for (const chatCollectionName of ["chats", "teacherChats"]) {
+    const chatsSnapshot = await getDocs(collection(userRef, chatCollectionName));
+
+    for (const chatDocument of chatsSnapshot.docs) {
+      const chatRef = doc(userRef, chatCollectionName, chatDocument.id);
+      const messagesSnapshot = await getDocs(collection(chatRef, "messages"));
+
+      await Promise.all(
+        messagesSnapshot.docs.map((messageDocument) =>
+          deleteDoc(doc(chatRef, "messages", messageDocument.id)),
+        ),
+      );
+      await deleteDoc(chatRef);
+    }
+  }
+
+  const roadmapsSnapshot = await getDocs(collection(userRef, "roadmaps"));
+  for (const roadmapDocument of roadmapsSnapshot.docs) {
+    const roadmapRef = doc(userRef, "roadmaps", roadmapDocument.id);
+    const stepsSnapshot = await getDocs(collection(roadmapRef, "steps"));
 
     await Promise.all(
-      messagesSnapshot.docs.map((messageDocument) =>
-        deleteDoc(doc(chatRef, "messages", messageDocument.id)),
+      stepsSnapshot.docs.map((stepDocument) =>
+        deleteDoc(doc(roadmapRef, "steps", stepDocument.id)),
       ),
     );
-    await deleteDoc(chatRef);
+    await deleteDoc(roadmapRef);
   }
 
   await Promise.all(
-    ["projects", "library"].map(async (collectionName) => {
+    ["projects", "library", "savedChats"].map(async (collectionName) => {
       const snapshot = await getDocs(collection(userRef, collectionName));
 
       await Promise.all(
