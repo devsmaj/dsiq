@@ -9,14 +9,9 @@ import {
   FileText,
   GraduationCap,
   HelpCircle,
-  ImageIcon,
   LogOut,
-  Maximize2,
   Menu,
-  Minimize2,
-  Mic,
   MoreHorizontal,
-  Plus,
   Search,
   Send,
   Settings,
@@ -27,7 +22,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { ChatComposer } from "@/components/chat-composer";
@@ -173,15 +168,6 @@ function formatChatUpdatedAt(updatedAtMs: number) {
   }).format(new Date(updatedAtMs));
 }
 
-function resizeTextarea(textarea: HTMLTextAreaElement | null) {
-  if (!textarea) {
-    return;
-  }
-
-  textarea.style.height = "auto";
-  textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
-}
-
 function getGreeting(name: string, isReturning: boolean) {
   if (isReturning) {
     return `Welcome back, ${name}`;
@@ -218,9 +204,7 @@ export default function DsiqChatPage() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
-  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [isSavedChatsPanelOpen, setIsSavedChatsPanelOpen] = useState(false);
@@ -262,10 +246,6 @@ export default function DsiqChatPage() {
   );
   const [error, setError] = useState("");
   const [actionStatus, setActionStatus] = useState("");
-  const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const expandedPromptRef = useRef<HTMLTextAreaElement | null>(null);
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
   const displayName =
@@ -342,11 +322,6 @@ export default function DsiqChatPage() {
       window.speechSynthesis?.cancel();
     };
   }, []);
-
-  useEffect(() => {
-    resizeTextarea(promptInputRef.current);
-    resizeTextarea(expandedPromptRef.current);
-  }, [prompt, isComposerExpanded]);
 
   useEffect(() => {
     async function loadChats() {
@@ -446,7 +421,6 @@ export default function DsiqChatPage() {
     setActiveSavedChatMenuId(null);
     setPrompt("");
     setSelectedImage(null);
-    setIsComposerExpanded(false);
     setIsSending(true);
 
     const userMessage: PrivateChatMessage = {
@@ -503,20 +477,6 @@ export default function DsiqChatPage() {
     }
   }
 
-  async function submitPrompt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await sendPromptText(prompt);
-  }
-
-  function handlePromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey) {
-      return;
-    }
-
-    event.preventDefault();
-    void sendPromptText(prompt);
-  }
-
   function startNewChat() {
     stopReadAloud();
     setCurrentChatId(null);
@@ -529,10 +489,6 @@ export default function DsiqChatPage() {
     setActiveSavedChatMenuId(null);
     setIsSearchPanelOpen(false);
     closeSavedChatsPanel();
-    setIsUploadPanelOpen(false);
-    window.requestAnimationFrame(() => {
-      promptInputRef.current?.focus();
-    });
   }
 
   async function openPrivateChat(chatId: string, mobile = false) {
@@ -798,41 +754,6 @@ export default function DsiqChatPage() {
     }
   }
 
-  function appendAttachmentNames(files: FileList | null) {
-    if (!files?.length || isSending) {
-      return;
-    }
-
-    const imageFile = Array.from(files).find((file) =>
-      file.type.startsWith("image/"),
-    );
-
-    if (imageFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          setSelectedImage({ dataUrl: reader.result, name: imageFile.name });
-        }
-      };
-      reader.readAsDataURL(imageFile);
-    } else {
-      const names = Array.from(files)
-        .map((file) => file.name)
-        .join(", ");
-
-      setPrompt((current) =>
-        current.trim()
-          ? `${current.trim()} Attached file: ${names}`
-          : `Attached file: ${names}`,
-      );
-    }
-
-    setIsUploadPanelOpen(false);
-    window.requestAnimationFrame(() => {
-      promptInputRef.current?.focus();
-    });
-  }
-
   function handleVoiceInput() {
     if (isSending) {
       return;
@@ -877,9 +798,6 @@ export default function DsiqChatPage() {
       setPrompt((current) =>
         current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
       );
-      window.requestAnimationFrame(() => {
-        promptInputRef.current?.focus();
-      });
     };
     recognition.onerror = () => {
       setIsListening(false);
@@ -1943,90 +1861,6 @@ export default function DsiqChatPage() {
             </div>
           </section>
         </div>
-
-        {isComposerExpanded ? (
-          <div className="fixed inset-0 z-[65] flex h-[100dvh] flex-col bg-white px-4 py-4 text-[color:var(--color-text)] sm:px-6">
-            <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 border-b border-[color:var(--color-line)] pb-4">
-              <p className="text-sm font-semibold">Write your prompt</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsComposerExpanded(false);
-                  window.requestAnimationFrame(() => {
-                    promptInputRef.current?.focus();
-                  });
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] bg-white transition hover:bg-[color:var(--color-surface-strong)]"
-                aria-label="Collapse composer"
-              >
-                <Minimize2 className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-4 py-4">
-              {selectedImage ? (
-                <div className="flex items-center gap-3 rounded-2xl border border-[color:var(--color-line)] p-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreviewImage(selectedImage);
-                      setIsImagePreviewOpen(true);
-                    }}
-                    className="h-14 w-14 overflow-hidden rounded-xl"
-                    aria-label="Open image preview"
-                  >
-                    <img
-                      src={selectedImage.dataUrl}
-                      alt={selectedImage.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[color:var(--color-muted)]">
-                    {selectedImage.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedImage(null)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 transition hover:bg-gray-200"
-                    aria-label="Remove image"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-              ) : null}
-
-              <textarea
-                ref={expandedPromptRef}
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                onKeyDown={handlePromptKeyDown}
-                disabled={isSending}
-                placeholder="Write clearly. Shift + Enter adds a new line."
-                autoFocus
-                className="min-h-0 flex-1 resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-background)] p-4 text-base leading-7 outline-none transition focus:border-[#111111] disabled:cursor-not-allowed disabled:opacity-70"
-              />
-
-              <div className="flex items-center justify-between gap-3 pb-[env(safe-area-inset-bottom)]">
-                <button
-                  type="button"
-                  onClick={() => setIsComposerExpanded(false)}
-                  className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-5 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  Collapse
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void sendPromptText(prompt)}
-                  disabled={isSending || (!prompt.trim() && !selectedImage)}
-                  className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-                >
-                  <Send className="h-4 w-4" aria-hidden="true" />
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
 
         {isImagePreviewOpen && previewImage ? (
           <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/80 p-4">
