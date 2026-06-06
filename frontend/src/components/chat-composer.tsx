@@ -155,61 +155,6 @@ export function ChatComposer({
             ))}
           </div>
         ) : null}
-        <div className="flex w-full items-end gap-2 sm:gap-3">
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsUploadPanelOpen((current) => !current)}
-              aria-label="Add attachment"
-              aria-expanded={isUploadPanelOpen}
-              disabled={isSending}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
-            >
-              <Plus className="h-5 w-5" aria-hidden="true" />
-            </button>
-            {isUploadPanelOpen ? (
-              <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                  Upload photos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  <FileText className="h-4 w-4" aria-hidden="true" />
-                  Upload files
-                </button>
-              </div>
-            ) : null}
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(event) => {
-                appendAttachmentNames(event.target.files);
-                event.currentTarget.value = "";
-              }}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(event) => {
-                appendAttachmentNames(event.target.files);
-                event.currentTarget.value = "";
-              }}
-            />
-          </div>
-
           <textarea
             ref={inputRef}
             value={value}
@@ -218,54 +163,111 @@ export function ChatComposer({
             disabled={isSending}
             placeholder={placeholder}
             rows={1}
-            className="block max-h-[180px] min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
+            className="block max-h-[180px] min-h-10 w-full min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-sm leading-6 text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)] disabled:cursor-not-allowed disabled:opacity-70"
             style={{ width: "100%" }}
           />
 
-          <button
-            type="button"
-            onClick={() => setIsExpanded(true)}
-            disabled={isSending}
-            aria-label="Expand composer"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
-          >
-            <Maximize2 className="h-4 w-4" aria-hidden="true" />
-          </button>
+          <div className="mt-2 flex w-full items-end gap-2 sm:gap-3">
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsUploadPanelOpen((current) => !current)}
+                aria-label="Add attachment"
+                aria-expanded={isUploadPanelOpen}
+                disabled={isSending}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+              </button>
+              {isUploadPanelOpen ? (
+                <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                    Upload photos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+                  >
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    Upload files
+                  </button>
+                </div>
+              ) : null}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  appendAttachmentNames(event.target.files);
+                  event.currentTarget.value = "";
+                }}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  appendAttachmentNames(event.target.files);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </div>
 
-          {onVoiceInput ? (
+            <div className="min-w-0 flex-1" />
+
             <button
               type="button"
-              onClick={onVoiceInput}
+              onClick={() => setIsExpanded(true)}
               disabled={isSending}
-              aria-label={isListening ? "Stop voice input" : "Start voice input"}
+              aria-label="Expand composer"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <Maximize2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            {onVoiceInput ? (
+              <button
+                type="button"
+                onClick={onVoiceInput}
+                disabled={isSending}
+                aria-label={isListening ? "Stop voice input" : "Start voice input"}
               className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-full px-3 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isListening
                   ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
                   : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
               }`}
-            >
-              {isListening ? (
-                <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
-                  <span className="recording-wave" />
-                  <span className="recording-wave [animation-delay:110ms]" />
-                  <span className="recording-wave [animation-delay:220ms]" />
-                  <span className="recording-wave [animation-delay:330ms]" />
-                </span>
-              ) : (
-                <Mic className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-          ) : null}
+              >
+                {isListening ? (
+                  <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
+                    <span className="recording-wave" />
+                    <span className="recording-wave [animation-delay:110ms]" />
+                    <span className="recording-wave [animation-delay:220ms]" />
+                    <span className="recording-wave [animation-delay:330ms]" />
+                  </span>
+                ) : (
+                  <Mic className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            ) : null}
 
-          <button
-            type="submit"
-            aria-label="Send"
-            disabled={isSending || (!value.trim() && !imageAttachments.length)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:!text-gray-400"
-          >
-            <Send className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
+            <button
+              type="submit"
+              aria-label="Send"
+              disabled={isSending || (!value.trim() && !imageAttachments.length)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:!text-gray-400"
+            >
+              <Send className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
         </form>
       </div>
 

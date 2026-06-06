@@ -2,21 +2,17 @@
 
 import Link from "next/link";
 import {
-  FileText,
-  ImageIcon,
   Info,
   Menu,
-  Mic,
-  Plus,
   Search,
-  Send,
   Settings,
   SquarePen,
   X,
 } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ChatComposer, type ChatImageAttachment } from "@/components/chat-composer";
 import { HOME_CHAT_LOADING_BYPASS_KEY } from "@/lib/chat-loading-bypass";
 import { openSettingsHelpPopup } from "@/components/settings-help-popup";
 import { dsiqLogoSrc } from "@/lib/public-asset";
@@ -72,13 +68,9 @@ export function HomeChat() {
   const [isDesktopDrawerOpen, setIsDesktopDrawerOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
-  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [heroLineIndex, setHeroLineIndex] = useState(0);
   const [prompt, setPrompt] = useState("");
-  const promptInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -104,9 +96,6 @@ export function HomeChat() {
   function openSearchChats() {
     setIsDesktopDrawerOpen(false);
     setIsMobileDrawerOpen(false);
-    window.requestAnimationFrame(() => {
-      promptInputRef.current?.focus();
-    });
   }
 
   function startNewChat() {
@@ -115,10 +104,10 @@ export function HomeChat() {
     router.push("/chat?guest=true");
   }
 
-  function handlePromptSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const message = prompt.trim();
+  function handlePromptSubmit(value: string, attachments: ChatImageAttachment[] = []) {
+    const message = attachments.length
+      ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
+      : value.trim();
     if (!message) {
       return;
     }
@@ -128,23 +117,6 @@ export function HomeChat() {
       String(Date.now()),
     );
     router.push(`/chat?guest=true&q=${encodeURIComponent(message)}`);
-  }
-
-  function appendAttachmentNames(files: FileList | null) {
-    if (!files?.length) {
-      return;
-    }
-
-    const names = Array.from(files)
-      .map((file) => file.name)
-      .join(", ");
-
-    setPrompt((current) =>
-      current.trim()
-        ? `${current.trim()} Attached: ${names}`
-        : `Attached: ${names}`,
-    );
-    setIsUploadPanelOpen(false);
   }
 
   function handleVoiceInput() {
@@ -187,9 +159,6 @@ export function HomeChat() {
       setPrompt((current) =>
         current.trim() ? `${current.trim()} ${spokenText}` : spokenText,
       );
-      window.requestAnimationFrame(() => {
-        promptInputRef.current?.focus();
-      });
     };
     recognition.onerror = () => {
       setIsListening(false);
@@ -365,98 +334,17 @@ export function HomeChat() {
                 </span>
               </h1>
 
-              <form
-                className="home-chat-composer mt-7 rounded-[30px] bg-white px-6 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.05)]"
-                onSubmit={handlePromptSubmit}
-              >
-                <input
-                  ref={promptInputRef}
-                  type="text"
+              <div className="home-chat-composer mt-7">
+                <ChatComposer
                   value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
+                  onChange={setPrompt}
+                  onSubmit={handlePromptSubmit}
+                  onVoiceInput={handleVoiceInput}
+                  isListening={isListening}
+                  isSending={false}
                   placeholder="Ask DSIQ"
-                  className="h-9 w-full bg-transparent text-sm text-[color:var(--color-text)] outline-none placeholder:text-[color:var(--color-muted)]"
                 />
-
-                <div className="mt-5 flex items-center gap-5">
-                  <div className="relative">
-                    <button
-                      type="button"
-                      aria-label="Add"
-                      aria-expanded={isUploadPanelOpen}
-                      onClick={() => setIsUploadPanelOpen((value) => !value)}
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-[#303134] transition hover:bg-[color:var(--color-surface-strong)]"
-                    >
-                    <Plus className="h-5 w-5" />
-                    </button>
-                    {isUploadPanelOpen ? (
-                      <div className="absolute bottom-12 left-0 z-30 w-56 rounded-2xl border border-[color:var(--color-line)] bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
-                        <button
-                          type="button"
-                          onClick={() => photoInputRef.current?.click()}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                        >
-                          <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                          Upload photos
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
-                        >
-                          <FileText className="h-4 w-4" aria-hidden="true" />
-                          Upload files
-                        </button>
-                      </div>
-                    ) : null}
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(event) => appendAttachmentNames(event.target.files)}
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={(event) => appendAttachmentNames(event.target.files)}
-                    />
-                  </div>
-                  <div className="flex-1" />
-                  <button
-                    type="button"
-                    onClick={handleVoiceInput}
-                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
-                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-full px-3 transition ${
-                      isListening
-                        ? "bg-[color:var(--color-brand-soft)] text-[color:var(--color-brand-strong)]"
-                        : "text-[#303134] hover:bg-[color:var(--color-surface-strong)]"
-                    }`}
-                  >
-                    {isListening ? (
-                      <span className="flex h-5 items-center gap-0.5" aria-hidden="true">
-                        <span className="recording-wave" />
-                        <span className="recording-wave [animation-delay:110ms]" />
-                        <span className="recording-wave [animation-delay:220ms]" />
-                        <span className="recording-wave [animation-delay:330ms]" />
-                      </span>
-                    ) : (
-                      <Mic className="h-4 w-4" aria-hidden="true" />
-                    )}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!prompt.trim()}
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] !text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Send message"
-                  >
-                    <Send className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </div>
-              </form>
+              </div>
 
             </div>
 
