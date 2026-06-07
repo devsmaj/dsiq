@@ -27,7 +27,7 @@ import { useUserProfile } from "@/lib/use-user-profile";
 
 const sidebarItems = [
   { labelKey: "sidebar.newChat", href: "/dsiq/chat", icon: SquarePen },
-  { labelKey: "sidebar.searchChats", href: "/dsiq/mentor?panel=search", icon: Search },
+  { labelKey: "sidebar.searchChats", href: "/dsiq/chat?panel=search", icon: Search },
   { labelKey: "sidebar.learningRoadmap", href: "/dsiq/roadmap", icon: GraduationCap },
   { labelKey: "sidebar.savedChats", href: "/dsiq/saved", icon: FileText },
 ] as const;

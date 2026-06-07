@@ -67,6 +67,13 @@ function writeLocalRoadmaps(uid: string, roadmaps: LocalRoadmap[]) {
   window.localStorage.setItem(getLocalRoadmapsKey(uid), JSON.stringify(roadmaps));
 }
 
+function getVisibleLocalRoadmaps(uid: string) {
+  return readLocalRoadmaps(uid)
+    .filter((roadmap) => !roadmap.deletedAtMs)
+    .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
+    .slice(0, ROADMAP_LIMIT);
+}
+
 function cleanTitle(text: string) {
   const title = text.trim().replace(/\s+/g, " ");
   return title.length > 58 ? `${title.slice(0, 55)}...` : title;
@@ -146,57 +153,55 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
 
   const firestoreDb = db;
 
-  if (!firestoreDb) {
-    writeLocalRoadmaps(
-      uid,
-      [nextRoadmap, ...readLocalRoadmaps(uid).filter((item) => item.id !== roadmap.id)]
-        .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
-        .slice(0, ROADMAP_LIMIT),
-    );
-    return nextRoadmap.id;
-  }
-
-  const roadmapRef = doc(collection(firestoreDb, "users", uid, "roadmaps"), roadmap.id);
-  await withTimeout(
-    setDoc(
-      roadmapRef,
-      {
-        createdAt: serverTimestamp(),
-        createdAtMs: nextRoadmap.createdAtMs,
-        goal: nextRoadmap.goal,
-        level: nextRoadmap.level,
-        subject: nextRoadmap.subject,
-        title: nextRoadmap.title,
-        updatedAt: serverTimestamp(),
-        updatedAtMs: nextRoadmap.updatedAtMs,
-      },
-      { merge: true },
-    ),
-    undefined,
-    "Roadmap could not sync to Firestore. Check your connection and try again.",
-  );
-
-  await Promise.all(
-    nextRoadmap.steps.map((step) =>
-      withTimeout(
-        setDoc(doc(roadmapRef, "steps", step.id), {
-          completed: step.completed,
-          description: step.description,
-          orderNumber: step.orderNumber,
-          title: step.title,
-        }),
-        undefined,
-        "Roadmap steps could not sync to Firestore. Check your connection and try again.",
-      ),
-    ),
-  );
-
   writeLocalRoadmaps(
     uid,
     [nextRoadmap, ...readLocalRoadmaps(uid).filter((item) => item.id !== roadmap.id)]
       .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
       .slice(0, ROADMAP_LIMIT),
   );
+
+  if (!firestoreDb) {
+    return nextRoadmap.id;
+  }
+
+  try {
+    const roadmapRef = doc(collection(firestoreDb, "users", uid, "roadmaps"), roadmap.id);
+    await withTimeout(
+      setDoc(
+        roadmapRef,
+        {
+          createdAt: serverTimestamp(),
+          createdAtMs: nextRoadmap.createdAtMs,
+          goal: nextRoadmap.goal,
+          level: nextRoadmap.level,
+          subject: nextRoadmap.subject,
+          title: nextRoadmap.title,
+          updatedAt: serverTimestamp(),
+          updatedAtMs: nextRoadmap.updatedAtMs,
+        },
+        { merge: true },
+      ),
+      undefined,
+      "Roadmap could not sync to Firestore. Check your connection and try again.",
+    );
+
+    await Promise.all(
+      nextRoadmap.steps.map((step) =>
+        withTimeout(
+          setDoc(doc(roadmapRef, "steps", step.id), {
+            completed: step.completed,
+            description: step.description,
+            orderNumber: step.orderNumber,
+            title: step.title,
+          }),
+          undefined,
+          "Roadmap steps could not sync to Firestore. Check your connection and try again.",
+        ),
+      ),
+    );
+  } catch (error) {
+    console.warn("Roadmap Firestore sync failed. Using local roadmap storage.", error);
+  }
 
   return nextRoadmap.id;
 }
@@ -205,63 +210,65 @@ export async function listRoadmaps(uid: string) {
   const firestoreDb = db;
 
   if (!firestoreDb) {
-    return readLocalRoadmaps(uid)
-      .filter((roadmap) => !roadmap.deletedAtMs)
-      .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
-      .slice(0, ROADMAP_LIMIT);
+    return getVisibleLocalRoadmaps(uid);
   }
 
-  const snapshot = await withTimeout(
-    getDocs(collection(firestoreDb, "users", uid, "roadmaps")),
-    undefined,
-    "Roadmaps could not load from Firestore. Check your connection and retry.",
-  );
+  try {
+    const snapshot = await withTimeout(
+      getDocs(collection(firestoreDb, "users", uid, "roadmaps")),
+      undefined,
+      "Roadmaps could not load from Firestore. Check your connection and retry.",
+    );
 
-  const roadmaps = await Promise.all(
-    snapshot.docs.map(async (roadmapDoc) => {
-      const data = roadmapDoc.data();
-      const stepsSnapshot = await withTimeout(
-        getDocs(
-          collection(
-            doc(firestoreDb, "users", uid, "roadmaps", roadmapDoc.id),
-            "steps",
+    const roadmaps = await Promise.all(
+      snapshot.docs.map(async (roadmapDoc) => {
+        const data = roadmapDoc.data();
+        const stepsSnapshot = await withTimeout(
+          getDocs(
+            collection(
+              doc(firestoreDb, "users", uid, "roadmaps", roadmapDoc.id),
+              "steps",
+            ),
           ),
-        ),
-        undefined,
-        "Roadmap steps could not load from Firestore. Check your connection and retry.",
-      );
+          undefined,
+          "Roadmap steps could not load from Firestore. Check your connection and retry.",
+        );
 
-      return {
-        createdAtMs:
-          typeof data.createdAtMs === "number" ? data.createdAtMs : 0,
-        goal: typeof data.goal === "string" ? data.goal : "Learning goal",
-        id: roadmapDoc.id,
-        level: typeof data.level === "string" ? data.level : "Beginner",
-        subject: typeof data.subject === "string" ? data.subject : "Learning",
-        title: typeof data.title === "string" ? data.title : "Learning Roadmap",
-        updatedAtMs:
-          typeof data.updatedAtMs === "number" ? data.updatedAtMs : 0,
-        steps: stepsSnapshot.docs
-          .map((stepDoc) => {
-            const step = stepDoc.data();
-            return {
-              completed: step.completed === true,
-              description:
-                typeof step.description === "string" ? step.description : "",
-              id: stepDoc.id,
-              orderNumber:
-                typeof step.orderNumber === "number" ? step.orderNumber : 0,
-              title: typeof step.title === "string" ? step.title : "Step",
-            };
-          })
-          .sort((first, second) => first.orderNumber - second.orderNumber),
-      } satisfies Roadmap;
-    }),
-  );
+        return {
+          createdAtMs:
+            typeof data.createdAtMs === "number" ? data.createdAtMs : 0,
+          goal: typeof data.goal === "string" ? data.goal : "Learning goal",
+          id: roadmapDoc.id,
+          level: typeof data.level === "string" ? data.level : "Beginner",
+          subject: typeof data.subject === "string" ? data.subject : "Learning",
+          title: typeof data.title === "string" ? data.title : "Learning Roadmap",
+          updatedAtMs:
+            typeof data.updatedAtMs === "number" ? data.updatedAtMs : 0,
+          steps: stepsSnapshot.docs
+            .map((stepDoc) => {
+              const step = stepDoc.data();
+              return {
+                completed: step.completed === true,
+                description:
+                  typeof step.description === "string" ? step.description : "",
+                id: stepDoc.id,
+                orderNumber:
+                  typeof step.orderNumber === "number" ? step.orderNumber : 0,
+                title: typeof step.title === "string" ? step.title : "Step",
+              };
+            })
+            .sort((first, second) => first.orderNumber - second.orderNumber),
+        } satisfies Roadmap;
+      }),
+    );
 
-  const nextRoadmaps = roadmaps
-    .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
-    .slice(0, ROADMAP_LIMIT);
-  writeLocalRoadmaps(uid, nextRoadmaps);
-  return nextRoadmaps;
+    const nextRoadmaps = roadmaps
+      .sort((first, second) => second.updatedAtMs - first.updatedAtMs)
+      .slice(0, ROADMAP_LIMIT);
+    writeLocalRoadmaps(uid, nextRoadmaps);
+    return nextRoadmaps;
+  } catch (error) {
+    console.warn("Roadmap Firestore loading failed. Using local roadmap storage.", error);
+    return getVisibleLocalRoadmaps(uid);
+  }
 }
