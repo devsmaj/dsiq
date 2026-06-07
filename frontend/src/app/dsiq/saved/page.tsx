@@ -58,6 +58,7 @@ export default function DsiqSavedChatsPage() {
           getFriendlyFirestoreError(
             loadError,
             "Saved chats could not load from Firestore. Please retry.",
+            "We could not load your saved chats. Please refresh or sign in again.",
           ),
         );
       } finally {

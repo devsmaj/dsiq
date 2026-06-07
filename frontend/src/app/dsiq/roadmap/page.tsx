@@ -39,6 +39,7 @@ export default function DsiqRoadmapPage() {
           getFriendlyFirestoreError(
             loadError,
             "Roadmaps could not load from Firestore. Please retry.",
+            "We could not load your roadmap. Please refresh or sign in again.",
           ),
         );
       } finally {

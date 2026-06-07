@@ -1,4 +1,8 @@
-export function getFriendlyFirestoreError(error: unknown, fallback: string) {
+export function getFriendlyFirestoreError(
+  error: unknown,
+  fallback: string,
+  permissionMessage = "We could not sync your private chat. Please refresh or sign in again.",
+) {
   const code =
     typeof error === "object" && error && "code" in error
       ? String(error.code)
@@ -9,7 +13,7 @@ export function getFriendlyFirestoreError(error: unknown, fallback: string) {
     code.includes("permission-denied") ||
     message.toLowerCase().includes("missing or insufficient permissions")
   ) {
-    return "We could not sync your private chat. Please refresh or sign in again.";
+    return permissionMessage;
   }
 
   return error instanceof Error ? error.message : fallback;
