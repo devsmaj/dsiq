@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import {
   CircleUserRound,
@@ -199,7 +199,6 @@ function getChatHref(chat: PrivateChatSummary) {
 
 export default function DsiqChatPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { authMode, logout } = useAuth();
   const { answers, isAuthLoading, isProfileLoading, profile, profileError, user } =
@@ -276,12 +275,14 @@ export default function DsiqChatPage() {
   });
 
   useEffect(() => {
-    if (searchParams.get("panel") === "search") {
+    const panel = new URLSearchParams(window.location.search).get("panel");
+
+    if (panel === "search") {
       setIsSearchPanelOpen(true);
       setIsSavedChatsPanelOpen(false);
       setIsMobileSidebarOpen(false);
     }
-  }, [searchParams]);
+  }, []);
   const currentChat = privateChats.find((chat) => chat.id === currentChatId);
   const isCurrentChatBookmarked = currentChat?.isBookmarked === true;
   const bookmarkedPrivateChats = privateChats.filter(
