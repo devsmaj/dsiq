@@ -40,6 +40,7 @@ import {
   buildPersonalizationInstruction,
   getEffectivePersonalizationSettings,
 } from "@/lib/personalization";
+import { getEffectiveNotificationPreferences } from "@/lib/notification-preferences";
 import {
   completeCurrentRoadmapMission,
   createRoadmapFromAiResponse,
@@ -534,6 +535,7 @@ export default function DsiqMentorPage() {
         ], {
           personalizationContext: buildPersonalizationInstruction(
             getEffectivePersonalizationSettings(profile),
+            getEffectiveNotificationPreferences(profile, user.uid),
           ),
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceOverride,

@@ -29,6 +29,11 @@ export type StoredUserProfile = {
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
   languagePreference?: string | null;
+  notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
+  settings?: {
+    emailNotifications?: boolean;
+    notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
+  };
   updatedAt?: string;
 };
 

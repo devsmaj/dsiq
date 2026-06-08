@@ -53,6 +53,11 @@ export type FirebaseUserProfile = {
   emailVerified?: boolean;
   photoURL?: string | null;
   languagePreference?: string | null;
+  notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
+  settings?: {
+    emailNotifications?: boolean;
+    notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
+  };
 };
 
 function mergeProviderIds(

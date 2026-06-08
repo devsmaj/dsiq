@@ -1,4 +1,8 @@
 import { getLanguageByCode, isLanguageCode, type LanguageCode } from "@/lib/i18n/languages";
+import {
+  buildNotificationInstruction,
+  type NotificationPreferences,
+} from "@/lib/notification-preferences";
 import type { StoredUserProfile } from "@/lib/user-profile-store";
 
 export const GUEST_PERSONALIZATION_KEY = "dsiq.personalization.guest";
@@ -147,7 +151,10 @@ export function getPersonalizationLabel(
   return getOptionLabel(field, typeof value === "string" ? value : undefined) || "Not set";
 }
 
-export function buildPersonalizationInstruction(settings: PersonalizationSettings) {
+export function buildPersonalizationInstruction(
+  settings: PersonalizationSettings,
+  notificationPreferences?: NotificationPreferences,
+) {
   const languageLabel = getPersonalizationLabel(
     "preferredLanguage",
     settings.preferredLanguage,
@@ -164,6 +171,9 @@ export function buildPersonalizationInstruction(settings: PersonalizationSetting
     "Adapt the lesson difficulty, examples, missions, and roadmap pacing to these saved settings.",
     "If complete beginner, student, beginner friendly, or short explanations plus practice is selected, use simpler lessons and smaller missions.",
     "If advanced, challenge me, or fast and direct is selected, give harder tasks, fewer basics, and expect more independent problem solving.",
+    notificationPreferences
+      ? buildNotificationInstruction(notificationPreferences)
+      : "",
   ].join("\n");
 }
 

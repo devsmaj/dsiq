@@ -46,12 +46,22 @@ import {
   type PersonalizationSettings,
 } from "@/lib/personalization";
 import {
+  defaultNotificationPreferences,
+  getEffectiveNotificationPreferences,
+  getGuestNotificationPreferences,
+  getLocalUserNotificationPreferences,
+  loadFirebaseNotificationPreferences,
+  saveFirebaseNotificationPreferences,
+  saveLocalNotificationPreferences,
+  type NotificationPreferences,
+} from "@/lib/notification-preferences";
+import {
   clearRoadmapMemory,
   listRoadmaps,
+  type Roadmap,
 } from "@/lib/roadmap-store";
 import {
   updateLocalUserProfile,
-  type StoredUserProfile,
 } from "@/lib/user-profile-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
@@ -78,6 +88,7 @@ const privatePanels = [
 const publicPanels = [
   { id: "general", labelKey: "settings.general", icon: Settings },
   { id: "personalization", labelKey: "settings.personalization", icon: GraduationCap },
+  { id: "notifications", labelKey: "settings.notifications", icon: Megaphone },
   { id: "data", labelKey: "settings.dataControls", icon: Database },
 ] as const;
 
@@ -102,10 +113,12 @@ function clearDsiqBrowserCache(uid?: string) {
     "dsiq.roadmaps.",
     "dsiq.profile.",
     "dsiq.personalization.",
+    "dsiq.notification-preferences.",
   ];
   const removableKeys = [
     "dsiq.guest.chat",
     "dsiq.current.public-chat-id",
+    "dsiq.notification-preferences.guest",
     "dsiq-language",
     APPEARANCE_STORAGE_KEY,
   ];
@@ -149,17 +162,6 @@ function applyAppearance(appearance: AppearanceValue) {
       : appearance === "light"
         ? "light"
         : "light dark";
-}
-
-function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
-  const selectedGoals =
-    profile?.selectedGoals?.length
-      ? profile.selectedGoals
-      : goals?.length
-        ? goals
-        : [];
-
-  return selectedGoals.length ? selectedGoals.join(", ") : "";
 }
 
 export function SettingsHelpPopup() {
@@ -499,6 +501,10 @@ export function SettingsHelpPopup() {
       const aiTeacherChats = chats.filter((chat) => chat.chatType === "teacher");
       const normalChats = chats.filter((chat) => chat.chatType !== "teacher");
       const effectivePersonalization = getEffectivePersonalizationSettings(profile);
+      const notificationPreferences = getEffectiveNotificationPreferences(
+        profile,
+        user?.uid,
+      );
       const data = {
         exportedAt: new Date().toISOString(),
         profile,
@@ -506,6 +512,7 @@ export function SettingsHelpPopup() {
         settings: {
           appearance,
           language: currentLanguage,
+          notificationPreferences,
         },
         personalization: effectivePersonalization,
         chatHistory: normalChats,
@@ -674,8 +681,15 @@ export function SettingsHelpPopup() {
                 />
               ) : null}
 
-              {activePanel === "notifications" && isPrivateUser ? (
-                <NotificationsPanel />
+              {activePanel === "notifications" ? (
+                <NotificationsPanel
+                  authMode={authMode}
+                  onSaved={() => {
+                    setToastMessage("Saved ✓");
+                    window.setTimeout(() => setToastMessage(""), 1200);
+                  }}
+                  userId={user?.uid}
+                />
               ) : null}
 
               {activePanel === "data" ? (
@@ -1097,30 +1111,471 @@ function PrivacyPanel({
   );
 }
 
-function NotificationsPanel() {
+const reminderDays = [
+  { value: "monday", label: "Mon" },
+  { value: "tuesday", label: "Tue" },
+  { value: "wednesday", label: "Wed" },
+  { value: "thursday", label: "Thu" },
+  { value: "friday", label: "Fri" },
+  { value: "saturday", label: "Sat" },
+  { value: "sunday", label: "Sun" },
+];
+
+function getCurrentMissionTitle(roadmap?: Roadmap) {
+  return (
+    roadmap?.steps.find((step) => step.id === roadmap.currentActiveMissionId)?.title ||
+    roadmap?.steps.find((step) => !step.completed)?.title ||
+    roadmap?.steps[0]?.title ||
+    "your current mission"
+  );
+}
+
+function getNotificationPermissionState() {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return "unsupported" as const;
+  }
+
+  return window.Notification.permission;
+}
+
+async function requestNotificationPermissionIfNeeded() {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return "unsupported" as const;
+  }
+
+  if (window.Notification.permission !== "default") {
+    return window.Notification.permission;
+  }
+
+  return window.Notification.requestPermission();
+}
+
+function NotificationsPanel({
+  authMode,
+  onSaved,
+  userId,
+}: {
+  authMode: string;
+  onSaved: () => void;
+  userId?: string;
+}) {
   const { t } = useTranslation();
+  const [preferences, setPreferences] = useState<NotificationPreferences>(
+    defaultNotificationPreferences,
+  );
+  const [activeRoadmap, setActiveRoadmap] = useState<Roadmap | undefined>();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [permissionState, setPermissionState] = useState<
+    NotificationPermission | "unsupported"
+  >(getNotificationPermissionState);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPreferences() {
+      const localPreferences = userId
+        ? getLocalUserNotificationPreferences(userId)
+        : getGuestNotificationPreferences();
+
+      if (isMounted) {
+        setPreferences(localPreferences);
+        setPermissionState(
+          localPreferences.browserNotificationPermission ||
+            getNotificationPermissionState(),
+        );
+      }
+
+      if (userId) {
+        try {
+          const roadmaps = await listRoadmaps(userId);
+          if (isMounted) {
+            setActiveRoadmap(roadmaps[0]);
+          }
+        } catch {
+          if (isMounted) {
+            setActiveRoadmap(undefined);
+          }
+        }
+      }
+
+      if (authMode === "firebase" && userId && !userId.startsWith("local-")) {
+        try {
+          const firebasePreferences = await loadFirebaseNotificationPreferences(userId);
+          if (firebasePreferences && isMounted) {
+            setPreferences(firebasePreferences);
+            saveLocalNotificationPreferences(firebasePreferences, userId);
+            setPermissionState(
+              firebasePreferences.browserNotificationPermission ||
+                getNotificationPermissionState(),
+            );
+          }
+        } catch (error) {
+          console.warn("Notification preferences could not load from Firestore.", error);
+        }
+      }
+    }
+
+    void loadPreferences();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authMode, userId]);
+
+  async function savePreferences(nextPreferences: NotificationPreferences) {
+    setPreferences(nextPreferences);
+    saveLocalNotificationPreferences(nextPreferences, userId);
+    onSaved();
+
+    if (authMode !== "firebase" || !userId || userId.startsWith("local-")) {
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      await saveFirebaseNotificationPreferences(userId, nextPreferences);
+    } catch (error) {
+      console.warn("Notification preferences could not sync to Firestore.", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  async function updatePreferences(
+    updater: (current: NotificationPreferences) => NotificationPreferences,
+    needsBrowserPermission = false,
+  ) {
+    let nextPreferences = updater(preferences);
+
+    if (needsBrowserPermission) {
+      const nextPermission = await requestNotificationPermissionIfNeeded();
+      setPermissionState(nextPermission);
+      nextPreferences = {
+        ...nextPreferences,
+        browserNotificationPermission: nextPermission,
+      };
+    }
+
+    await savePreferences(nextPreferences);
+  }
+
+  const currentMission = getCurrentMissionTitle(activeRoadmap);
+  const roadmapTitle = activeRoadmap?.title || "your roadmap";
+  const progress = activeRoadmap?.progressPercentage || 0;
 
   return (
     <div>
       <PanelTitle title={t("settings.notifications")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow
+        <NotificationSection
+          description="Receive account, DSIQ, and roadmap progress updates."
           icon={<FileText />}
+          isOn={preferences.emailNotifications}
           label={t("settings.notifications.email")}
-          value={t("settings.notifications.off")}
-        />
-        <InfoRow
+          onToggle={() =>
+            void updatePreferences((current) => ({
+              ...current,
+              emailNotifications: !current.emailNotifications,
+            }))
+          }
+        >
+          {preferences.emailNotifications ? (
+            <div className="mt-4 grid gap-2">
+              <CheckboxLine
+                checked={preferences.emailTopics.accountUpdates}
+                label="Account updates"
+                onChange={() =>
+                  void updatePreferences((current) => ({
+                    ...current,
+                    emailTopics: {
+                      ...current.emailTopics,
+                      accountUpdates: !current.emailTopics.accountUpdates,
+                    },
+                  }))
+                }
+              />
+              <CheckboxLine
+                checked={preferences.emailTopics.importantUpdates}
+                label="Important DSIQ updates"
+                onChange={() =>
+                  void updatePreferences((current) => ({
+                    ...current,
+                    emailTopics: {
+                      ...current.emailTopics,
+                      importantUpdates: !current.emailTopics.importantUpdates,
+                    },
+                  }))
+                }
+              />
+              <CheckboxLine
+                checked={preferences.emailTopics.roadmapProgressSummaries}
+                label="Roadmap progress summaries"
+                onChange={() =>
+                  void updatePreferences((current) => ({
+                    ...current,
+                    emailTopics: {
+                      ...current.emailTopics,
+                      roadmapProgressSummaries:
+                        !current.emailTopics.roadmapProgressSummaries,
+                    },
+                  }))
+                }
+              />
+            </div>
+          ) : null}
+        </NotificationSection>
+
+        <NotificationSection
+          description={`Connects to ${roadmapTitle}, ${currentMission}, and ${progress}% progress.`}
           icon={<Megaphone />}
+          isOn={preferences.studyReminders.enabled}
           label={t("settings.notifications.studyReminders")}
-          value={t("settings.notifications.off")}
-        />
-        <InfoRow
+          onToggle={() =>
+            void updatePreferences(
+              (current) => ({
+                ...current,
+                studyReminders: {
+                  ...current.studyReminders,
+                  enabled: !current.studyReminders.enabled,
+                },
+              }),
+              !preferences.studyReminders.enabled,
+            )
+          }
+        >
+          {preferences.studyReminders.enabled ? (
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-3 gap-2">
+                {(["daily", "weekly", "custom"] as const).map((cadence) => (
+                  <button
+                    type="button"
+                    key={cadence}
+                    onClick={() =>
+                      void updatePreferences((current) => ({
+                        ...current,
+                        studyReminders: {
+                          ...current.studyReminders,
+                          cadence,
+                        },
+                      }))
+                    }
+                    className={`h-10 rounded-full border px-3 text-xs font-semibold capitalize transition ${
+                      preferences.studyReminders.cadence === cadence
+                        ? "border-[#111111] bg-[#111111] text-white"
+                        : "border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] hover:bg-[color:var(--color-surface-strong)]"
+                    }`}
+                  >
+                    {cadence}
+                  </button>
+                ))}
+              </div>
+
+              {preferences.studyReminders.cadence === "custom" ? (
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                  {reminderDays.map((day) => {
+                    const isSelected = preferences.studyReminders.customDays.includes(
+                      day.value,
+                    );
+                    return (
+                      <button
+                        type="button"
+                        key={day.value}
+                        onClick={() =>
+                          void updatePreferences((current) => ({
+                            ...current,
+                            studyReminders: {
+                              ...current.studyReminders,
+                              customDays: isSelected
+                                ? current.studyReminders.customDays.filter(
+                                    (item) => item !== day.value,
+                                  )
+                                : [...current.studyReminders.customDays, day.value],
+                            },
+                          }))
+                        }
+                        className={`h-9 rounded-full border text-xs font-semibold transition ${
+                          isSelected
+                            ? "border-[#111111] bg-[#111111] text-white"
+                            : "border-[color:var(--color-line)] bg-white hover:bg-[color:var(--color-surface-strong)]"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                  Reminder time
+                </span>
+                <input
+                  type="time"
+                  value={preferences.studyReminders.reminderTime}
+                  onChange={(event) =>
+                    void updatePreferences((current) => ({
+                      ...current,
+                      studyReminders: {
+                        ...current.studyReminders,
+                        reminderTime: event.target.value || "19:00",
+                      },
+                    }))
+                  }
+                  className="mt-2 h-11 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+                />
+              </label>
+
+              <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3 text-xs leading-5 text-[color:var(--color-muted)]">
+                <p>Study {activeRoadmap?.subject || "your skill"} today</p>
+                <p>Continue {currentMission}</p>
+              </div>
+            </div>
+          ) : null}
+        </NotificationSection>
+
+        <NotificationSection
+          description="Stay consistent with practice, streak, and mission nudges."
           icon={<HelpCircle />}
+          isOn={preferences.focusReminders.enabled}
           label={t("settings.notifications.focusReminders")}
-          value={t("settings.notifications.off")}
-        />
+          onToggle={() =>
+            void updatePreferences(
+              (current) => ({
+                ...current,
+                focusReminders: {
+                  ...current.focusReminders,
+                  enabled: !current.focusReminders.enabled,
+                },
+              }),
+              !preferences.focusReminders.enabled,
+            )
+          }
+        >
+          {preferences.focusReminders.enabled ? (
+            <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                  Reminder frequency
+                </span>
+                <select
+                  value={preferences.focusReminders.frequency}
+                  onChange={(event) =>
+                    void updatePreferences((current) => ({
+                      ...current,
+                      focusReminders: {
+                        ...current.focusReminders,
+                        frequency: event.target
+                          .value as NotificationPreferences["focusReminders"]["frequency"],
+                      },
+                    }))
+                  }
+                  className="mt-2 h-11 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekdays">Weekdays</option>
+                  <option value="twice-weekly">Twice weekly</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+              </label>
+              <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3 text-xs leading-5 text-[color:var(--color-muted)]">
+                <p>You have not practiced today</p>
+                <p>Continue your learning streak</p>
+                <p>Finish {currentMission}</p>
+              </div>
+            </div>
+          ) : null}
+        </NotificationSection>
       </div>
+      <p className="mt-4 text-xs leading-5 text-[color:var(--color-muted)]">
+        Browser notification permission: {permissionState}
+        {isSyncing ? " - Syncing..." : ""}
+      </p>
     </div>
+  );
+}
+
+function NotificationSection({
+  children,
+  description,
+  icon,
+  isOn,
+  label,
+  onToggle,
+}: {
+  children: React.ReactNode;
+  description: string;
+  icon: React.ReactNode;
+  isOn: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="py-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)] [&>svg]:h-4 [&>svg]:w-4">
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">{label}</p>
+            <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
+              {description}
+            </p>
+          </div>
+        </div>
+        <ToggleSwitch checked={isOn} onChange={onToggle} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ToggleSwitch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`relative h-7 w-12 shrink-0 rounded-full transition ${
+        checked ? "bg-[#111111]" : "bg-[color:var(--color-line)]"
+      }`}
+    >
+      <span
+        className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+          checked ? "left-6" : "left-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+function CheckboxLine({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex items-center gap-3 rounded-2xl border border-[color:var(--color-line)] bg-white px-3 py-2 text-sm">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="h-4 w-4 accent-[#111111]"
+      />
+      <span>{label}</span>
+    </label>
   );
 }
 

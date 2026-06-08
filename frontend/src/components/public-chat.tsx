@@ -20,6 +20,7 @@ import {
   buildPersonalizationInstruction,
   getEffectivePersonalizationSettings,
 } from "@/lib/personalization";
+import { getEffectiveNotificationPreferences } from "@/lib/notification-preferences";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -236,6 +237,7 @@ export function PublicChat() {
         (await askGroq(nextMessages, {
           personalizationContext: buildPersonalizationInstruction(
             getEffectivePersonalizationSettings(profile),
+            getEffectiveNotificationPreferences(profile, user?.uid),
           ),
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceChange?.languageCode ||
