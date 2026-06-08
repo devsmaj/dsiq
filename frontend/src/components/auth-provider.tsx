@@ -232,6 +232,12 @@ function getSocialAccountMessage(methods: string[]) {
   return null;
 }
 
+function hasPasswordProvider(user: User | null) {
+  return Boolean(
+    user?.providerData.some((provider) => provider.providerId === "password"),
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const authMode: "firebase" | "local" = hasFirebaseConfig ? "firebase" : "local";
   const [user, setUser] = useState<AppUser | null>(() =>
@@ -545,7 +551,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (storedPassword !== currentPassword) {
-            throw new Error("Current password is incorrect.");
+            throw new Error("Wrong current password.");
           }
 
           window.localStorage.setItem(passwordKey, newPassword);
@@ -553,7 +559,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (!auth?.currentUser) {
-          throw new Error("No active account was found.");
+          throw new Error("Session expired, please login again.");
+        }
+
+        if (!hasPasswordProvider(auth.currentUser)) {
+          throw new Error("Your password is managed by your login provider.");
         }
 
         const credential = EmailAuthProvider.credential(
@@ -577,21 +587,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (
             code.includes("wrong-password") ||
-            code.includes("invalid-credential")
+            code.includes("invalid-credential") ||
+            code.includes("invalid-login-credentials")
           ) {
-            throw new Error("Current password is incorrect.");
+            throw new Error("Wrong current password.");
           }
 
           if (code.includes("weak-password")) {
-            throw new Error("Use a stronger password with at least 6 characters.");
+            throw new Error("Weak password.");
           }
 
-          if (code.includes("requires-recent-login")) {
-            throw new Error("For security, please log in again before changing your password.");
+          if (
+            code.includes("requires-recent-login") ||
+            code.includes("user-token-expired") ||
+            code.includes("user-disabled") ||
+            code.includes("user-not-found")
+          ) {
+            throw new Error("Session expired, please login again.");
           }
 
           if (code.includes("provider-already-linked") || code.includes("operation-not-allowed")) {
-            throw new Error("Password changes are not available for this login provider.");
+            throw new Error("Your password is managed by your login provider.");
           }
 
           throw error instanceof Error

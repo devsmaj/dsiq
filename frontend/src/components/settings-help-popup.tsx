@@ -105,6 +105,34 @@ const publicPanels = [
 type AppearanceValue = (typeof appearanceOptions)[number]["value"];
 type PanelId = (typeof privatePanels)[number]["id"];
 
+function canChangeAccountPassword(user: { providerIds?: string[] } | null) {
+  if (!user?.providerIds?.length) {
+    return true;
+  }
+
+  return user.providerIds.includes("password");
+}
+
+function getProviderLabel(providerIds?: string[]) {
+  if (!providerIds?.length) {
+    return "Email / connected provider";
+  }
+
+  if (providerIds.includes("password")) {
+    return "Email / password";
+  }
+
+  if (providerIds.includes("google.com")) {
+    return "Google";
+  }
+
+  if (providerIds.includes("apple.com")) {
+    return "Apple";
+  }
+
+  return "Connected provider";
+}
+
 export function openSettingsHelpPopup() {
   window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT));
 }
@@ -374,12 +402,12 @@ export function SettingsHelpPopup() {
     }
 
     if (newPassword.length < 6) {
-      setChangePasswordError(t("settings.account.weakPassword"));
+      setChangePasswordError("Weak password.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setChangePasswordError(t("settings.account.passwordMismatch"));
+      setChangePasswordError("Passwords do not match.");
       return;
     }
 
@@ -390,7 +418,7 @@ export function SettingsHelpPopup() {
       setNewPassword("");
       setConfirmPassword("");
       setIsChangePasswordOpen(false);
-      setToastMessage(t("settings.account.passwordChanged"));
+      setToastMessage("Password updated successfully.");
     } catch (error) {
       setChangePasswordError(
         error instanceof Error
@@ -653,13 +681,13 @@ export function SettingsHelpPopup() {
 
               {activePanel === "account" && isPrivateUser ? (
                 <AccountPanel
+                  canChangePassword={canChangeAccountPassword(user)}
                   email={user?.email || t("settings.account.noEmail")}
-                  providerLabel={
-                    user?.email
-                      ? t("settings.account.providerEmail")
-                      : t("settings.account.providerConnected")
-                  }
+                  providerLabel={getProviderLabel(user?.providerIds)}
                   onChangePassword={() => {
+                    if (!canChangeAccountPassword(user)) {
+                      return;
+                    }
                     setChangePasswordError("");
                     setCurrentPassword("");
                     setNewPassword("");
@@ -902,10 +930,12 @@ function GeneralPanel({
 }
 
 function AccountPanel({
+  canChangePassword,
   email,
   onChangePassword,
   providerLabel,
 }: {
+  canChangePassword: boolean;
   email: string;
   onChangePassword: () => void;
   providerLabel: string;
@@ -923,6 +953,12 @@ function AccountPanel({
           value={providerLabel}
         />
         <ActionRow
+          disabled={!canChangePassword}
+          description={
+            canChangePassword
+              ? undefined
+              : "Your password is managed by your login provider."
+          }
           icon={<Shield />}
           label={t("settings.account.changePassword")}
           onClick={onChangePassword}
@@ -2278,11 +2314,15 @@ function InfoRow({
 
 function ActionRow({
   danger,
+  description,
+  disabled,
   icon,
   label,
   onClick,
 }: {
   danger?: boolean;
+  description?: string;
+  disabled?: boolean;
   icon: React.ReactElement;
   label: string;
   onClick: () => void;
@@ -2290,21 +2330,35 @@ function ActionRow({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`flex w-full items-center gap-3 py-4 text-left transition hover:text-black ${
-        danger ? "text-red-600" : "text-[color:var(--color-text)]"
+      className={`flex w-full items-center gap-3 py-4 text-left transition hover:text-black disabled:cursor-not-allowed disabled:hover:text-[color:var(--color-muted)] ${
+        disabled
+          ? "text-[color:var(--color-muted)]"
+          : danger
+            ? "text-red-600"
+            : "text-[color:var(--color-text)]"
       }`}
     >
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          danger
+          disabled
+            ? "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]"
+            : danger
             ? "bg-red-50 text-red-600"
             : "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]"
         }`}
       >
         {icon}
       </span>
-      <span className="text-sm font-semibold">{label}</span>
+      <span>
+        <span className="block text-sm font-semibold">{label}</span>
+        {description ? (
+          <span className="mt-1 block text-xs leading-5 text-[color:var(--color-muted)]">
+            {description}
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }
