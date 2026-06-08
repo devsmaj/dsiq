@@ -3,17 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { DsiqLogo } from "@/components/dsiq-logo";
 
 const navItems = [
-  { href: "/about", label: "About" },
-  { href: "/features", label: "Features" },
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/contact", label: "Contact" },
+  { href: "/about", labelKey: "public.nav.about" },
+  { href: "/features", labelKey: "public.nav.features" },
+  { href: "/how-it-works", labelKey: "public.nav.howItWorks" },
+  { href: "/contact", labelKey: "public.nav.contact" },
 ];
 
 export function PublicHeader() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -37,26 +39,26 @@ export function PublicHeader() {
           <nav className="hidden items-center gap-5 text-[13px] font-medium text-[color:var(--color-text)] lg:flex">
             {navItems.map((item) => (
               <Link
-                key={item.label}
+                key={item.labelKey}
                 href={item.href}
                 className="rounded-full px-3 py-2 transition hover:bg-[color:var(--color-surface-strong)] hover:text-black active:bg-[color:var(--color-line)]"
                 onClick={showNavigationLoading}
               >
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
             <Link
               href="/login"
               className="inline-flex h-10 items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
             >
-              Log in
+              {t("public.nav.login")}
             </Link>
           </nav>
 
           <button
             type="button"
             className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-line)] text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] lg:hidden"
-            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-label={isOpen ? t("common.close") : t("common.openMenu")}
             aria-expanded={isOpen}
             aria-controls="public-mobile-menu"
             onClick={() => setIsOpen((value) => !value)}
@@ -77,12 +79,12 @@ export function PublicHeader() {
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link
-                  key={item.label}
+                  key={item.labelKey}
                   href={item.href}
                   className="rounded-2xl px-4 py-3 text-sm font-medium text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] active:bg-[color:var(--color-line)]"
                   onClick={showNavigationLoading}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -92,7 +94,7 @@ export function PublicHeader() {
                 href="/login"
                 className="inline-flex h-11 w-full items-center justify-center rounded-full border border-black bg-[#111111] px-5 text-sm font-medium !text-white transition hover:bg-black"
               >
-                Log in
+                {t("public.nav.login")}
               </Link>
             </div>
           </div>

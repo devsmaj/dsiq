@@ -14,36 +14,36 @@ export type PersonalizationSettings = {
 
 export const personalizationOptions = {
   learningGoals: [
+    { value: "learn-programming", label: "Learn programming" },
+    { value: "become-developer", label: "Become a developer" },
     { value: "websites-apps", label: "Build websites and apps" },
-    { value: "mobile-apps", label: "Create mobile applications" },
-    { value: "ai", label: "Learn AI" },
+    { value: "startup", label: "Build my startup" },
     { value: "tech-job", label: "Get a programming job" },
-    { value: "choose-direction", label: "Help me choose" },
+    { value: "improve-skills", label: "Improve my skills" },
   ],
   aiTeacherStyle: [
     { value: "step-by-step", label: "Step-by-step and practical" },
-    { value: "short-simple", label: "Short explanations" },
-    { value: "challenge-mode", label: "Challenge mode" },
-    { value: "mentor-coach", label: "Mentor and accountability coach" },
+    { value: "beginner-friendly", label: "Beginner friendly" },
+    { value: "detailed", label: "More detailed explanations" },
+    { value: "challenge-me", label: "Challenge me" },
+    { value: "fast-direct", label: "Fast and direct" },
   ],
   focusPreference: [
     { value: "one-task", label: "One focused task at a time" },
-    { value: "projects", label: "Learn through projects" },
-    { value: "daily-missions", label: "Daily missions" },
-    { value: "deep-work", label: "Deep focused sessions" },
+    { value: "project-based", label: "Project-based learning" },
+    { value: "flexible", label: "Flexible learning" },
   ],
   experienceLevel: [
-    { value: "beginner", label: "Beginner" },
-    { value: "basics", label: "Know the basics" },
-    { value: "building-projects", label: "Already building projects" },
+    { value: "complete-beginner", label: "Complete beginner" },
+    { value: "student", label: "Student" },
+    { value: "intermediate", label: "Intermediate" },
     { value: "advanced", label: "Advanced" },
   ],
   preferredLearningStyle: [
     { value: "examples", label: "Simple examples" },
-    { value: "practice", label: "Practice first" },
-    { value: "visual", label: "Visual explanation" },
-    { value: "projects", label: "Projects" },
-    { value: "reading", label: "Reading and notes" },
+    { value: "short-practice", label: "Short explanations + practice" },
+    { value: "detailed-lessons", label: "Detailed lessons" },
+    { value: "projects-only", label: "Projects only" },
   ],
 } as const;
 
@@ -51,7 +51,7 @@ export const defaultPersonalizationSettings: PersonalizationSettings = {
   learningGoals: [],
   aiTeacherStyle: "step-by-step",
   focusPreference: "one-task",
-  experienceLevel: "beginner",
+  experienceLevel: "complete-beginner",
   preferredLearningStyle: "examples",
   preferredLanguage: "auto",
 };
@@ -162,8 +162,8 @@ export function buildPersonalizationInstruction(settings: PersonalizationSetting
     `Preferred learning style: ${getPersonalizationLabel("preferredLearningStyle", settings.preferredLearningStyle)}.`,
     `Preferred language setting: ${languageLabel}.`,
     "Adapt the lesson difficulty, examples, missions, and roadmap pacing to these saved settings.",
-    "If beginner or short explanations is selected, use simpler lessons and smaller missions.",
-    "If advanced or challenge mode is selected, give harder tasks and expect more independent problem solving.",
+    "If complete beginner, student, beginner friendly, or short explanations plus practice is selected, use simpler lessons and smaller missions.",
+    "If advanced, challenge me, or fast and direct is selected, give harder tasks, fewer basics, and expect more independent problem solving.",
   ].join("\n");
 }
 

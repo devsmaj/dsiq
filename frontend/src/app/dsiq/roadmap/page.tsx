@@ -53,20 +53,20 @@ export default function DsiqRoadmapPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 {t("roadmap.title")}
               </p>
-              <h1 className="mt-2 text-2xl font-semibold">Your learning path</h1>
+              <h1 className="mt-2 text-2xl font-semibold">{t("roadmap.heading")}</h1>
             </div>
             <Link
               href="/dsiq/mentor"
               className="primary-button inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
             >
               <Bot className="h-4 w-4" aria-hidden="true" />
-              Create roadmap with AI Teacher
+              {t("roadmap.createWithAiTeacher")}
             </Link>
           </header>
 
           {isLoading ? (
             <p className="rounded-2xl bg-white px-5 py-4 text-sm text-[color:var(--color-muted)]">
-              Loading roadmap...
+              {t("roadmap.loading")}
             </p>
           ) : activeRoadmap ? (
             <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -80,7 +80,7 @@ export default function DsiqRoadmapPage() {
                       {activeRoadmap.title}
                     </h2>
                     <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
-                      Goal: {activeRoadmap.goal}
+                      {t("roadmap.goal", { goal: activeRoadmap.goal })}
                     </p>
                   </div>
                 </div>
@@ -99,7 +99,7 @@ export default function DsiqRoadmapPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-sm font-semibold">{step.title}</h3>
                             <span className="rounded-full bg-[color:var(--color-surface-strong)] px-2.5 py-1 text-[11px] font-semibold capitalize text-[color:var(--color-muted)]">
-                              {step.status || (step.completed ? "completed" : "locked")}
+                              {step.status || (step.completed ? t("roadmap.completedStatus") : t("roadmap.lockedStatus"))}
                             </span>
                           </div>
                           {step.phaseTitle ? (
@@ -118,7 +118,7 @@ export default function DsiqRoadmapPage() {
               </article>
 
               <aside className="rounded-2xl border border-[color:var(--color-line)] bg-white p-5">
-                <p className="text-sm font-semibold">Progress</p>
+                <p className="text-sm font-semibold">{t("roadmap.progress")}</p>
                 <p className="mt-2 text-3xl font-semibold">
                   {
                     activeRoadmap.steps.filter((step) => step.completed).length
@@ -126,21 +126,22 @@ export default function DsiqRoadmapPage() {
                   /{activeRoadmap.steps.length}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-[color:var(--color-text)]">
-                  {activeRoadmap.progressPercentage || 0}% complete
+                  {t("roadmap.complete", { progress: activeRoadmap.progressPercentage || 0 })}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                  Next lesson:{" "}
-                  {activeRoadmap.steps.find((step) => !step.completed)?.title ||
-                    "Review your completed roadmap"}
+                  {t("roadmap.nextLesson", {
+                    lesson:
+                      activeRoadmap.steps.find((step) => !step.completed)?.title ||
+                      t("roadmap.reviewCompleted"),
+                  })}
                 </p>
                 <div className="mt-5 rounded-2xl bg-[color:var(--color-surface-strong)] p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <Check className="h-4 w-4" aria-hidden="true" />
-                    Daily mission
+                    {t("roadmap.dailyMission")}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
-                    Finish one focused lesson and ask your AI Teacher for a short
-                    quiz before moving on.
+                    {t("roadmap.dailyMissionDescription")}
                   </p>
                 </div>
               </aside>
@@ -151,16 +152,16 @@ export default function DsiqRoadmapPage() {
                 className="mx-auto h-10 w-10 text-[color:var(--color-muted)]"
                 aria-hidden="true"
               />
-              <h2 className="mt-4 text-lg font-semibold">No roadmap yet.</h2>
+              <h2 className="mt-4 text-lg font-semibold">{t("roadmap.emptyTitle")}</h2>
               <p className="mt-2 text-sm text-[color:var(--color-muted)]">
-                Ask your AI Teacher to create one.
+                {t("roadmap.emptyDescription")}
               </p>
               <Link
                 href="/dsiq/mentor"
                 className="primary-button mt-5 inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
               >
                 <Bot className="h-4 w-4" aria-hidden="true" />
-                Create roadmap with AI Teacher
+                {t("roadmap.createWithAiTeacher")}
               </Link>
             </section>
           )}

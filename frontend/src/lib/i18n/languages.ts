@@ -1,24 +1,22 @@
-import enTranslations from "@/lib/i18n/locales/en.json";
-
 export const LANGUAGE_STORAGE_KEY = "dsiq-language";
 
 export const languages = [
-  { code: "auto", label: enTranslations["settings.language.autoDetect"], aiName: "Auto Detect" },
+  { code: "auto", label: "Auto detect (recommended)", aiName: "Auto Detect" },
   { code: "en", label: "English", aiName: "English" },
   { code: "ha", label: "Hausa", aiName: "Hausa" },
   { code: "ar", label: "Arabic", aiName: "Arabic", direction: "rtl" },
   { code: "fr", label: "French", aiName: "French" },
   { code: "es", label: "Spanish", aiName: "Spanish" },
+  { code: "zh-CN", label: "Chinese (Simplified)", aiName: "Chinese" },
+  { code: "hi", label: "Hindi", aiName: "Hindi" },
   { code: "pt", label: "Portuguese", aiName: "Portuguese" },
   { code: "de", label: "German", aiName: "German" },
   { code: "it", label: "Italian", aiName: "Italian" },
   { code: "tr", label: "Turkish", aiName: "Turkish" },
   { code: "ru", label: "Russian", aiName: "Russian" },
-  { code: "zh-CN", label: "Chinese (Simplified)", aiName: "Chinese" },
   { code: "zh-TW", label: "Chinese (Traditional)", aiName: "Chinese" },
   { code: "ja", label: "Japanese", aiName: "Japanese" },
   { code: "ko", label: "Korean", aiName: "Korean" },
-  { code: "hi", label: "Hindi", aiName: "Hindi" },
   { code: "ur", label: "Urdu", aiName: "Urdu", direction: "rtl" },
   { code: "bn", label: "Bengali", aiName: "Bengali" },
   { code: "id", label: "Indonesian", aiName: "Indonesian" },

@@ -24,16 +24,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
+import { useDsiqLanguage } from "@/components/i18n-provider";
+import { updateFirebaseUserPersonalization } from "@/lib/firebase-user-records";
 import {
-  updateFirebaseUserLanguage,
-  updateFirebaseUserPersonalization,
-} from "@/lib/firebase-user-records";
-import {
-  getAppliedLanguage,
-  getLanguageDirection,
-  getStoredLanguagePreference,
   isLanguageCode,
-  LANGUAGE_STORAGE_KEY,
   languages,
   type LanguageCode,
 } from "@/lib/i18n/languages";
@@ -47,7 +41,6 @@ import {
   type PersonalizationSettings,
 } from "@/lib/personalization";
 import {
-  updateLocalUserLanguage,
   updateLocalUserProfile,
   type StoredUserProfile,
 } from "@/lib/user-profile-store";
@@ -100,20 +93,6 @@ function getInitialAppearance(): AppearanceValue {
     : "system";
 }
 
-function getInitialLanguage(): LanguageCode {
-  if (typeof window === "undefined") {
-    return "auto";
-  }
-
-  return getStoredLanguagePreference();
-}
-
-function applyLanguage(languageCode: LanguageCode) {
-  const appliedLanguage = getAppliedLanguage(languageCode);
-  document.documentElement.lang = appliedLanguage;
-  document.documentElement.dir = getLanguageDirection(languageCode);
-}
-
 function applyAppearance(appearance: AppearanceValue) {
   const root = document.documentElement;
   root.dataset.dsiqTheme = appearance;
@@ -138,7 +117,8 @@ function getGoalSummary(profile: StoredUserProfile | null, goals?: string[]) {
 
 export function SettingsHelpPopup() {
   const router = useRouter();
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
+  const { currentLanguage, setCurrentLanguage } = useDsiqLanguage();
   const { authMode, changePassword, deleteAccount, user } = useAuth();
   const { answers, profile } = useUserProfile();
   const isPrivateUser = Boolean(user);
@@ -150,7 +130,6 @@ export function SettingsHelpPopup() {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [appearance, setAppearance] =
     useState<AppearanceValue>(getInitialAppearance);
-  const [language, setLanguage] = useState<LanguageCode>(getInitialLanguage);
   const [personalization, setPersonalization] =
     useState<PersonalizationSettings>(defaultPersonalizationSettings);
   const [openPersonalizationField, setOpenPersonalizationField] =
@@ -168,8 +147,8 @@ export function SettingsHelpPopup() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const selectedLanguage = useMemo(
-    () => languages.find((item) => item.code === language) || languages[0],
-    [language],
+    () => languages.find((item) => item.code === currentLanguage) || languages[0],
+    [currentLanguage],
   );
   const selectedAppearance = useMemo(
     () =>
@@ -204,27 +183,27 @@ export function SettingsHelpPopup() {
   }, [appearance]);
 
   useEffect(() => {
-    applyLanguage(language);
-    void i18n.changeLanguage(getAppliedLanguage(language));
-  }, [i18n, language]);
-
-  useEffect(() => {
     setPersonalization(getEffectivePersonalizationSettings(profile));
   }, [profile]);
 
   useEffect(() => {
-    const profileLanguage = profile?.languagePreference || null;
+    const profileLanguage =
+      profile?.preferredLanguage || profile?.languagePreference || null;
     if (!isLanguageCode(profileLanguage)) {
       return;
     }
 
-    if (profileLanguage !== language) {
-      window.setTimeout(() => setLanguage(profileLanguage), 0);
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, profileLanguage);
-      applyLanguage(profileLanguage);
-      void i18n.changeLanguage(getAppliedLanguage(profileLanguage));
+    if (profileLanguage !== currentLanguage) {
+      window.setTimeout(() => {
+        void setCurrentLanguage(profileLanguage);
+      }, 0);
     }
-  }, [i18n, language, profile?.languagePreference]);
+  }, [
+    currentLanguage,
+    profile?.languagePreference,
+    profile?.preferredLanguage,
+    setCurrentLanguage,
+  ]);
 
   function selectAppearance(nextAppearance: AppearanceValue) {
     setAppearance(nextAppearance);
@@ -236,37 +215,23 @@ export function SettingsHelpPopup() {
   async function selectLanguage(nextLanguage: LanguageCode) {
     const fixedLanguage = nextLanguage === "auto" ? null : nextLanguage;
 
-    setLanguage(nextLanguage);
     setPersonalization((current) => ({
       ...current,
       preferredLanguage: nextLanguage,
     }));
-    applyLanguage(nextLanguage);
-    await i18n.changeLanguage(getAppliedLanguage(nextLanguage));
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    await setCurrentLanguage(nextLanguage);
     setIsLanguageOpen(false);
+    setToastMessage("Saved ✓");
+    window.setTimeout(() => setToastMessage(""), 1200);
 
     if (!user) {
-      saveGuestPersonalizationSettings({ preferredLanguage: nextLanguage });
       return;
     }
 
-    updateLocalUserLanguage(user.uid, fixedLanguage);
     updateLocalUserProfile(user.uid, {
       preferredLanguage: fixedLanguage,
       languagePreference: fixedLanguage,
     });
-
-    if (authMode === "firebase") {
-      try {
-        await updateFirebaseUserLanguage({
-          uid: user.uid,
-          languagePreference: fixedLanguage,
-        });
-      } catch (error) {
-        console.warn("Language preference sync failed.", error);
-      }
-    }
   }
 
   async function savePersonalization(
@@ -282,15 +247,12 @@ export function SettingsHelpPopup() {
     setPersonalization(nextSettings);
     setOpenPersonalizationField(null);
     saveGuestPersonalizationSettings({ [field]: value });
-    setToastMessage("Personalization saved.");
+    setToastMessage("Saved ✓");
     window.setTimeout(() => setToastMessage(""), 1200);
 
     if (field === "preferredLanguage") {
       const nextLanguage = value as LanguageCode;
-      setLanguage(nextLanguage);
-      applyLanguage(nextLanguage);
-      await i18n.changeLanguage(getAppliedLanguage(nextLanguage));
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+      await setCurrentLanguage(nextLanguage);
     }
 
     if (!user) {
@@ -384,7 +346,7 @@ export function SettingsHelpPopup() {
       onboarding: answers,
       settings: {
         appearance,
-        language,
+        language: currentLanguage,
       },
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -472,7 +434,7 @@ export function SettingsHelpPopup() {
                   appearance={appearance}
                   isAppearanceOpen={isAppearanceOpen}
                   isLanguageOpen={isLanguageOpen}
-                  language={language}
+                  language={currentLanguage}
                   selectedAppearance={selectedAppearance}
                   selectedLanguage={selectedLanguage}
                   onAppearanceOpenChange={setIsAppearanceOpen}
@@ -533,7 +495,7 @@ export function SettingsHelpPopup() {
                   isPrivateUser={isPrivateUser}
                   languageLabel={
                     selectedLanguage.code === "auto"
-                      ? t("settings.language.autoDetect")
+                      ? selectedLanguage.label
                       : selectedLanguage.label
                   }
                 />
@@ -599,7 +561,7 @@ function GeneralPanel({
   const selectedAppearanceLabel = t(selectedAppearance.labelKey);
   const selectedLanguageLabel =
     selectedLanguage.code === "auto"
-      ? t("settings.language.autoDetect")
+      ? selectedLanguage.label
       : selectedLanguage.label;
 
   return (
@@ -656,7 +618,7 @@ function GeneralPanel({
                   checked={language === option.code}
                   label={
                     option.code === "auto"
-                      ? t("settings.language.autoDetect")
+                      ? option.label
                       : option.label
                   }
                   onClick={() => onSelectLanguage(option.code)}
@@ -729,7 +691,7 @@ function PersonalizationPanel({
     value: languageOption.code,
     label:
       languageOption.code === "auto"
-        ? t("settings.language.autoDetect")
+        ? languageOption.label
         : languageOption.label,
   }));
 
@@ -1194,7 +1156,7 @@ function SettingRow({
   title: string;
 }) {
   return (
-    <div className="grid gap-3 py-4 sm:grid-cols-[1fr_230px] sm:items-start">
+    <div className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_280px] sm:items-start">
       <div>
         <p className="text-sm font-semibold">{title}</p>
         <p className="mt-1 text-xs leading-5 text-[color:var(--color-muted)]">
@@ -1276,10 +1238,10 @@ function DropdownButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-11 w-full items-center justify-between rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
+      className="flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-3 text-xs font-medium transition hover:bg-[color:var(--color-surface-strong)] sm:text-sm"
       aria-expanded={expanded}
     >
-      <span>{label}</span>
+      <span className="min-w-0 truncate whitespace-nowrap">{label}</span>
       <ChevronDown className="h-4 w-4" aria-hidden="true" />
     </button>
   );
@@ -1318,11 +1280,11 @@ function DropdownOption({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[color:var(--color-surface-strong)]"
+      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition hover:bg-[color:var(--color-surface-strong)] sm:text-sm"
     >
-      <span className="flex items-center gap-2">
+      <span className="flex min-w-0 items-center gap-2">
         {icon}
-        {label}
+        <span className="truncate whitespace-nowrap">{label}</span>
       </span>
       {checked ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
     </button>

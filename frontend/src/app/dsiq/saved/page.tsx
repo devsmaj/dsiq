@@ -14,9 +14,9 @@ import {
 } from "@/lib/firebase-chat-store";
 import { useUserProfile } from "@/lib/use-user-profile";
 
-function formatUpdatedAt(updatedAtMs: number) {
+function formatUpdatedAt(updatedAtMs: number, fallback: string) {
   if (!updatedAtMs) {
-    return "Saved";
+    return fallback;
   }
 
   return new Intl.DateTimeFormat(undefined, {
@@ -78,20 +78,20 @@ export default function DsiqSavedChatsPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 {t("saved.title")}
               </p>
-              <h1 className="mt-2 text-2xl font-semibold">Bookmarked learning chats</h1>
+              <h1 className="mt-2 text-2xl font-semibold">{t("saved.heading")}</h1>
             </div>
             <Link
               href="/dsiq/chat"
               className="primary-button inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
-              Back to chat
+              {t("saved.backToChat")}
             </Link>
           </header>
 
           {isLoading ? (
             <p className="rounded-2xl bg-white px-5 py-4 text-sm text-[color:var(--color-muted)]">
-              Loading saved chats...
+              {t("saved.loading")}
             </p>
           ) : error ? (
             <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-700">
@@ -124,7 +124,7 @@ export default function DsiqSavedChatsPage() {
                         </p>
                       ) : null}
                       <p className="mt-2 text-xs text-[color:var(--color-muted)]">
-                        {formatUpdatedAt(chat.updatedAtMs)}
+                        {formatUpdatedAt(chat.updatedAtMs, t("saved.savedAtFallback"))}
                       </p>
                     </div>
                   </div>
@@ -137,16 +137,16 @@ export default function DsiqSavedChatsPage() {
                 className="mx-auto h-10 w-10 text-[color:var(--color-muted)]"
                 aria-hidden="true"
               />
-              <h2 className="mt-4 text-lg font-semibold">No saved chats yet.</h2>
+              <h2 className="mt-4 text-lg font-semibold">{t("saved.emptyTitle")}</h2>
               <p className="mt-2 text-sm text-[color:var(--color-muted)]">
-                Open a recent chat and choose Save chat to bookmark it here.
+                {t("saved.emptyDescription")}
               </p>
               <Link
                 href="/dsiq/chat"
                 className="primary-button mt-5 inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-semibold transition hover:bg-black"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
-                Back to chat
+                {t("saved.backToChat")}
               </Link>
             </section>
           )}

@@ -179,21 +179,21 @@ function formatChatUpdatedAt(updatedAtMs: number) {
   }).format(new Date(updatedAtMs));
 }
 
-function getGreeting(name: string, isReturning: boolean) {
+function getGreetingKey(isReturning: boolean) {
   if (isReturning) {
-    return `Welcome back, ${name}`;
+    return "chat.welcomeBack";
   }
 
   const hour = new Date().getHours();
   if (hour < 12) {
-    return `Good morning, ${name}`;
+    return "chat.goodMorning";
   }
 
   if (hour < 17) {
-    return `Good afternoon, ${name}`;
+    return "chat.goodAfternoon";
   }
 
-  return `Good evening, ${name}`;
+  return "chat.goodEvening";
 }
 
 function getChatTypeLabel(chat: PrivateChatSummary) {
@@ -1811,7 +1811,7 @@ export default function DsiqChatPage() {
                   <div className="flex min-h-[calc(100dvh-7rem)] items-center justify-center pb-[calc(160px+env(safe-area-inset-bottom))] pt-4 text-center lg:min-h-[calc(100dvh-5rem)]">
                     <div className="w-full max-w-2xl">
                       <h1 className="text-2xl font-semibold tracking-normal text-[color:var(--color-text)] sm:text-3xl">
-                        {getGreeting(displayName, hasPreviousProgress)}
+                        {t(getGreetingKey(hasPreviousProgress), { name: displayName })}
                       </h1>
                       {hasPreviousProgress ? (
                         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)] sm:text-base">
@@ -1819,7 +1819,7 @@ export default function DsiqChatPage() {
                         </p>
                       ) : (
                         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[color:var(--color-muted)] sm:text-base">
-                          DSIQ is ready to guide your skills, lessons, missions, and opportunities.
+                          {t("chat.readyToGuide")}
                         </p>
                       )}
                       <div className="mx-auto mt-6 grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
