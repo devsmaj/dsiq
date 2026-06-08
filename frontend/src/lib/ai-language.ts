@@ -2,6 +2,7 @@ import {
   getLanguageByCode,
   isLanguageCode,
   LANGUAGE_STORAGE_KEY,
+  languages,
   type LanguageCode,
 } from "@/lib/i18n/languages";
 
@@ -11,27 +12,78 @@ export type AiLanguageChoice = {
   replyLanguage: LanguageCode;
 };
 
+const dynamicLanguageAliases = languages.reduce<Record<string, LanguageCode>>(
+  (aliases, language) => {
+    aliases[language.code.toLowerCase()] = language.code;
+    aliases[language.label.toLowerCase()] = language.code;
+    aliases[language.aiName.toLowerCase()] = language.code;
+    return aliases;
+  },
+  {},
+);
+
 const languageNameToCode: Record<string, LanguageCode> = {
+  ...dynamicLanguageAliases,
   arabic: "ar",
-  ar: "ar",
-  العربية: "ar",
-  عربي: "ar",
-  english: "en",
-  en: "en",
-  french: "fr",
+  "العربية": "ar",
+  "عربي": "ar",
+  chinese: "zh-CN",
+  mandarin: "zh-CN",
+  "中文": "zh-CN",
+  "简体中文": "zh-CN",
+  "繁體中文": "zh-TW",
+  español: "es",
+  espanol: "es",
   français: "fr",
   francais: "fr",
-  fr: "fr",
+  deutsch: "de",
+  português: "pt",
+  portugues: "pt",
+  hindi: "hi",
+  "हिन्दी": "hi",
+  "हिंदी": "hi",
+  urdu: "ur",
+  "اردو": "ur",
+  turkish: "tr",
+  türkçe: "tr",
+  japanese: "ja",
+  "日本語": "ja",
+  korean: "ko",
+  "한국어": "ko",
+  indonesian: "id",
+  "bahasa indonesia": "id",
+  swahili: "sw",
+  kiswahili: "sw",
   hausa: "ha",
-  ha: "ha",
+};
+
+const latinLanguageSignals: Partial<Record<LanguageCode, string[]>> = {
+  cs: ["ahoj", "prosím", "děkuji", "jsem", "chci", "učit"],
+  da: ["hej", "tak", "jeg", "vil", "lære", "hvordan"],
+  de: ["hallo", "danke", "ich", "möchte", "lernen", "bitte", "wie"],
+  en: ["hello", "hi", "teach", "learn", "always", "reply", "answer", "roadmap"],
+  es: ["hola", "gracias", "quiero", "aprender", "por favor", "cómo", "responde"],
+  fi: ["hei", "kiitos", "haluan", "oppia", "miten", "vastaa"],
+  fr: ["bonjour", "merci", "je veux", "apprendre", "réponds", "toujours"],
+  ha: ["sannu", "na gode", "ina so", "koyon", "amsa", "min", "da hausa"],
+  id: ["halo", "terima kasih", "saya", "ingin", "belajar", "jawab"],
+  it: ["ciao", "grazie", "voglio", "imparare", "rispondi", "sempre"],
+  ms: ["halo", "terima kasih", "saya", "mahu", "belajar", "jawab"],
+  nl: ["hallo", "dank", "ik wil", "leren", "antwoord"],
+  no: ["hei", "takk", "jeg vil", "lære", "svar"],
+  pl: ["cześć", "dziękuję", "chcę", "uczyć", "odpowiadaj"],
+  pt: ["olá", "obrigado", "quero", "aprender", "responda", "sempre"],
+  ro: ["salut", "mulțumesc", "vreau", "să învăț", "răspunde"],
+  so: ["salaam", "mahadsanid", "waxaan rabaa", "baro", "jawaab"],
+  sv: ["hej", "tack", "jag vill", "lära", "svara"],
+  sw: ["habari", "asante", "nataka", "kujifunza", "jibu"],
+  tr: ["merhaba", "teşekkür", "öğrenmek", "istiyorum", "cevap"],
+  vi: ["xin chào", "cảm ơn", "tôi muốn", "học", "trả lời"],
+  yo: ["bawo", "e se", "mo fe", "ko", "dahun"],
 };
 
 function normalizeText(text: string) {
   return text.trim().toLowerCase();
-}
-
-function hasArabic(text: string) {
-  return /[\u0600-\u06ff]/.test(text);
 }
 
 function getStoredReplyLanguage() {
@@ -43,71 +95,125 @@ function getStoredReplyLanguage() {
   return isLanguageCode(value) && value !== "auto" ? value : null;
 }
 
-export function detectMessageLanguage(text: string): LanguageCode {
-  const normalized = normalizeText(text);
+function getScriptLanguage(text: string): LanguageCode | null {
+  if (/[\u3040-\u30ff]/.test(text)) {
+    return "ja";
+  }
 
-  if (hasArabic(text)) {
+  if (/[\uac00-\ud7af]/.test(text)) {
+    return "ko";
+  }
+
+  if (/[\u4e00-\u9fff]/.test(text)) {
+    return "zh-CN";
+  }
+
+  if (/[\u0590-\u05ff]/.test(text)) {
+    return "he";
+  }
+
+  if (/[\u0600-\u06ff]/.test(text)) {
+    if (/[ٹڈڑںھے]/.test(text)) {
+      return "ur";
+    }
+
+    if (/[پچژگ]/.test(text)) {
+      return "fa";
+    }
+
     return "ar";
   }
 
-  if (/\b(réponds|reponds|toujours|français|francais|bonjour|merci)\b/i.test(text)) {
-    return "fr";
+  if (/[\u0900-\u097f]/.test(text)) {
+    return "hi";
   }
 
-  if (/\b(ka|kana|kika|amsa|min|da hausa|ina so|na gode|sannu)\b/i.test(text)) {
-    return "ha";
+  if (/[\u0980-\u09ff]/.test(text)) {
+    return "bn";
   }
 
-  if (/\b(hello|hi|teach|learn|always|reply|answer|roadmap|javascript|html)\b/.test(normalized)) {
-    return "en";
+  if (/[\u0e00-\u0e7f]/.test(text)) {
+    return "th";
   }
 
-  return "en";
+  if (/[\u1200-\u137f]/.test(text)) {
+    return "am";
+  }
+
+  if (/[\u0370-\u03ff]/.test(text)) {
+    return "el";
+  }
+
+  if (/[\u0400-\u04ff]/.test(text)) {
+    return /\b(привіт|дякую|хочу|навчитися|будь ласка)\b/i.test(text)
+      ? "uk"
+      : "ru";
+  }
+
+  return null;
+}
+
+function detectLatinLanguage(text: string): LanguageCode {
+  const normalized = normalizeText(text);
+  let bestLanguage: LanguageCode = "en";
+  let bestScore = 0;
+
+  for (const [languageCode, signals] of Object.entries(latinLanguageSignals)) {
+    const score = signals.reduce(
+      (currentScore, signal) =>
+        normalized.includes(signal) ? currentScore + signal.length : currentScore,
+      0,
+    );
+
+    if (score > bestScore && isLanguageCode(languageCode)) {
+      bestLanguage = languageCode;
+      bestScore = score;
+    }
+  }
+
+  return bestLanguage;
+}
+
+export function detectMessageLanguage(text: string): LanguageCode {
+  const scriptLanguage = getScriptLanguage(text);
+
+  if (scriptLanguage) {
+    return scriptLanguage;
+  }
+
+  return detectLatinLanguage(text);
+}
+
+function resolveLanguageName(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[.؟?!,;:]+$/g, "")
+    .replace(/\s+/g, " ");
+
+  return languageNameToCode[normalized] || null;
 }
 
 export function detectLanguagePreferenceCommand(text: string) {
-  const normalized = normalizeText(text);
-
   const commandPatterns = [
-    /always\s+(?:reply|answer|respond)\s+(?:to\s+me\s+)?in\s+([a-zA-Z\u0600-\u06ff]+)/i,
-    /(?:reply|answer|respond)\s+(?:to\s+me\s+)?always\s+in\s+([a-zA-Z\u0600-\u06ff]+)/i,
-    /réponds-moi\s+toujours\s+en\s+([a-zA-Z]+)/i,
-    /reponds-moi\s+toujours\s+en\s+([a-zA-Z]+)/i,
-    /ka\s+rika\s+amsa\s+min\s+da\s+([a-zA-Z]+)/i,
+    /always\s+(?:reply|answer|respond)\s+(?:to\s+me\s+)?in\s+([\p{L}\s()-]+)/iu,
+    /(?:reply|answer|respond)\s+(?:to\s+me\s+)?always\s+in\s+([\p{L}\s()-]+)/iu,
+    /(?:reply|answer|respond)\s+(?:only\s+)?(?:in|with)\s+([\p{L}\s()-]+)/iu,
+    /réponds-moi\s+toujours\s+en\s+([\p{L}\s()-]+)/iu,
+    /reponds-moi\s+toujours\s+en\s+([\p{L}\s()-]+)/iu,
+    /ka\s+rika\s+amsa\s+min\s+da\s+([\p{L}\s()-]+)/iu,
   ];
 
   for (const pattern of commandPatterns) {
-    const match = text.match(pattern);
-    const rawLanguage = match?.[1]?.toLowerCase();
-    const languageCode = rawLanguage ? languageNameToCode[rawLanguage] : undefined;
+    const languageCode = resolveLanguageName(text.match(pattern)?.[1]);
 
     if (languageCode) {
       return languageCode;
     }
-  }
-
-  if (
-    normalized.includes("always answer me in arabic") ||
-    normalized.includes("always reply in arabic") ||
-    normalized.includes("always respond in arabic")
-  ) {
-    return "ar";
-  }
-
-  if (
-    normalized.includes("always answer me in french") ||
-    normalized.includes("always reply in french") ||
-    normalized.includes("always respond in french")
-  ) {
-    return "fr";
-  }
-
-  if (
-    normalized.includes("always answer me in hausa") ||
-    normalized.includes("always reply in hausa") ||
-    normalized.includes("ka rika amsa min da hausa")
-  ) {
-    return "ha";
   }
 
   return null;
@@ -164,9 +270,10 @@ export function getAiReplyLanguageInstruction(choice: AiLanguageChoice) {
 
   return [
     `User preferred language: ${preferredName}`,
-    `User latest message language: ${detectedName}`,
+    `Current message language: ${detectedName}`,
     `Reply language: ${replyName}`,
-    "Reply ONLY in the reply language unless the user asks to change language.",
-    "If the user mixes languages and no saved preference exists, use the main meaning or emotional language. If unclear, briefly ask which language they prefer.",
+    "Respond only in the user's preferred language. If no preference exists, respond in the detected language of the latest message.",
+    "If the user asks to change language, update the language preference and use the new language.",
+    "If the user mixes languages and no saved preference exists, use the language carrying the main meaning or emotional part. If unclear, briefly ask which language they prefer.",
   ].join("\n");
 }
