@@ -378,9 +378,9 @@ export function SettingsHelpPopup() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="settings-title"
-            className="grid max-h-[88vh] w-full max-w-[820px] grid-cols-1 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] shadow-[0_26px_80px_rgba(0,0,0,0.22)] md:grid-cols-[230px_minmax(0,1fr)]"
+            className="grid max-h-[85vh] w-full max-w-[820px] grid-cols-1 overflow-hidden rounded-[1.5rem] border border-[color:var(--color-line)] bg-[color:var(--color-surface)] text-[color:var(--color-text)] shadow-[0_26px_80px_rgba(0,0,0,0.22)] md:grid-cols-[230px_minmax(0,1fr)]"
           >
-            <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-3 md:border-b-0 md:border-r">
+            <aside className="settings-sidebar shrink-0 border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-3 md:border-b-0 md:border-r">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold">{t("settings.title")}</p>
                 <button
@@ -417,7 +417,7 @@ export function SettingsHelpPopup() {
               </nav>
             </aside>
 
-            <div className="min-h-[430px] overflow-y-auto p-5 sm:p-6">
+            <div className="settings-content min-h-[430px] max-h-[85vh] overflow-y-auto p-5 pb-8 sm:p-6 sm:pb-8">
               <div className="mb-5 hidden items-center justify-end md:flex">
                 <button
                   type="button"
@@ -769,6 +769,7 @@ function PersonalizationPanel({
           label={t("settings.language")}
           openField={openField}
           options={languageOptions}
+          placement="up"
           scroll
           value={personalization.preferredLanguage}
           valueLabel={getPersonalizationLabel(
@@ -791,6 +792,7 @@ function PersonalizationDropdownRow({
   onSave,
   openField,
   options,
+  placement = "down",
   scroll,
   value,
   valueLabel,
@@ -803,6 +805,7 @@ function PersonalizationDropdownRow({
   onSave: (value: string) => void;
   openField: keyof PersonalizationSettings | null;
   options: ReadonlyArray<{ value: string; label: string }>;
+  placement?: "down" | "up";
   scroll?: boolean;
   value: string;
   valueLabel: string;
@@ -817,7 +820,7 @@ function PersonalizationDropdownRow({
         onClick={() => onOpenField(field)}
       />
       {isOpen ? (
-        <DropdownMenu scroll={scroll}>
+        <DropdownMenu placement={placement} scroll={scroll}>
           {options.map((option) => (
             <DropdownOption
               key={option.value}
@@ -1249,14 +1252,18 @@ function DropdownButton({
 
 function DropdownMenu({
   children,
+  placement = "down",
   scroll,
 }: {
   children: React.ReactNode;
+  placement?: "down" | "up";
   scroll?: boolean;
 }) {
   return (
     <div
-      className={`absolute right-0 top-12 z-30 w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.14)] ${
+      className={`absolute right-0 z-30 w-full rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] p-1 shadow-[0_18px_40px_rgba(0,0,0,0.14)] ${
+        placement === "up" ? "bottom-12" : "top-12"
+      } ${
         scroll ? "max-h-72 overflow-y-auto" : ""
       }`}
     >
