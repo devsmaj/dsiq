@@ -290,6 +290,7 @@ export default function DsiqChatPage() {
   const bookmarkedPrivateChats = privateChats.filter(
     (chat) => chat.isBookmarked,
   );
+  const hasMessages = messages.length > 0;
   const hasPreviousProgress = privateChats.length > 0;
   const welcomeActions = [
     {
@@ -1714,18 +1715,18 @@ export default function DsiqChatPage() {
             </button>
 
             <div className="fixed right-4 top-[calc(env(safe-area-inset-top)+1rem)] z-30 flex items-center gap-2 sm:right-6 lg:right-8">
-              <Link
-                href="/dsiq/mentor"
-                aria-label="Turn AI Teacher on"
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-xs font-semibold text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
-              >
-                <span>AI Teacher</span>
-                <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] text-gray-600">
-                  OFF
-                </span>
-              </Link>
-              {messages.length ? (
-                <>
+              {!hasMessages ? (
+                <Link
+                  href="/dsiq/mentor"
+                  aria-label="Turn AI Teacher on"
+                  className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--color-line)] bg-white px-3 text-xs font-semibold text-[color:var(--color-text)] shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  <span>AI Teacher</span>
+                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] text-gray-600">
+                    OFF
+                  </span>
+                </Link>
+              ) : null}
                 <button
                   type="button"
                   aria-label="New chat"
@@ -1790,14 +1791,12 @@ export default function DsiqChatPage() {
                     </div>
                   ) : null}
                 </div>
-                </>
-              ) : null}
             </div>
 
             <div className="mx-auto min-h-[100dvh] w-full max-w-6xl px-4 pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8 lg:px-10 lg:pt-8">
               <div className="mx-auto w-full max-w-[900px]">
 
-                {!messages.length ? (
+                {!hasMessages ? (
                   <div className="flex min-h-[calc(100dvh-7rem)] items-center justify-center pb-[calc(160px+env(safe-area-inset-bottom))] pt-4 text-center lg:min-h-[calc(100dvh-5rem)]">
                     <div className="w-full max-w-2xl">
                       <h1 className="text-2xl font-semibold tracking-normal text-[color:var(--color-text)] sm:text-3xl">
@@ -1829,7 +1828,7 @@ export default function DsiqChatPage() {
                   </div>
                 ) : null}
 
-                {messages.length ? (
+                {hasMessages ? (
                   <div className="mx-auto flex w-full max-w-[760px] flex-col gap-4 px-1 pb-[calc(180px+env(safe-area-inset-bottom))] text-left lg:pb-[calc(170px+env(safe-area-inset-bottom))]">
 
                     {messages.map((message, index) => (
