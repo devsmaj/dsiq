@@ -44,6 +44,7 @@ import {
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
+import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -215,6 +216,7 @@ export default function DsiqChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [isReadingAloud, setIsReadingAloud] = useState(false);
+  const [languagePreferenceOverride, setLanguagePreferenceOverride] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -483,7 +485,21 @@ export default function DsiqChatPage() {
       });
       void refreshPrivateChats();
 
-      const response = await askGroq(toGroqMessages(nextMessages));
+      const languagePreferenceChange = await handleLanguagePreferenceCommand({
+        message,
+        uid: user.uid,
+      });
+      if (languagePreferenceChange) {
+        setLanguagePreferenceOverride(languagePreferenceChange.languageCode);
+      }
+      const response =
+        languagePreferenceChange?.reply ||
+        (await askGroq(toGroqMessages(nextMessages), {
+          preferredLanguage:
+            languagePreferenceChange?.languageCode ||
+            languagePreferenceOverride ||
+            profile?.languagePreference,
+        }));
       const modelMessage: PrivateChatMessage = {
         createdAtMs: Date.now(),
         id: createClientMessageId(),

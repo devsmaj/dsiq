@@ -1,3 +1,7 @@
+import {
+  chooseAiReplyLanguage,
+  getAiReplyLanguageInstruction,
+} from "@/lib/ai-language";
 import { getAiLanguageInstruction } from "@/lib/i18n/languages";
 
 export type GroqChatMessage = {
@@ -23,11 +27,18 @@ const RESPONSE_FORMATTING_INSTRUCTION = [
   "If explaining code, use fenced code blocks.",
 ].join("\n");
 
-export async function askGroq(messages: GroqChatMessage[]) {
+export async function askGroq(
+  messages: GroqChatMessage[],
+  options: { preferredLanguage?: string | null } = {},
+) {
   const latestUserMessage = [...messages]
     .reverse()
     .find((message) => message.role === "user");
   const userMessage = latestUserMessage?.text?.trim() || "";
+  const languageChoice = chooseAiReplyLanguage({
+    latestMessage: userMessage,
+    preferredLanguage: options.preferredLanguage,
+  });
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => {
     controller.abort();
@@ -35,7 +46,11 @@ export async function askGroq(messages: GroqChatMessage[]) {
   const formattedMessages = [
     {
       role: "user" as const,
-      text: [RESPONSE_FORMATTING_INSTRUCTION, getAiLanguageInstruction()].join("\n"),
+      text: [
+        RESPONSE_FORMATTING_INSTRUCTION,
+        getAiLanguageInstruction(options.preferredLanguage),
+        getAiReplyLanguageInstruction(languageChoice),
+      ].join("\n"),
     },
     ...messages,
   ];

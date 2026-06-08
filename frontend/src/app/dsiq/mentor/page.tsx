@@ -33,6 +33,7 @@ import {
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { getAiLanguageInstruction } from "@/lib/i18n/languages";
+import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
 import {
   completeCurrentRoadmapMission,
   createRoadmapFromAiResponse,
@@ -153,6 +154,7 @@ export default function DsiqMentorPage() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [teacherChats, setTeacherChats] = useState<PrivateChatSummary[]>([]);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
+  const [languagePreferenceOverride, setLanguagePreferenceOverride] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isComposerExpanded, setIsComposerExpanded] = useState(false);
@@ -281,14 +283,14 @@ export default function DsiqMentorPage() {
         "Use bullets and line breaks.",
         "Do not write long paragraphs.",
         "Always respond in the same language as the user's latest message. Do not force English unless the user asks for English.",
-        getAiLanguageInstruction(profile?.languagePreference),
+        getAiLanguageInstruction(languagePreferenceOverride || profile?.languagePreference),
         "Never end every response with the same phrase. Do not repeatedly say 'Do you understand?' or 'Should I continue?'. End naturally based on the user's message, lesson stage, and next best action.",
         "Ask a follow-up only when useful, and make it match the user's message and context.",
         "For roadmaps, format with clear numbered steps and keep the roadmap content separate from the normal answer.",
         "If giving a list, each item must be on a new line.",
         "If explaining code, use fenced code blocks.",
       ].join("\n"),
-    [answers?.age, currentLesson, currentMission, displayName, goals, profile?.age, profile?.languagePreference, role],
+    [answers?.age, currentLesson, currentMission, displayName, goals, languagePreferenceOverride, profile?.age, profile?.languagePreference, role],
   );
 
   useEffect(() => {
@@ -489,8 +491,17 @@ export default function DsiqMentorPage() {
 
       const activeRoadmap = await getActiveRoadmap(user.uid);
       let answer = "";
+      const languagePreferenceChange = await handleLanguagePreferenceCommand({
+        message: question,
+        uid: user.uid,
+      });
+      if (languagePreferenceChange) {
+        setLanguagePreferenceOverride(languagePreferenceChange.languageCode);
+      }
 
-      if (activeRoadmap && isMissionCompletionMessage(question)) {
+      if (languagePreferenceChange) {
+        answer = languagePreferenceChange.reply;
+      } else if (activeRoadmap && isMissionCompletionMessage(question)) {
         const { completedMission, nextMission, roadmap } =
           await completeCurrentRoadmapMission(user.uid, activeRoadmap);
         const progress = roadmap.progressPercentage || 0;
@@ -515,7 +526,9 @@ export default function DsiqMentorPage() {
             role: "user",
             text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
           },
-        ]);
+        ], {
+          preferredLanguage: languagePreferenceOverride || profile?.languagePreference,
+        });
       }
       setMentorMessages((current) => [
         ...current,

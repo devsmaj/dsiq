@@ -6,15 +6,16 @@ import { useSearchParams } from "next/navigation";
 import { SquarePen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useAuth } from "@/components/auth-provider";
 import { ChatComposer } from "@/components/chat-composer";
 import {
   createFirebaseChat,
   saveFirebaseChatMessage,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
+import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
+import { useUserProfile } from "@/lib/use-user-profile";
 
 const GUEST_CHAT_KEY = "dsiq.guest.chat";
 const LOGGED_IN_CHAT_KEY = "dsiq.current.public-chat-id";
@@ -97,13 +98,14 @@ export function PublicChat() {
   const searchParams = useSearchParams();
   const initialQuestion = searchParams.get("q")?.trim() || "";
   const shouldUseGuestChat = searchParams.get("guest") === "true";
-  const { isLoading: isAuthLoading, user } = useAuth();
+  const { isAuthLoading, profile, user } = useUserProfile();
   const isGuest = shouldUseGuestChat || !user;
   const [messages, setMessages] = useState<GroqChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
+  const [languagePreferenceOverride, setLanguagePreferenceOverride] = useState<string | null>(null);
   const handledInitialQuestion = useRef(false);
   const chatIdRef = useRef<string | null>(null);
   const latestMessageRef = useRef<HTMLDivElement | null>(null);
@@ -215,7 +217,21 @@ export function PublicChat() {
     await saveMessage(userMessage);
 
     try {
-      const response = await askGroq(nextMessages);
+      const languagePreferenceChange = await handleLanguagePreferenceCommand({
+        message: trimmedText,
+        uid: user?.uid,
+      });
+      if (languagePreferenceChange) {
+        setLanguagePreferenceOverride(languagePreferenceChange.languageCode);
+      }
+      const response =
+        languagePreferenceChange?.reply ||
+        (await askGroq(nextMessages, {
+          preferredLanguage:
+            languagePreferenceChange?.languageCode ||
+            languagePreferenceOverride ||
+            profile?.languagePreference,
+        }));
       const modelMessage: GroqChatMessage = {
         role: "model",
         text: response,
