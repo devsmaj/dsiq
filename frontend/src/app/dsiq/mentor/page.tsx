@@ -34,9 +34,14 @@ import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { getAiLanguageInstruction } from "@/lib/i18n/languages";
 import {
+  completeCurrentRoadmapMission,
   createRoadmapFromAiResponse,
+  formatRoadmapContext,
+  getActiveRoadmap,
+  isMissionCompletionMessage,
   isRoadmapRequest,
   saveRoadmap,
+  shouldSaveRoadmapFromResponse,
 } from "@/lib/roadmap-store";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -482,12 +487,36 @@ export default function DsiqMentorPage() {
         uid: user.uid,
       });
 
-      const answer = await askGroq([
-        {
-          role: "user",
-          text: `${mentorContext}\n\nStudent question: ${question}`,
-        },
-      ]);
+      const activeRoadmap = await getActiveRoadmap(user.uid);
+      let answer = "";
+
+      if (activeRoadmap && isMissionCompletionMessage(question)) {
+        const { completedMission, nextMission, roadmap } =
+          await completeCurrentRoadmapMission(user.uid, activeRoadmap);
+        const progress = roadmap.progressPercentage || 0;
+
+        answer = [
+          `Great work. ${completedMission?.title || "Your current mission"} completed.`,
+          "",
+          nextMission
+            ? `Next mission unlocked: ${nextMission.title}.`
+            : "You completed the missions in this roadmap.",
+          `Progress: ${progress}%.`,
+          "",
+          nextMission
+            ? "Tell me when you are ready, and I will teach this next mission step by step."
+            : "Tell me your next goal when you are ready, and I will help you choose the next path.",
+        ].join("\n");
+      } else {
+        const roadmapContext = formatRoadmapContext(activeRoadmap);
+
+        answer = await askGroq([
+          {
+            role: "user",
+            text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
+          },
+        ]);
+      }
       setMentorMessages((current) => [
         ...current,
         {
@@ -507,7 +536,7 @@ export default function DsiqMentorPage() {
         uid: user.uid,
       });
 
-      if (isRoadmapRequest(question)) {
+      if (isRoadmapRequest(question) && shouldSaveRoadmapFromResponse(answer)) {
         await saveRoadmap(
           user.uid,
           createRoadmapFromAiResponse({

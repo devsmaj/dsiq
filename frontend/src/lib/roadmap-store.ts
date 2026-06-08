@@ -8,14 +8,30 @@ export type RoadmapStep = {
   description: string;
   id: string;
   orderNumber: number;
+  phaseTitle?: string;
+  status?: "completed" | "current" | "locked";
+  title: string;
+};
+
+export type RoadmapPhase = {
+  id: string;
+  orderNumber: number;
   title: string;
 };
 
 export type Roadmap = {
+  completedLessonIds?: string[];
   createdAtMs: number;
+  currentActiveMissionId?: string;
+  dailyStudyTime?: string;
+  experience?: string;
   goal: string;
   id: string;
+  lastActivityMs?: number;
   level: string;
+  phases?: RoadmapPhase[];
+  progressPercentage?: number;
+  resources?: string;
   subject: string;
   title: string;
   updatedAtMs: number;
@@ -91,6 +107,90 @@ function extractNumberedSteps(text: string) {
   return numbered.length >= 2 ? numbered : lines.slice(0, 8);
 }
 
+function getCompletedLessonIds(steps: RoadmapStep[]) {
+  return steps.filter((step) => step.completed).map((step) => step.id);
+}
+
+function parseRoadmapStepStatus(status: unknown): RoadmapStep["status"] {
+  return status === "completed" || status === "current" || status === "locked"
+    ? status
+    : undefined;
+}
+
+function getProgressPercentage(steps: RoadmapStep[]) {
+  if (!steps.length) {
+    return 0;
+  }
+
+  return Math.round((steps.filter((step) => step.completed).length / steps.length) * 100);
+}
+
+function getCurrentActiveMissionId(steps: RoadmapStep[]) {
+  return steps.find((step) => !step.completed)?.id || steps[steps.length - 1]?.id;
+}
+
+function normalizeRoadmapSteps(steps: RoadmapStep[]) {
+  const activeMissionId = getCurrentActiveMissionId(steps);
+
+  return steps.map((step) => {
+    const status = step.completed
+      ? "completed"
+      : step.id === activeMissionId
+        ? "current"
+        : "locked";
+
+    return {
+      ...step,
+      status,
+    } satisfies RoadmapStep;
+  });
+}
+
+function buildRoadmapPhases(steps: RoadmapStep[]) {
+  const phaseTitles = Array.from(
+    new Set(steps.map((step) => step.phaseTitle || "Foundation").filter(Boolean)),
+  );
+
+  return phaseTitles.map((title, index) => ({
+    id: `phase-${index + 1}`,
+    orderNumber: index + 1,
+    title,
+  }));
+}
+
+function withRoadmapProgress(roadmap: Roadmap) {
+  const steps = normalizeRoadmapSteps(roadmap.steps);
+  const completedLessonIds = getCompletedLessonIds(steps);
+  const currentActiveMissionId = getCurrentActiveMissionId(steps);
+
+  return {
+    ...roadmap,
+    completedLessonIds,
+    currentActiveMissionId,
+    lastActivityMs: roadmap.lastActivityMs || roadmap.updatedAtMs,
+    phases: roadmap.phases?.length ? roadmap.phases : buildRoadmapPhases(steps),
+    progressPercentage: getProgressPercentage(steps),
+    steps,
+  } satisfies Roadmap;
+}
+
+function getCurrentMission(roadmap: Roadmap) {
+  return (
+    roadmap.steps.find((step) => step.id === roadmap.currentActiveMissionId) ||
+    roadmap.steps.find((step) => !step.completed) ||
+    roadmap.steps[roadmap.steps.length - 1]
+  );
+}
+
+function getNextMission(roadmap: Roadmap) {
+  const currentMission = getCurrentMission(roadmap);
+  if (!currentMission) {
+    return undefined;
+  }
+
+  return roadmap.steps.find((step) => step.orderNumber > currentMission.orderNumber);
+}
+
 export function isRoadmapRequest(text: string) {
   const normalized = text.toLowerCase();
   return [
@@ -107,7 +207,7 @@ export function createRoadmapFromAiResponse(input: {
   prompt: string;
 }) {
   const now = Date.now();
-  const steps = extractNumberedSteps(input.answer).map((step, index) => {
+  const steps: RoadmapStep[] = extractNumberedSteps(input.answer).map((step, index) => {
     const [titlePart, ...descriptionParts] = step.split(":");
     const title = cleanTitle(titlePart || `Step ${index + 1}`);
 
@@ -118,15 +218,21 @@ export function createRoadmapFromAiResponse(input: {
         "Ask your AI Teacher for the next focused lesson.",
       id: createLocalId(),
       orderNumber: index + 1,
+      phaseTitle: index < 5 ? "Foundation" : "Projects",
+      status: index === 0 ? "current" : "locked",
       title,
     };
   });
 
-  return {
+  return withRoadmapProgress({
     createdAtMs: now,
+    dailyStudyTime: "Not provided",
+    experience: "Not provided",
     goal: cleanTitle(input.prompt) || "Learning goal",
     id: createLocalId(),
+    lastActivityMs: now,
     level: "Beginner",
+    resources: "Not provided",
     subject: cleanTitle(input.prompt.replace(/roadmap|study plan/gi, "")) || "General learning",
     title: `${cleanTitle(input.prompt) || "Learning"} Roadmap`,
     updatedAtMs: now,
@@ -138,18 +244,21 @@ export function createRoadmapFromAiResponse(input: {
             description: "Start with the first clear foundation lesson.",
             id: createLocalId(),
             orderNumber: 1,
+            phaseTitle: "Foundation",
+            status: "current",
             title: "Foundation",
           },
         ],
-  } satisfies Roadmap;
+  } satisfies Roadmap);
 }
 
 export async function saveRoadmap(uid: string, roadmap: Roadmap) {
   const now = Date.now();
-  const nextRoadmap = {
+  const nextRoadmap = withRoadmapProgress({
     ...roadmap,
+    lastActivityMs: now,
     updatedAtMs: now,
-  };
+  });
 
   const firestoreDb = db;
 
@@ -172,8 +281,17 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
         {
           createdAt: serverTimestamp(),
           createdAtMs: nextRoadmap.createdAtMs,
+          completedLessonIds: nextRoadmap.completedLessonIds || [],
+          currentActiveMissionId: nextRoadmap.currentActiveMissionId || "",
+          dailyStudyTime: nextRoadmap.dailyStudyTime || "",
+          experience: nextRoadmap.experience || "",
           goal: nextRoadmap.goal,
+          lastActivity: serverTimestamp(),
+          lastActivityMs: nextRoadmap.lastActivityMs || now,
           level: nextRoadmap.level,
+          phases: nextRoadmap.phases || [],
+          progressPercentage: nextRoadmap.progressPercentage || 0,
+          resources: nextRoadmap.resources || "",
           subject: nextRoadmap.subject,
           title: nextRoadmap.title,
           updatedAt: serverTimestamp(),
@@ -192,6 +310,8 @@ export async function saveRoadmap(uid: string, roadmap: Roadmap) {
             completed: step.completed,
             description: step.description,
             orderNumber: step.orderNumber,
+            phaseTitle: step.phaseTitle || "",
+            status: step.status || (step.completed ? "completed" : "locked"),
             title: step.title,
           }),
           undefined,
@@ -234,12 +354,26 @@ export async function listRoadmaps(uid: string) {
           "Roadmap steps could not load from Firestore. Check your connection and retry.",
         );
 
-        return {
+        return withRoadmapProgress({
+          completedLessonIds: Array.isArray(data.completedLessonIds)
+            ? data.completedLessonIds.filter((item): item is string => typeof item === "string")
+            : [],
           createdAtMs:
             typeof data.createdAtMs === "number" ? data.createdAtMs : 0,
+          currentActiveMissionId:
+            typeof data.currentActiveMissionId === "string" ? data.currentActiveMissionId : "",
+          dailyStudyTime:
+            typeof data.dailyStudyTime === "string" ? data.dailyStudyTime : "",
+          experience: typeof data.experience === "string" ? data.experience : "",
           goal: typeof data.goal === "string" ? data.goal : "Learning goal",
           id: roadmapDoc.id,
+          lastActivityMs:
+            typeof data.lastActivityMs === "number" ? data.lastActivityMs : 0,
           level: typeof data.level === "string" ? data.level : "Beginner",
+          phases: Array.isArray(data.phases) ? (data.phases as RoadmapPhase[]) : [],
+          progressPercentage:
+            typeof data.progressPercentage === "number" ? data.progressPercentage : 0,
+          resources: typeof data.resources === "string" ? data.resources : "",
           subject: typeof data.subject === "string" ? data.subject : "Learning",
           title: typeof data.title === "string" ? data.title : "Learning Roadmap",
           updatedAtMs:
@@ -254,11 +388,14 @@ export async function listRoadmaps(uid: string) {
                 id: stepDoc.id,
                 orderNumber:
                   typeof step.orderNumber === "number" ? step.orderNumber : 0,
+                phaseTitle:
+                  typeof step.phaseTitle === "string" ? step.phaseTitle : "Foundation",
+                status: parseRoadmapStepStatus(step.status),
                 title: typeof step.title === "string" ? step.title : "Step",
               };
             })
             .sort((first, second) => first.orderNumber - second.orderNumber),
-        } satisfies Roadmap;
+        } satisfies Roadmap);
       }),
     );
 
@@ -271,4 +408,102 @@ export async function listRoadmaps(uid: string) {
     console.warn("Roadmap Firestore loading failed. Using local roadmap storage.", error);
     return getVisibleLocalRoadmaps(uid);
   }
+}
+
+export async function getActiveRoadmap(uid: string) {
+  const roadmaps = await listRoadmaps(uid);
+  return roadmaps[0];
+}
+
+export function formatRoadmapContext(roadmap?: Roadmap) {
+  if (!roadmap) {
+    return "No active Learning Roadmap is saved yet.";
+  }
+
+  const currentMission = getCurrentMission(roadmap);
+  const nextMission = getNextMission(roadmap);
+  const completedMissions = roadmap.steps
+    .filter((step) => step.completed)
+    .map((step) => step.title);
+
+  return [
+    "Saved Learning Roadmap context:",
+    `Roadmap title: ${roadmap.title}`,
+    `Goal: ${roadmap.goal}`,
+    `Skill level: ${roadmap.level}`,
+    `Daily study time: ${roadmap.dailyStudyTime || "Not provided"}`,
+    `Progress: ${roadmap.progressPercentage || 0}%`,
+    `Current phase: ${currentMission?.phaseTitle || "Not started"}`,
+    `Completed missions: ${completedMissions.length ? completedMissions.join(", ") : "None yet"}`,
+    `Current mission: ${currentMission?.title || "No active mission"}`,
+    `Next mission: ${nextMission?.title || "No next mission yet"}`,
+    "Use this context before asking the student for their goal again.",
+  ].join("\n");
+}
+
+export function isMissionCompletionMessage(text: string) {
+  const normalized = text.trim().toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return [
+    "done",
+    "finished",
+    "completed",
+    "i finished",
+    "i completed",
+    "mission complete",
+    "today's mission",
+    "todays mission",
+  ].some((phrase) => normalized.includes(phrase));
+}
+
+export async function completeCurrentRoadmapMission(uid: string, roadmap: Roadmap) {
+  const normalizedRoadmap = withRoadmapProgress(roadmap);
+  const currentMission = getCurrentMission(normalizedRoadmap);
+
+  if (!currentMission) {
+    return {
+      completedMission: undefined,
+      nextMission: undefined,
+      roadmap: normalizedRoadmap,
+    };
+  }
+
+  const nextSteps = normalizedRoadmap.steps.map((step) =>
+    step.id === currentMission.id
+      ? {
+          ...step,
+          completed: true,
+          status: "completed" as const,
+        }
+      : step,
+  );
+  const completedRoadmap = withRoadmapProgress({
+    ...normalizedRoadmap,
+    lastActivityMs: Date.now(),
+    steps: nextSteps,
+  });
+  const nextMission = completedRoadmap.steps.find((step) => !step.completed);
+
+  await saveRoadmap(uid, completedRoadmap);
+
+  return {
+    completedMission: currentMission,
+    nextMission,
+    roadmap: completedRoadmap,
+  };
+}
+
+export function shouldSaveRoadmapFromResponse(text: string) {
+  const normalized = text.toLowerCase();
+
+  return (
+    normalized.includes("phase") ||
+    normalized.includes("mission") ||
+    normalized.includes("roadmap") ||
+    extractNumberedSteps(text).length >= 3
+  );
 }

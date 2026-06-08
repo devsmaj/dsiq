@@ -95,8 +95,18 @@ export default function DsiqRoadmapPage() {
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-xs font-semibold">
                           {step.orderNumber}
                         </span>
-                        <div>
-                          <h3 className="text-sm font-semibold">{step.title}</h3>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold">{step.title}</h3>
+                            <span className="rounded-full bg-[color:var(--color-surface-strong)] px-2.5 py-1 text-[11px] font-semibold capitalize text-[color:var(--color-muted)]">
+                              {step.status || (step.completed ? "completed" : "locked")}
+                            </span>
+                          </div>
+                          {step.phaseTitle ? (
+                            <p className="mt-1 text-xs font-medium text-[color:var(--color-muted)]">
+                              {step.phaseTitle}
+                            </p>
+                          ) : null}
                           <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
                             {step.description}
                           </p>
@@ -114,6 +124,9 @@ export default function DsiqRoadmapPage() {
                     activeRoadmap.steps.filter((step) => step.completed).length
                   }
                   /{activeRoadmap.steps.length}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[color:var(--color-text)]">
+                  {activeRoadmap.progressPercentage || 0}% complete
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
                   Next lesson:{" "}
