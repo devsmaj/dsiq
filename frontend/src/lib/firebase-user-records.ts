@@ -54,7 +54,10 @@ export type FirebaseUserProfile = {
   photoURL?: string | null;
   languagePreference?: string | null;
   notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
+  dataControlPreferences?: import("@/lib/data-control-preferences").DataControlPreferences;
   settings?: {
+    aiMemoryEnabled?: boolean;
+    dataControlPreferences?: import("@/lib/data-control-preferences").DataControlPreferences;
     emailNotifications?: boolean;
     notificationPreferences?: import("@/lib/notification-preferences").NotificationPreferences;
   };

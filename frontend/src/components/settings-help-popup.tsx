@@ -30,6 +30,16 @@ import {
   exportUserChatHistory,
   listBookmarkedPrivateChats,
 } from "@/lib/firebase-chat-store";
+import {
+  defaultDataControlPreferences,
+  getEffectiveDataControlPreferences,
+  getGuestDataControlPreferences,
+  getLocalUserDataControlPreferences,
+  loadFirebaseDataControlPreferences,
+  saveFirebaseDataControlPreferences,
+  saveLocalDataControlPreferences,
+  type DataControlPreferences,
+} from "@/lib/data-control-preferences";
 import { updateFirebaseUserPersonalization } from "@/lib/firebase-user-records";
 import {
   isLanguageCode,
@@ -114,11 +124,13 @@ function clearDsiqBrowserCache(uid?: string) {
     "dsiq.profile.",
     "dsiq.personalization.",
     "dsiq.notification-preferences.",
+    "dsiq.data-control-preferences.",
   ];
   const removableKeys = [
     "dsiq.guest.chat",
     "dsiq.current.public-chat-id",
     "dsiq.notification-preferences.guest",
+    "dsiq.data-control-preferences.guest",
     "dsiq-language",
     APPEARANCE_STORAGE_KEY,
   ];
@@ -419,10 +431,6 @@ export function SettingsHelpPopup() {
   }
 
   async function resetAiPersonalization() {
-    if (!user) {
-      return;
-    }
-
     const updates = toProfilePersonalizationUpdates(defaultPersonalizationSettings);
 
     setIsPrivacyActionBusy(true);
@@ -431,9 +439,12 @@ export function SettingsHelpPopup() {
       setPersonalization(defaultPersonalizationSettings);
       saveGuestPersonalizationSettings(defaultPersonalizationSettings);
       await setCurrentLanguage("auto");
-      updateLocalUserProfile(user.uid, updates);
 
-      if (authMode === "firebase") {
+      if (user) {
+        updateLocalUserProfile(user.uid, updates);
+      }
+
+      if (user && authMode === "firebase") {
         await updateFirebaseUserPersonalization({
           uid: user.uid,
           updates,
@@ -451,15 +462,16 @@ export function SettingsHelpPopup() {
   }
 
   async function resetRoadmapMemory() {
-    if (!user) {
-      return;
-    }
-
     setIsPrivacyActionBusy(true);
     setPrivacyActionError("");
     try {
-      await clearRoadmapMemory(user.uid);
-      showPrivacySuccess("AI memory reset");
+      if (user) {
+        await clearRoadmapMemory(user.uid);
+      } else if (typeof window !== "undefined") {
+        window.localStorage.removeItem("dsiq.roadmaps.guest");
+        window.localStorage.removeItem("dsiq.roadmaps.local-guest");
+      }
+      showPrivacySuccess("Learning progress reset");
     } catch (error) {
       setPrivacyActionError(
         error instanceof Error ? error.message : "Action failed, try again",
@@ -470,14 +482,14 @@ export function SettingsHelpPopup() {
   }
 
   async function resetAiTeacherMemory() {
-    if (!user) {
-      return;
-    }
-
     setIsPrivacyActionBusy(true);
     setPrivacyActionError("");
     try {
-      await clearUserChatHistory(user.uid, "teacher");
+      if (user) {
+        await clearUserChatHistory(user.uid, "teacher");
+      } else if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("dsiq.guest.chat");
+      }
       window.dispatchEvent(new Event(CHAT_HISTORY_CLEARED_EVENT));
       showPrivacySuccess("AI memory reset");
     } catch (error) {
@@ -495,6 +507,10 @@ export function SettingsHelpPopup() {
     }
 
     try {
+      const guestMessages =
+        !user && typeof window !== "undefined"
+          ? JSON.parse(window.sessionStorage.getItem("dsiq.guest.chat") || "[]")
+          : [];
       const chats = user ? await exportUserChatHistory(user.uid) : [];
       const roadmaps = user ? await listRoadmaps(user.uid) : [];
       const savedChats = user ? await listBookmarkedPrivateChats(user.uid) : [];
@@ -505,6 +521,10 @@ export function SettingsHelpPopup() {
         profile,
         user?.uid,
       );
+      const dataControlPreferences = getEffectiveDataControlPreferences(
+        profile,
+        user?.uid,
+      );
       const data = {
         exportedAt: new Date().toISOString(),
         profile,
@@ -512,10 +532,11 @@ export function SettingsHelpPopup() {
         settings: {
           appearance,
           language: currentLanguage,
+          dataControlPreferences,
           notificationPreferences,
         },
         personalization: effectivePersonalization,
-        chatHistory: normalChats,
+        chatHistory: user ? normalChats : guestMessages,
         savedChats,
         aiTeacherChats,
         learningRoadmaps: roadmaps,
@@ -694,12 +715,25 @@ export function SettingsHelpPopup() {
 
               {activePanel === "data" ? (
                 <DataControlsPanel
+                  authMode={authMode}
                   isPrivateUser={isPrivateUser}
                   languageLabel={
                     selectedLanguage.code === "auto"
                       ? selectedLanguage.label
                       : selectedLanguage.label
                   }
+                  onExportData={exportData}
+                  onOpenMemoryControls={() => {
+                    setPrivacyActionError("");
+                    setIsMemoryControlsOpen(true);
+                  }}
+                  onResetLearningData={() => void resetRoadmapMemory()}
+                  onSaved={() => {
+                    setToastMessage("Saved ✓");
+                    window.setTimeout(() => setToastMessage(""), 1200);
+                  }}
+                  profile={profile}
+                  userId={user?.uid}
                 />
               ) : null}
             </div>
@@ -1579,34 +1613,239 @@ function CheckboxLine({
   );
 }
 
+const savedDataItems = [
+  "Profile information",
+  "Personalization settings",
+  "AI Teacher preferences",
+  "Chat history",
+  "Saved chats",
+  "Learning roadmaps",
+  "Learning progress",
+  "Language preference",
+];
+
+function formatSyncDate(value?: string) {
+  if (!value) {
+    return "Not synced yet";
+  }
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
 function DataControlsPanel({
+  authMode,
   isPrivateUser,
   languageLabel,
+  onExportData,
+  onOpenMemoryControls,
+  onResetLearningData,
+  onSaved,
+  profile,
+  userId,
 }: {
+  authMode: string;
   isPrivateUser: boolean;
   languageLabel: string;
+  onExportData: () => void;
+  onOpenMemoryControls: () => void;
+  onResetLearningData: () => void;
+  onSaved: () => void;
+  profile: Parameters<typeof getEffectiveDataControlPreferences>[0];
+  userId?: string;
 }) {
   const { t } = useTranslation();
+  const [preferences, setPreferences] = useState<DataControlPreferences>(
+    defaultDataControlPreferences,
+  );
+  const [isSyncing, setIsSyncing] = useState(false);
+  const canCloudSync = Boolean(isPrivateUser && authMode === "firebase" && userId);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPreferences() {
+      const localPreferences = userId
+        ? getLocalUserDataControlPreferences(userId)
+        : getGuestDataControlPreferences();
+
+      if (isMounted) {
+        setPreferences(getEffectiveDataControlPreferences(profile, userId));
+      }
+
+      if (canCloudSync && userId && !userId.startsWith("local-")) {
+        try {
+          const firebasePreferences = await loadFirebaseDataControlPreferences(userId);
+          if (firebasePreferences && isMounted) {
+            setPreferences(firebasePreferences);
+            saveLocalDataControlPreferences(firebasePreferences, userId);
+          }
+        } catch (error) {
+          console.warn("Data control preferences could not load from Firestore.", error);
+          if (isMounted) {
+            setPreferences(localPreferences);
+          }
+        }
+      }
+    }
+
+    void loadPreferences();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canCloudSync, profile, userId]);
+
+  async function savePreferences(nextPreferences: DataControlPreferences) {
+    const preferencesWithSyncTime = {
+      ...nextPreferences,
+      lastSyncedAt: new Date().toISOString(),
+    };
+
+    setPreferences(preferencesWithSyncTime);
+    saveLocalDataControlPreferences(preferencesWithSyncTime, userId);
+    onSaved();
+
+    if (!canCloudSync || !userId || userId.startsWith("local-")) {
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      await saveFirebaseDataControlPreferences(userId, preferencesWithSyncTime);
+    } catch (error) {
+      console.warn("Data control preferences could not sync to Firestore.", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   return (
     <div>
       <PanelTitle title={t("settings.dataControls")} />
-      <div className="mt-7 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
-        <p className="text-sm font-semibold">{t("settings.data.savedPreferences")}</p>
-        <p className="mt-2 text-sm leading-7 text-[color:var(--color-muted)]">
-          {t("settings.data.savedPreferencesDescription")}
-          {" "}
-          <span className="font-semibold text-[color:var(--color-text)]">
-            {languageLabel}
-          </span>
-          .
-        </p>
-        {isPrivateUser ? (
+      <div className="mt-7 space-y-4">
+        <DataControlSection title="Data sync">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <StatusTile label="Cloud sync" value={canCloudSync ? "On" : "Off" } />
+            <StatusTile
+              label="Last synced"
+              value={formatSyncDate(preferences.lastSyncedAt)}
+            />
+          </div>
           <p className="mt-3 text-sm leading-7 text-[color:var(--color-muted)]">
-            {t("settings.data.cloudSyncDescription")}
+            {canCloudSync
+              ? "Your chats, roadmap, progress and preferences are synced securely."
+              : "Saved on this device only."}
+            {isSyncing ? " Syncing..." : ""}
           </p>
-        ) : null}
+        </DataControlSection>
+
+        <DataControlSection title="Saved data">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {savedDataItems.map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-2 rounded-2xl border border-[color:var(--color-line)] bg-white px-3 py-2 text-sm"
+              >
+                <Check className="h-4 w-4 text-[color:var(--color-muted)]" aria-hidden="true" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs leading-5 text-[color:var(--color-muted)]">
+            Current language: <span className="font-semibold text-[color:var(--color-text)]">{languageLabel}</span>
+          </p>
+        </DataControlSection>
+
+        <DataControlSection title="AI memory">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold">
+                AI Memory: {preferences.aiMemoryEnabled ? "ON" : "OFF"}
+              </p>
+              <p className="mt-1 text-sm leading-7 text-[color:var(--color-muted)]">
+                {preferences.aiMemoryEnabled
+                  ? "DSIQ remembers goals, skill level, learning style and progress."
+                  : "DSIQ responds without personalization context."}
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={preferences.aiMemoryEnabled}
+              onChange={() =>
+                void savePreferences({
+                  ...preferences,
+                  aiMemoryEnabled: !preferences.aiMemoryEnabled,
+                })
+              }
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onOpenMemoryControls}
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+          >
+            Manage AI memory
+          </button>
+        </DataControlSection>
+
+        <DataControlSection title="Export data">
+          <p className="text-sm leading-7 text-[color:var(--color-muted)]">
+            Download profile, chats, roadmap, progress and settings in JSON format.
+          </p>
+          <button
+            type="button"
+            onClick={onExportData}
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-4 text-sm font-semibold text-white transition hover:bg-black"
+          >
+            Download my data
+          </button>
+        </DataControlSection>
+
+        <DataControlSection title="Reset learning data">
+          <p className="text-sm leading-7 text-[color:var(--color-muted)]">
+            Reset only roadmap, missions and learning progress. Your account, chats and preferences stay saved.
+          </p>
+          <button
+            type="button"
+            onClick={onResetLearningData}
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-full border border-red-200 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+          >
+            Reset learning progress
+          </button>
+        </DataControlSection>
       </div>
+    </div>
+  );
+}
+
+function DataControlSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <section className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+      <p className="text-sm font-semibold">{title}</p>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+function StatusTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--color-line)] bg-white p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
   );
 }

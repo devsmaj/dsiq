@@ -20,6 +20,7 @@ import {
   buildPersonalizationInstruction,
   getEffectivePersonalizationSettings,
 } from "@/lib/personalization";
+import { getEffectiveDataControlPreferences } from "@/lib/data-control-preferences";
 import { getEffectiveNotificationPreferences } from "@/lib/notification-preferences";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
@@ -232,13 +233,19 @@ export function PublicChat() {
       if (languagePreferenceChange) {
         setLanguagePreferenceOverride(languagePreferenceChange.languageCode);
       }
+      const dataControlPreferences = getEffectiveDataControlPreferences(
+        profile,
+        user?.uid,
+      );
       const response =
         languagePreferenceChange?.reply ||
         (await askGroq(nextMessages, {
-          personalizationContext: buildPersonalizationInstruction(
-            getEffectivePersonalizationSettings(profile),
-            getEffectiveNotificationPreferences(profile, user?.uid),
-          ),
+          personalizationContext: dataControlPreferences.aiMemoryEnabled
+            ? buildPersonalizationInstruction(
+                getEffectivePersonalizationSettings(profile),
+                getEffectiveNotificationPreferences(profile, user?.uid),
+              )
+            : undefined,
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceChange?.languageCode ||
               languagePreferenceOverride,

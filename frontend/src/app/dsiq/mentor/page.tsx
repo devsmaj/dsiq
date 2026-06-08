@@ -40,6 +40,7 @@ import {
   buildPersonalizationInstruction,
   getEffectivePersonalizationSettings,
 } from "@/lib/personalization";
+import { getEffectiveDataControlPreferences } from "@/lib/data-control-preferences";
 import { getEffectiveNotificationPreferences } from "@/lib/notification-preferences";
 import {
   completeCurrentRoadmapMission,
@@ -525,7 +526,13 @@ export default function DsiqMentorPage() {
             : "Tell me your next goal when you are ready, and I will help you choose the next path.",
         ].join("\n");
       } else {
-        const roadmapContext = formatRoadmapContext(activeRoadmap);
+        const dataControlPreferences = getEffectiveDataControlPreferences(
+          profile,
+          user.uid,
+        );
+        const roadmapContext = dataControlPreferences.aiMemoryEnabled
+          ? formatRoadmapContext(activeRoadmap)
+          : "AI memory is off. Do not use saved goals, progress, roadmap, or personalization.";
 
         answer = await askGroq([
           {
@@ -533,10 +540,12 @@ export default function DsiqMentorPage() {
             text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
           },
         ], {
-          personalizationContext: buildPersonalizationInstruction(
-            getEffectivePersonalizationSettings(profile),
-            getEffectiveNotificationPreferences(profile, user.uid),
-          ),
+          personalizationContext: dataControlPreferences.aiMemoryEnabled
+            ? buildPersonalizationInstruction(
+                getEffectivePersonalizationSettings(profile),
+                getEffectiveNotificationPreferences(profile, user.uid),
+              )
+            : undefined,
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceOverride,
             profile?.languagePreference,
