@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import {
+  ArrowLeft,
   CircleUserRound,
   Check,
   Copy,
@@ -130,6 +131,30 @@ const problemCategories = [
   "UI bug",
   "Other",
 ];
+
+function getHelpScreenTitle(screen: HelpScreen) {
+  if (screen === "faq") {
+    return "FAQ";
+  }
+
+  if (screen === "support") {
+    return "Contact Support";
+  }
+
+  if (screen === "problem") {
+    return "Report a Problem";
+  }
+
+  if (screen === "feedback") {
+    return "Send Feedback";
+  }
+
+  if (screen === "version") {
+    return "App Version";
+  }
+
+  return "Help";
+}
 
 const collapsedTooltipClass =
   "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
@@ -2261,7 +2286,7 @@ export default function DsiqChatPage() {
 
         {isHelpOpen ? (
           <div
-            className="fixed inset-0 z-[70] flex items-start justify-center bg-black/35 px-4 py-8 backdrop-blur-sm sm:items-center"
+            className="fixed inset-0 z-[70] flex items-start justify-center bg-black/35 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-8"
             role="presentation"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) {
@@ -2273,20 +2298,38 @@ export default function DsiqChatPage() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="help-title"
-              className="w-full max-w-lg rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.20)] transition sm:p-6"
+              className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--color-line)] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.20)] transition"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2
-                    id="help-title"
-                    className="text-lg font-semibold text-[color:var(--color-text)]"
+              <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5 sm:px-6 sm:pt-6">
+                {helpScreen === "home" ? (
+                  <div>
+                    <h2
+                      id="help-title"
+                      className="text-lg font-semibold text-[color:var(--color-text)]"
+                    >
+                      Help
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
+                      Quick support options for your DSIQ workspace.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openHelpScreen("home")}
+                    className="flex min-w-0 items-center gap-2 rounded-full pr-3 text-left text-[color:var(--color-text)] transition hover:text-black"
                   >
-                    Help
-                  </h2>
-                  <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
-                    Quick support options for your DSIQ workspace.
-                  </p>
-                </div>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)]">
+                      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span
+                      id="help-title"
+                      className="truncate text-lg font-semibold"
+                    >
+                      {getHelpScreenTitle(helpScreen)}
+                    </span>
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label="Close help"
@@ -2297,18 +2340,10 @@ export default function DsiqChatPage() {
                 </button>
               </div>
 
-              {helpScreen !== "home" ? (
-                <button
-                  type="button"
-                  onClick={() => openHelpScreen("home")}
-                  className="mt-5 text-sm font-semibold text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
-                >
-                  Back to Help
-                </button>
-              ) : null}
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-5 sm:px-6">
 
               {helpError ? (
-                <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                   {helpError}
                 </p>
               ) : null}
@@ -2320,7 +2355,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "home" ? (
-                <div className="mt-5 divide-y divide-[color:var(--color-line)]">
+                <div className="divide-y divide-[color:var(--color-line)]">
                   {helpItems.map((item) => {
                     const Icon = item.icon;
 
@@ -2349,7 +2384,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "faq" ? (
-                <div className="mt-5 divide-y divide-[color:var(--color-line)]">
+                <div className="divide-y divide-[color:var(--color-line)]">
                   {faqItems.map((item) => (
                     <div key={item.question} className="py-4">
                       <p className="text-sm font-semibold text-[color:var(--color-text)]">
@@ -2364,7 +2399,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "support" ? (
-                <div className="mt-5 space-y-3">
+                <div className="space-y-3">
                   <HelpTextField
                     label="Name"
                     value={supportForm.name}
@@ -2396,7 +2431,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "problem" ? (
-                <div className="mt-5 space-y-3">
+                <div className="space-y-3">
                   <label className="block">
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                       Problem category
@@ -2452,7 +2487,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "feedback" ? (
-                <div className="mt-5 space-y-3">
+                <div className="space-y-3">
                   <label className="block">
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                       Rating
@@ -2500,7 +2535,7 @@ export default function DsiqChatPage() {
               ) : null}
 
               {helpScreen === "version" ? (
-                <div className="mt-5 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+                <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
                   <p className="text-sm font-semibold">DSIQ version</p>
                   <p className="mt-1 text-sm text-[color:var(--color-muted)]">
                     {appVersion}
@@ -2517,11 +2552,12 @@ export default function DsiqChatPage() {
                   </ul>
                 </div>
               ) : null}
+              </div>
 
               <button
                 type="button"
                 onClick={() => setIsHelpOpen(false)}
-                className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)]"
+                className="mx-5 mb-5 inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] sm:mx-6 sm:mb-6"
               >
                 Close
               </button>
