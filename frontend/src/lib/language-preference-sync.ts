@@ -3,8 +3,27 @@ import {
   getLanguageConfirmation,
 } from "@/lib/ai-language";
 import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
-import { LANGUAGE_STORAGE_KEY, type LanguageCode } from "@/lib/i18n/languages";
+import {
+  getStoredLanguagePreference,
+  isLanguageCode,
+  LANGUAGE_STORAGE_KEY,
+  type LanguageCode,
+} from "@/lib/i18n/languages";
 import { updateLocalUserLanguage } from "@/lib/user-profile-store";
+
+export function getEffectiveAiLanguagePreference(
+  ...languageSources: Array<string | null | undefined>
+) {
+  const candidates = [...languageSources, getStoredLanguagePreference()];
+
+  for (const candidate of candidates) {
+    if (isLanguageCode(candidate ?? null) && candidate !== "auto") {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 
 export async function saveLanguagePreference(input: {
   languageCode: LanguageCode;

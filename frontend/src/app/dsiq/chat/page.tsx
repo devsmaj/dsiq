@@ -44,7 +44,10 @@ import {
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
-import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
+import {
+  getEffectiveAiLanguagePreference,
+  handleLanguagePreferenceCommand,
+} from "@/lib/language-preference-sync";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -496,10 +499,11 @@ export default function DsiqChatPage() {
       const response =
         languagePreferenceChange?.reply ||
         (await askGroq(toGroqMessages(nextMessages), {
-          preferredLanguage:
+          preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceChange?.languageCode ||
-            languagePreferenceOverride ||
+              languagePreferenceOverride,
             profile?.languagePreference,
+          ),
         }));
       const modelMessage: PrivateChatMessage = {
         createdAtMs: Date.now(),

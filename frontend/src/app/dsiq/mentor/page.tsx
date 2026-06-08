@@ -32,7 +32,10 @@ import {
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
 import { dsiqLogoSrc } from "@/lib/public-asset";
-import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
+import {
+  getEffectiveAiLanguagePreference,
+  handleLanguagePreferenceCommand,
+} from "@/lib/language-preference-sync";
 import {
   completeCurrentRoadmapMission,
   createRoadmapFromAiResponse,
@@ -525,7 +528,10 @@ export default function DsiqMentorPage() {
             text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
           },
         ], {
-          preferredLanguage: languagePreferenceOverride || profile?.languagePreference,
+          preferredLanguage: getEffectiveAiLanguagePreference(
+            languagePreferenceOverride,
+            profile?.languagePreference,
+          ),
         });
       }
       setMentorMessages((current) => [

@@ -12,7 +12,10 @@ import {
   saveFirebaseChatMessage,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
-import { handleLanguagePreferenceCommand } from "@/lib/language-preference-sync";
+import {
+  getEffectiveAiLanguagePreference,
+  handleLanguagePreferenceCommand,
+} from "@/lib/language-preference-sync";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -227,10 +230,11 @@ export function PublicChat() {
       const response =
         languagePreferenceChange?.reply ||
         (await askGroq(nextMessages, {
-          preferredLanguage:
+          preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceChange?.languageCode ||
-            languagePreferenceOverride ||
+              languagePreferenceOverride,
             profile?.languagePreference,
+          ),
         }));
       const modelMessage: GroqChatMessage = {
         role: "model",

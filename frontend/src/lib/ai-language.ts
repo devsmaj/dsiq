@@ -271,8 +271,8 @@ export function getFinalReplyLanguageRule(choice: AiLanguageChoice) {
   const replyName = getLanguageByCode(choice.replyLanguage)?.aiName || choice.replyLanguage;
 
   return [
-    `The user's reply language is ${replyName}.`,
-    "You must answer only in this language.",
-    "Do not switch to English unless requested.",
+    `User saved language preference: ${replyName}.`,
+    "You MUST respond only in this language unless the user asks to change.",
+    "Do not switch to English unless the user explicitly requests English.",
   ].join("\n");
 }
