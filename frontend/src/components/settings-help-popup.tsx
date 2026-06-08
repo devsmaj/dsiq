@@ -25,6 +25,11 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
 import { useDsiqLanguage } from "@/components/i18n-provider";
+import {
+  clearUserChatHistory,
+  exportUserChatHistory,
+  listBookmarkedPrivateChats,
+} from "@/lib/firebase-chat-store";
 import { updateFirebaseUserPersonalization } from "@/lib/firebase-user-records";
 import {
   isLanguageCode,
@@ -41,6 +46,10 @@ import {
   type PersonalizationSettings,
 } from "@/lib/personalization";
 import {
+  clearRoadmapMemory,
+  listRoadmaps,
+} from "@/lib/roadmap-store";
+import {
   updateLocalUserProfile,
   type StoredUserProfile,
 } from "@/lib/user-profile-store";
@@ -49,6 +58,7 @@ import { useUserProfile } from "@/lib/use-user-profile";
 const OPEN_SETTINGS_EVENT = "dsiq:open-settings-help";
 const APPEARANCE_STORAGE_KEY = "dsiq-appearance";
 const DELETE_CONFIRMATION_TEXT = "DELETE";
+const CHAT_HISTORY_CLEARED_EVENT = "dsiq:chat-history-cleared";
 
 const appearanceOptions = [
   { value: "system", labelKey: "settings.appearance.system", icon: Monitor },
@@ -80,6 +90,43 @@ export function openSettingsHelpPopup() {
 
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function clearDsiqBrowserCache(uid?: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const removablePrefixes = [
+    "dsiq.private-chats.",
+    "dsiq.roadmaps.",
+    "dsiq.profile.",
+    "dsiq.personalization.",
+  ];
+  const removableKeys = [
+    "dsiq.guest.chat",
+    "dsiq.current.public-chat-id",
+    "dsiq-language",
+    APPEARANCE_STORAGE_KEY,
+  ];
+
+  for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+    const key = window.localStorage.key(index);
+    if (!key) {
+      continue;
+    }
+
+    if (
+      removableKeys.includes(key) ||
+      removablePrefixes.some((prefix) => key.startsWith(prefix)) ||
+      (uid && key.includes(uid))
+    ) {
+      window.localStorage.removeItem(key);
+    }
+  }
+
+  window.sessionStorage.removeItem("dsiq.guest.chat");
+  window.sessionStorage.removeItem("dsiq.current.public-chat-id");
 }
 
 function getInitialAppearance(): AppearanceValue {
@@ -137,6 +184,11 @@ export function SettingsHelpPopup() {
   const [toastMessage, setToastMessage] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [isClearChatsConfirmOpen, setIsClearChatsConfirmOpen] = useState(false);
+  const [isClearingChats, setIsClearingChats] = useState(false);
+  const [isMemoryControlsOpen, setIsMemoryControlsOpen] = useState(false);
+  const [isPrivacyActionBusy, setIsPrivacyActionBusy] = useState(false);
+  const [privacyActionError, setPrivacyActionError] = useState("");
   const [changePasswordError, setChangePasswordError] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -282,6 +334,7 @@ export function SettingsHelpPopup() {
       setIsDeletingAccount(true);
       setDeleteError("");
       await deleteAccount();
+      clearDsiqBrowserCache(user?.uid);
       setIsDeleteModalOpen(false);
       setIsOpen(false);
       setToastMessage(t("settings.delete.success"));
@@ -335,29 +388,155 @@ export function SettingsHelpPopup() {
     }
   }
 
-  function exportData() {
+  function showPrivacySuccess(message: string) {
+    setPrivacyActionError("");
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1400);
+  }
+
+  async function handleClearChatHistory() {
+    if (!user) {
+      setPrivacyActionError("Sign in again before clearing chat history.");
+      return;
+    }
+
+    try {
+      setIsClearingChats(true);
+      setPrivacyActionError("");
+      await clearUserChatHistory(user.uid);
+      window.dispatchEvent(new Event(CHAT_HISTORY_CLEARED_EVENT));
+      setIsClearChatsConfirmOpen(false);
+      showPrivacySuccess("Chat history cleared");
+    } catch (error) {
+      setPrivacyActionError(
+        error instanceof Error ? error.message : "Action failed, try again",
+      );
+    } finally {
+      setIsClearingChats(false);
+    }
+  }
+
+  async function resetAiPersonalization() {
+    if (!user) {
+      return;
+    }
+
+    const updates = toProfilePersonalizationUpdates(defaultPersonalizationSettings);
+
+    setIsPrivacyActionBusy(true);
+    setPrivacyActionError("");
+    try {
+      setPersonalization(defaultPersonalizationSettings);
+      saveGuestPersonalizationSettings(defaultPersonalizationSettings);
+      await setCurrentLanguage("auto");
+      updateLocalUserProfile(user.uid, updates);
+
+      if (authMode === "firebase") {
+        await updateFirebaseUserPersonalization({
+          uid: user.uid,
+          updates,
+        });
+      }
+
+      showPrivacySuccess("AI memory reset");
+    } catch (error) {
+      setPrivacyActionError(
+        error instanceof Error ? error.message : "Action failed, try again",
+      );
+    } finally {
+      setIsPrivacyActionBusy(false);
+    }
+  }
+
+  async function resetRoadmapMemory() {
+    if (!user) {
+      return;
+    }
+
+    setIsPrivacyActionBusy(true);
+    setPrivacyActionError("");
+    try {
+      await clearRoadmapMemory(user.uid);
+      showPrivacySuccess("AI memory reset");
+    } catch (error) {
+      setPrivacyActionError(
+        error instanceof Error ? error.message : "Action failed, try again",
+      );
+    } finally {
+      setIsPrivacyActionBusy(false);
+    }
+  }
+
+  async function resetAiTeacherMemory() {
+    if (!user) {
+      return;
+    }
+
+    setIsPrivacyActionBusy(true);
+    setPrivacyActionError("");
+    try {
+      await clearUserChatHistory(user.uid, "teacher");
+      window.dispatchEvent(new Event(CHAT_HISTORY_CLEARED_EVENT));
+      showPrivacySuccess("AI memory reset");
+    } catch (error) {
+      setPrivacyActionError(
+        error instanceof Error ? error.message : "Action failed, try again",
+      );
+    } finally {
+      setIsPrivacyActionBusy(false);
+    }
+  }
+
+  async function exportData() {
     if (typeof window === "undefined") {
       return;
     }
 
-    const data = {
-      exportedAt: new Date().toISOString(),
-      profile,
-      onboarding: answers,
-      settings: {
-        appearance,
-        language: currentLanguage,
-      },
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "dsiq-data.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      const chats = user ? await exportUserChatHistory(user.uid) : [];
+      const roadmaps = user ? await listRoadmaps(user.uid) : [];
+      const savedChats = user ? await listBookmarkedPrivateChats(user.uid) : [];
+      const aiTeacherChats = chats.filter((chat) => chat.chatType === "teacher");
+      const normalChats = chats.filter((chat) => chat.chatType !== "teacher");
+      const effectivePersonalization = getEffectivePersonalizationSettings(profile);
+      const data = {
+        exportedAt: new Date().toISOString(),
+        profile,
+        onboarding: answers,
+        settings: {
+          appearance,
+          language: currentLanguage,
+        },
+        personalization: effectivePersonalization,
+        chatHistory: normalChats,
+        savedChats,
+        aiTeacherChats,
+        learningRoadmaps: roadmaps,
+        progressData: {
+          roadmaps: roadmaps.map((roadmap) => ({
+            completedLessonIds: roadmap.completedLessonIds || [],
+            currentActiveMissionId: roadmap.currentActiveMissionId || "",
+            id: roadmap.id,
+            progressPercentage: roadmap.progressPercentage || 0,
+            title: roadmap.title,
+          })),
+        },
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "dsiq-user-data.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      showPrivacySuccess("Data exported");
+    } catch (error) {
+      setPrivacyActionError(
+        error instanceof Error ? error.message : "Action failed, try again",
+      );
+    }
   }
 
   return (
@@ -477,12 +656,21 @@ export function SettingsHelpPopup() {
 
               {activePanel === "privacy" && isPrivateUser ? (
                 <PrivacyPanel
+                  error={privacyActionError}
+                  onClearChatHistory={() => {
+                    setPrivacyActionError("");
+                    setIsClearChatsConfirmOpen(true);
+                  }}
                   onDeleteAccount={() => {
                     setDeleteConfirmText("");
                     setDeleteError("");
                     setIsDeleteModalOpen(true);
                   }}
                   onExportData={exportData}
+                  onOpenMemoryControls={() => {
+                    setPrivacyActionError("");
+                    setIsMemoryControlsOpen(true);
+                  }}
                 />
               ) : null}
 
@@ -513,6 +701,30 @@ export function SettingsHelpPopup() {
           onCancel={() => setIsDeleteModalOpen(false)}
           onConfirm={() => void handleDeleteAccount()}
           onConfirmTextChange={setDeleteConfirmText}
+        />
+      ) : null}
+
+      {isClearChatsConfirmOpen ? (
+        <ConfirmActionModal
+          confirmLabel="Clear chat history"
+          description="This clears your DSIQ chat history and saved chat bookmarks. Your Learning Roadmap will not be deleted."
+          error={privacyActionError}
+          isWorking={isClearingChats}
+          title="Clear chat history?"
+          onCancel={() => setIsClearChatsConfirmOpen(false)}
+          onConfirm={() => void handleClearChatHistory()}
+        />
+      ) : null}
+
+      {isMemoryControlsOpen ? (
+        <AiMemoryControlsModal
+          error={privacyActionError}
+          isWorking={isPrivacyActionBusy}
+          personalization={personalization}
+          onCancel={() => setIsMemoryControlsOpen(false)}
+          onResetAiPersonalization={() => void resetAiPersonalization()}
+          onResetAiTeacherMemory={() => void resetAiTeacherMemory()}
+          onResetRoadmapMemory={() => void resetRoadmapMemory()}
         />
       ) : null}
 
@@ -836,32 +1048,43 @@ function PersonalizationDropdownRow({
 }
 
 function PrivacyPanel({
+  error,
+  onClearChatHistory,
   onDeleteAccount,
   onExportData,
+  onOpenMemoryControls,
 }: {
+  error: string;
+  onClearChatHistory: () => void;
   onDeleteAccount: () => void;
   onExportData: () => void;
+  onOpenMemoryControls: () => void;
 }) {
   const { t } = useTranslation();
 
   return (
     <div>
       <PanelTitle title={t("settings.privacy")} />
+      {error ? (
+        <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow
+        <ActionRow
           icon={<Trash2 />}
           label={t("settings.privacy.clearChatHistory")}
-          value={t("settings.privacy.clearChatHistoryValue")}
+          onClick={onClearChatHistory}
         />
         <ActionRow
           icon={<FileText />}
           label={t("settings.privacy.exportData")}
           onClick={onExportData}
         />
-        <InfoRow
+        <ActionRow
           icon={<Shield />}
           label={t("settings.privacy.aiMemoryControls")}
-          value={t("settings.privacy.aiMemoryControlsValue")}
+          onClick={onOpenMemoryControls}
         />
         <ActionRow
           danger
@@ -929,6 +1152,170 @@ function DataControlsPanel({
           </p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function ConfirmActionModal({
+  confirmLabel,
+  description,
+  error,
+  isWorking,
+  onCancel,
+  onConfirm,
+  title,
+}: {
+  confirmLabel: string;
+  description: string;
+  error: string;
+  isWorking: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  title: string;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
+              {title}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+              {description}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={t("common.close")}
+            onClick={onCancel}
+            disabled={isWorking}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isWorking}
+            className="inline-flex h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold text-[color:var(--color-text)] transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isWorking}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#111111] px-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isWorking ? <LoadingSpinner /> : null}
+            {confirmLabel}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AiMemoryControlsModal({
+  error,
+  isWorking,
+  onCancel,
+  onResetAiPersonalization,
+  onResetAiTeacherMemory,
+  onResetRoadmapMemory,
+  personalization,
+}: {
+  error: string;
+  isWorking: boolean;
+  onCancel: () => void;
+  onResetAiPersonalization: () => void;
+  onResetAiTeacherMemory: () => void;
+  onResetRoadmapMemory: () => void;
+  personalization: PersonalizationSettings;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+      <section className="w-full max-w-lg rounded-[1.5rem] border border-[color:var(--color-line)] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[color:var(--color-text)]">
+              AI memory controls
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+              View or reset what DSIQ uses to personalize teaching. This does not delete your account.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={t("common.close")}
+            onClick={onCancel}
+            disabled={isWorking}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-[color:var(--color-surface-strong)] p-4 text-sm">
+          <p className="font-semibold">Saved personalization</p>
+          <div className="mt-3 grid gap-2 text-xs leading-5 text-[color:var(--color-muted)]">
+            <p>Goal: {getPersonalizationLabel("learningGoals", personalization.learningGoals)}</p>
+            <p>Level: {getPersonalizationLabel("experienceLevel", personalization.experienceLevel)}</p>
+            <p>Teacher style: {getPersonalizationLabel("aiTeacherStyle", personalization.aiTeacherStyle)}</p>
+            <p>Focus: {getPersonalizationLabel("focusPreference", personalization.focusPreference)}</p>
+            <p>Learning style: {getPersonalizationLabel("preferredLearningStyle", personalization.preferredLearningStyle)}</p>
+            <p>Language: {getPersonalizationLabel("preferredLanguage", personalization.preferredLanguage)}</p>
+          </div>
+        </div>
+
+        {error ? (
+          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-5 grid gap-3">
+          <button
+            type="button"
+            onClick={onResetAiPersonalization}
+            disabled={isWorking}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isWorking ? <LoadingSpinner /> : null}
+            Reset AI personalization
+          </button>
+          <button
+            type="button"
+            onClick={onResetRoadmapMemory}
+            disabled={isWorking}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Reset roadmap memory
+          </button>
+          <button
+            type="button"
+            onClick={onResetAiTeacherMemory}
+            disabled={isWorking}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--color-line)] px-4 text-sm font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Reset AI Teacher memory
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 
 import { withTimeout } from "@/lib/async-timeout";
 import { db } from "@/lib/firebase";
@@ -413,6 +413,33 @@ export async function listRoadmaps(uid: string) {
 export async function getActiveRoadmap(uid: string) {
   const roadmaps = await listRoadmaps(uid);
   return roadmaps[0];
+}
+
+export async function clearRoadmapMemory(uid: string) {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(getLocalRoadmapsKey(uid));
+  }
+
+  const firestoreDb = db;
+  if (!firestoreDb) {
+    return;
+  }
+
+  const snapshot = await getDocs(collection(firestoreDb, "users", uid, "roadmaps"));
+
+  await Promise.all(
+    snapshot.docs.map(async (roadmapDocument) => {
+      const roadmapRef = doc(firestoreDb, "users", uid, "roadmaps", roadmapDocument.id);
+      const stepsSnapshot = await getDocs(collection(roadmapRef, "steps"));
+
+      await Promise.all(
+        stepsSnapshot.docs.map((stepDocument) =>
+          deleteDoc(doc(roadmapRef, "steps", stepDocument.id)),
+        ),
+      );
+      await deleteDoc(roadmapRef);
+    }),
+  );
 }
 
 export function formatRoadmapContext(roadmap?: Roadmap) {

@@ -25,6 +25,8 @@ import {
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useUserProfile } from "@/lib/use-user-profile";
 
+const CHAT_HISTORY_CLEARED_EVENT = "dsiq:chat-history-cleared";
+
 const sidebarItems = [
   { labelKey: "sidebar.newChat", href: "/dsiq/chat", icon: SquarePen },
   { labelKey: "sidebar.searchChats", href: "/dsiq/chat?panel=search", icon: Search },
@@ -145,6 +147,18 @@ export function DsiqAppSidebar({
 
     void loadRecentChats();
   }, [isAuthLoading, user]);
+
+  useEffect(() => {
+    function handleChatHistoryCleared() {
+      setRecentChats([]);
+      setActiveRecentChatMenuId(null);
+      setConfirmingRecentDeleteChatId(null);
+    }
+
+    window.addEventListener(CHAT_HISTORY_CLEARED_EVENT, handleChatHistoryCleared);
+    return () =>
+      window.removeEventListener(CHAT_HISTORY_CLEARED_EVENT, handleChatHistoryCleared);
+  }, []);
 
   function renderSidebar(mobile = false) {
     return (

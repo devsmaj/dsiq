@@ -659,6 +659,131 @@ export async function listBookmarkedPrivateChats(uid: string) {
   return (await listPrivateChats(uid)).filter((chat) => chat.isBookmarked);
 }
 
+export type ExportedUserChat = PrivateChatSummary & {
+  messages: PrivateChatMessage[];
+  source?: string;
+};
+
+async function deleteChatCollection(uid: string, collectionName: "chats" | "teacherChats") {
+  if (!canUseFirestoreForUid(uid)) {
+    return;
+  }
+
+  const userRef = doc(db!, "users", uid);
+  const snapshot = await getDocs(collection(userRef, collectionName));
+
+  await Promise.all(
+    snapshot.docs.map(async (chatDocument) => {
+      const chatRef = doc(userRef, collectionName, chatDocument.id);
+      const messagesSnapshot = await getDocs(collection(chatRef, "messages"));
+
+      await Promise.all(
+        messagesSnapshot.docs.map((messageDocument) =>
+          deleteDoc(doc(chatRef, "messages", messageDocument.id)),
+        ),
+      );
+      await deleteDoc(chatRef);
+    }),
+  );
+}
+
+export async function clearUserChatHistory(uid: string, chatType?: ChatType) {
+  assertValidUid(uid);
+
+  if (typeof window !== "undefined") {
+    if (chatType) {
+      writeLocalPrivateChats(
+        uid,
+        readLocalPrivateChats(uid).filter(
+          (chat) => normalizeChatType(chat.chatType) !== chatType,
+        ),
+      );
+    } else {
+      window.localStorage.removeItem(getLocalPrivateChatsKey(uid));
+      window.sessionStorage.removeItem("dsiq.guest.chat");
+      window.sessionStorage.removeItem("dsiq.current.public-chat-id");
+    }
+  }
+
+  if (!canUseFirestoreForUid(uid)) {
+    return;
+  }
+
+  const collectionsToDelete = chatType
+    ? [getPrivateChatCollectionName(chatType) as "chats" | "teacherChats"]
+    : (["chats", "teacherChats"] as const);
+
+  await Promise.all(
+    collectionsToDelete.map((collectionName) => deleteChatCollection(uid, collectionName)),
+  );
+
+  const savedChatsSnapshot = await getDocs(collection(db!, "users", uid, "savedChats"));
+  await Promise.all(
+    savedChatsSnapshot.docs
+      .filter((savedChatDocument) => {
+        if (!chatType) {
+          return true;
+        }
+
+        return normalizeChatType(savedChatDocument.data().chatType) === chatType;
+      })
+      .map((savedChatDocument) =>
+        deleteDoc(doc(db!, "users", uid, "savedChats", savedChatDocument.id)),
+      ),
+  );
+}
+
+export async function exportUserChatHistory(uid: string) {
+  assertValidUid(uid);
+
+  if (!canUseFirestoreForUid(uid)) {
+    return readLocalPrivateChats(uid).map((chat) => ({
+      ...chat,
+      messages: chat.messages.filter((message) => !message.deletedAtMs),
+    }));
+  }
+
+  const exportedChats = await Promise.all(
+    (["chats", "teacherChats"] as const).map(async (collectionName) => {
+      const chatType = collectionName === "teacherChats" ? "teacher" : "normal";
+      const snapshot = await getDocs(collection(db!, "users", uid, collectionName));
+
+      return Promise.all(
+        snapshot.docs.map(async (chatDocument) => {
+          const data = chatDocument.data();
+          const messagesSnapshot = await getDocs(
+            collection(doc(db!, "users", uid, collectionName, chatDocument.id), "messages"),
+          );
+
+          return {
+            chatType,
+            id: chatDocument.id,
+            isBookmarked: data.isBookmarked === true,
+            lastMessage: typeof data.lastMessage === "string" ? data.lastMessage : "",
+            messages: messagesSnapshot.docs
+              .map((messageDocument) => {
+                const message = messageDocument.data();
+                return {
+                  createdAtMs:
+                    typeof message.createdAtMs === "number" ? message.createdAtMs : 0,
+                  id: messageDocument.id,
+                  role: message.role === "model" ? "model" : "user",
+                  text: typeof message.text === "string" ? message.text : "",
+                } satisfies PrivateChatMessage;
+              })
+              .sort((first, second) => first.createdAtMs - second.createdAtMs),
+            source: typeof data.source === "string" ? data.source : "",
+            title: typeof data.title === "string" ? data.title : "Chat",
+            updatedAtMs: typeof data.updatedAtMs === "number" ? data.updatedAtMs : 0,
+          } satisfies ExportedUserChat;
+        }),
+      );
+    }),
+  );
+
+  return exportedChats.flat().sort((first, second) => second.updatedAtMs - first.updatedAtMs);
+}
+
 export async function updatePrivateChatTitle(input: {
   chatId: string;
   chatType?: ChatType;
