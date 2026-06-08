@@ -44,6 +44,7 @@ import {
   type PrivateChatSummary,
 } from "@/lib/firebase-chat-store";
 import { askGroq, type GroqChatMessage } from "@/lib/groq";
+import { saveHelpSubmission } from "@/lib/help-center-store";
 import {
   getEffectiveAiLanguagePreference,
   handleLanguagePreferenceCommand,
@@ -81,6 +82,54 @@ const collapsedItems = [
 ] as const;
 
 const appVersion = "0.1.0";
+const lastUpdateDate = "June 8, 2026";
+
+type HelpScreen = "home" | "faq" | "support" | "problem" | "feedback" | "version";
+
+const releaseNotes = [
+  "Functional notification, data control, and password settings.",
+  "AI Teacher context now respects saved learning preferences.",
+  "Help Center supports support requests, reports, and feedback.",
+];
+
+const faqItems = [
+  {
+    question: "What is DSIQ?",
+    answer: "DSIQ is an AI learning platform that helps you choose a path, learn skills, and keep moving with clear missions.",
+  },
+  {
+    question: "How does AI Teacher work?",
+    answer: "AI Teacher explains step by step, asks useful questions, and adapts lessons to your goals and level.",
+  },
+  {
+    question: "How does Learning Roadmap work?",
+    answer: "Your roadmap breaks a goal into missions, tracks progress, and shows what to study next.",
+  },
+  {
+    question: "How are chats saved?",
+    answer: "Signed-in chats sync to your account. Guest chats are only saved on this device/session.",
+  },
+  {
+    question: "How do I change language?",
+    answer: "Open Settings, go to General, then choose your language preference.",
+  },
+  {
+    question: "How do I reset AI memory?",
+    answer: "Open Settings, go to Data Controls, then use Manage AI memory or reset learning data.",
+  },
+  {
+    question: "Is DSIQ free?",
+    answer: "DSIQ has free access for core learning features. Paid features may be added as the platform grows.",
+  },
+];
+
+const problemCategories = [
+  "AI response issue",
+  "Login problem",
+  "Payment/account",
+  "UI bug",
+  "Other",
+];
 
 const collapsedTooltipClass =
   "pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-[0_10px_25px_rgba(0,0,0,0.18)] transition group-hover:opacity-100 group-focus-visible:opacity-100";
@@ -88,26 +137,31 @@ const collapsedTooltipClass =
 const helpItems = [
   {
     title: "Frequently Asked Questions",
+    screen: "faq",
     description: "Find quick answers about chats, saved work, and your AI Teacher.",
     icon: HelpCircle,
   },
   {
     title: "Contact Support",
+    screen: "support",
     description: "Reach the DSIQ team when you need help with your account.",
     icon: CircleUserRound,
   },
   {
     title: "Report a Problem",
+    screen: "problem",
     description: "Tell us when something is broken or not working as expected.",
     icon: Target,
   },
   {
     title: "Send Feedback",
+    screen: "feedback",
     description: "Share what would make DSIQ better for your learning flow.",
     icon: SquarePen,
   },
   {
     title: "App Version",
+    screen: "version",
     description: `DSIQ ${appVersion}`,
     icon: FileText,
   },
@@ -217,6 +271,10 @@ export default function DsiqChatPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [helpScreen, setHelpScreen] = useState<HelpScreen>("home");
+  const [helpError, setHelpError] = useState("");
+  const [helpSuccess, setHelpSuccess] = useState("");
+  const [isHelpSubmitting, setIsHelpSubmitting] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isChatActionsOpen, setIsChatActionsOpen] = useState(false);
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
@@ -240,6 +298,22 @@ export default function DsiqChatPage() {
     dataUrl: string;
     name: string;
   } | null>(null);
+  const [supportForm, setSupportForm] = useState({
+    email: "",
+    message: "",
+    name: "",
+  });
+  const [problemForm, setProblemForm] = useState({
+    category: "AI response issue",
+    description: "",
+    screenshotDataUrl: "",
+    screenshotName: "",
+  });
+  const [feedbackForm, setFeedbackForm] = useState({
+    improvement: "",
+    likes: "",
+    rating: "5",
+  });
   const [activeSavedChatMenuId, setActiveSavedChatMenuId] = useState<
     string | null
   >(null);
@@ -908,7 +982,170 @@ export default function DsiqChatPage() {
     if (isMobileSidebarOpen) {
       setIsMobileSidebarOpen(false);
     }
+    setHelpScreen("home");
+    setHelpError("");
+    setHelpSuccess("");
+    setSupportForm((current) => ({
+      ...current,
+      email: current.email || user?.email || "",
+      name:
+        current.name ||
+        profile?.fullName ||
+        profile?.nickname ||
+        user?.displayName ||
+        "",
+    }));
     setIsHelpOpen(true);
+  }
+
+  function openHelpScreen(screen: HelpScreen) {
+    setHelpScreen(screen);
+    setHelpError("");
+    setHelpSuccess("");
+  }
+
+  async function submitSupportRequest() {
+    if (!supportForm.name.trim() || !supportForm.email.trim() || !supportForm.message.trim()) {
+      setHelpError("Please complete all fields.");
+      return;
+    }
+
+    setIsHelpSubmitting(true);
+    setHelpError("");
+    setHelpSuccess("");
+
+    try {
+      await saveHelpSubmission({
+        createdAtIso: new Date().toISOString(),
+        email: supportForm.email.trim(),
+        message: supportForm.message.trim(),
+        name: supportForm.name.trim(),
+        pageUrl: window.location.href,
+        status: "new",
+        type: "support-request",
+        uid: user?.uid,
+      });
+      setSupportForm((current) => ({ ...current, message: "" }));
+      setHelpSuccess("Message sent successfully.");
+    } catch (submissionError) {
+      setHelpError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Message could not be sent. Please try again.",
+      );
+    } finally {
+      setIsHelpSubmitting(false);
+    }
+  }
+
+  async function submitProblemReport() {
+    if (!problemForm.description.trim()) {
+      setHelpError("Please describe the problem.");
+      return;
+    }
+
+    setIsHelpSubmitting(true);
+    setHelpError("");
+    setHelpSuccess("");
+
+    try {
+      await saveHelpSubmission({
+        category: problemForm.category,
+        createdAtIso: new Date().toISOString(),
+        description: problemForm.description.trim(),
+        email: user?.email || "",
+        pageUrl: window.location.href,
+        screenshotDataUrl: problemForm.screenshotDataUrl || undefined,
+        screenshotName: problemForm.screenshotName || undefined,
+        status: "new",
+        type: "bug-report",
+        uid: user?.uid,
+      });
+      setProblemForm({
+        category: "AI response issue",
+        description: "",
+        screenshotDataUrl: "",
+        screenshotName: "",
+      });
+      setHelpSuccess("Problem report sent successfully.");
+    } catch (submissionError) {
+      setHelpError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Problem report could not be sent. Please try again.",
+      );
+    } finally {
+      setIsHelpSubmitting(false);
+    }
+  }
+
+  async function submitFeedback() {
+    if (!feedbackForm.likes.trim() && !feedbackForm.improvement.trim()) {
+      setHelpError("Please add a short note.");
+      return;
+    }
+
+    setIsHelpSubmitting(true);
+    setHelpError("");
+    setHelpSuccess("");
+
+    try {
+      await saveHelpSubmission({
+        createdAtIso: new Date().toISOString(),
+        email: user?.email || "",
+        improvement: feedbackForm.improvement.trim(),
+        likes: feedbackForm.likes.trim(),
+        pageUrl: window.location.href,
+        rating: Number(feedbackForm.rating),
+        status: "new",
+        type: "feedback",
+        uid: user?.uid,
+      });
+      setFeedbackForm({
+        improvement: "",
+        likes: "",
+        rating: "5",
+      });
+      setHelpSuccess("Feedback sent successfully.");
+    } catch (submissionError) {
+      setHelpError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Feedback could not be sent. Please try again.",
+      );
+    } finally {
+      setIsHelpSubmitting(false);
+    }
+  }
+
+  function handleProblemScreenshot(file?: File) {
+    if (!file) {
+      setProblemForm((current) => ({
+        ...current,
+        screenshotDataUrl: "",
+        screenshotName: "",
+      }));
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setHelpError("Please upload an image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProblemForm((current) => ({
+        ...current,
+        screenshotDataUrl: typeof reader.result === "string" ? reader.result : "",
+        screenshotName: file.name,
+      }));
+      setHelpError("");
+    };
+    reader.onerror = () => {
+      setHelpError("Screenshot could not be loaded.");
+    };
+    reader.readAsDataURL(file);
   }
 
   const ProfileAvatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
@@ -2060,37 +2297,226 @@ export default function DsiqChatPage() {
                 </button>
               </div>
 
-              <div className="mt-5 divide-y divide-[color:var(--color-line)]">
-                {helpItems.map((item) => {
-                  const Icon = item.icon;
+              {helpScreen !== "home" ? (
+                <button
+                  type="button"
+                  onClick={() => openHelpScreen("home")}
+                  className="mt-5 text-sm font-semibold text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+                >
+                  Back to Help
+                </button>
+              ) : null}
 
-                  return (
-                    <button
-                      key={item.title}
-                      type="button"
-                      className="flex w-full items-center gap-3 py-4 text-left transition hover:text-black"
-                      onClick={() => {
-                        if (item.title === "Contact Support") {
-                          window.location.href =
-                            "mailto:support@dsiq.app?subject=DSIQ%20Support";
-                        }
-                      }}
+              {helpError ? (
+                <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {helpError}
+                </p>
+              ) : null}
+
+              {helpSuccess ? (
+                <p className="mt-4 rounded-2xl bg-green-50 px-4 py-3 text-sm text-green-700">
+                  {helpSuccess}
+                </p>
+              ) : null}
+
+              {helpScreen === "home" ? (
+                <div className="mt-5 divide-y divide-[color:var(--color-line)]">
+                  {helpItems.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <button
+                        key={item.title}
+                        type="button"
+                        className="flex w-full items-center gap-3 py-4 text-left transition hover:text-black"
+                        onClick={() => openHelpScreen(item.screen)}
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-[color:var(--color-text)]">
+                            {item.title}
+                          </span>
+                          <span className="mt-1 block text-xs leading-5 text-[color:var(--color-muted)]">
+                            {item.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {helpScreen === "faq" ? (
+                <div className="mt-5 divide-y divide-[color:var(--color-line)]">
+                  {faqItems.map((item) => (
+                    <div key={item.question} className="py-4">
+                      <p className="text-sm font-semibold text-[color:var(--color-text)]">
+                        {item.question}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[color:var(--color-muted)]">
+                        {item.answer}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {helpScreen === "support" ? (
+                <div className="mt-5 space-y-3">
+                  <HelpTextField
+                    label="Name"
+                    value={supportForm.name}
+                    onChange={(value) =>
+                      setSupportForm((current) => ({ ...current, name: value }))
+                    }
+                  />
+                  <HelpTextField
+                    label="Email"
+                    type="email"
+                    value={supportForm.email}
+                    onChange={(value) =>
+                      setSupportForm((current) => ({ ...current, email: value }))
+                    }
+                  />
+                  <HelpTextArea
+                    label="Message"
+                    value={supportForm.message}
+                    onChange={(value) =>
+                      setSupportForm((current) => ({ ...current, message: value }))
+                    }
+                  />
+                  <HelpSubmitButton
+                    isLoading={isHelpSubmitting}
+                    label="Send support request"
+                    onClick={() => void submitSupportRequest()}
+                  />
+                </div>
+              ) : null}
+
+              {helpScreen === "problem" ? (
+                <div className="mt-5 space-y-3">
+                  <label className="block">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Problem category
+                    </span>
+                    <select
+                      value={problemForm.category}
+                      onChange={(event) =>
+                        setProblemForm((current) => ({
+                          ...current,
+                          category: event.target.value,
+                        }))
+                      }
+                      className="mt-2 h-12 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]">
-                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      {problemCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <HelpTextArea
+                    label="Description"
+                    value={problemForm.description}
+                    onChange={(value) =>
+                      setProblemForm((current) => ({ ...current, description: value }))
+                    }
+                  />
+                  <label className="block">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Optional screenshot
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) =>
+                        handleProblemScreenshot(event.target.files?.[0])
+                      }
+                      className="mt-2 block w-full text-sm text-[color:var(--color-muted)] file:mr-4 file:h-10 file:rounded-full file:border-0 file:bg-[color:var(--color-surface-strong)] file:px-4 file:text-sm file:font-semibold file:text-[color:var(--color-text)]"
+                    />
+                    {problemForm.screenshotName ? (
+                      <span className="mt-2 block text-xs text-[color:var(--color-muted)]">
+                        {problemForm.screenshotName}
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-[color:var(--color-text)]">
-                          {item.title}
-                        </span>
-                        <span className="mt-1 block text-xs leading-5 text-[color:var(--color-muted)]">
-                          {item.description}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                    ) : null}
+                  </label>
+                  <HelpSubmitButton
+                    isLoading={isHelpSubmitting}
+                    label="Send problem report"
+                    onClick={() => void submitProblemReport()}
+                  />
+                </div>
+              ) : null}
+
+              {helpScreen === "feedback" ? (
+                <div className="mt-5 space-y-3">
+                  <label className="block">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                      Rating
+                    </span>
+                    <select
+                      value={feedbackForm.rating}
+                      onChange={(event) =>
+                        setFeedbackForm((current) => ({
+                          ...current,
+                          rating: event.target.value,
+                        }))
+                      }
+                      className="mt-2 h-12 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+                    >
+                      <option value="5">5 - Excellent</option>
+                      <option value="4">4 - Good</option>
+                      <option value="3">3 - Okay</option>
+                      <option value="2">2 - Needs work</option>
+                      <option value="1">1 - Poor</option>
+                    </select>
+                  </label>
+                  <HelpTextArea
+                    label="What do you like?"
+                    value={feedbackForm.likes}
+                    onChange={(value) =>
+                      setFeedbackForm((current) => ({ ...current, likes: value }))
+                    }
+                  />
+                  <HelpTextArea
+                    label="What can improve?"
+                    value={feedbackForm.improvement}
+                    onChange={(value) =>
+                      setFeedbackForm((current) => ({
+                        ...current,
+                        improvement: value,
+                      }))
+                    }
+                  />
+                  <HelpSubmitButton
+                    isLoading={isHelpSubmitting}
+                    label="Send feedback"
+                    onClick={() => void submitFeedback()}
+                  />
+                </div>
+              ) : null}
+
+              {helpScreen === "version" ? (
+                <div className="mt-5 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+                  <p className="text-sm font-semibold">DSIQ version</p>
+                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                    {appVersion}
+                  </p>
+                  <p className="mt-4 text-sm font-semibold">Last update date</p>
+                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                    {lastUpdateDate}
+                  </p>
+                  <p className="mt-4 text-sm font-semibold">Release notes</p>
+                  <ul className="mt-2 space-y-2 text-sm leading-6 text-[color:var(--color-muted)]">
+                    {releaseNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               <button
                 type="button"
@@ -2104,5 +2530,82 @@ export default function DsiqChatPage() {
         ) : null}
       </main>
     </PrivateRoute>
+  );
+}
+
+function HelpTextField({
+  label,
+  onChange,
+  type = "text",
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  type?: "email" | "text";
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+      />
+    </label>
+  );
+}
+
+function HelpTextArea({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+        {label}
+      </span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={4}
+        className="mt-2 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#111111]"
+      />
+    </label>
+  );
+}
+
+function HelpSubmitButton({
+  isLoading,
+  label,
+  onClick,
+}: {
+  isLoading: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isLoading}
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {isLoading ? (
+        <span
+          className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+          aria-hidden="true"
+        />
+      ) : null}
+      {label}
+    </button>
   );
 }
