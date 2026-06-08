@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
   Bot,
+  Check,
   FileText,
   GraduationCap,
   Menu,
@@ -82,6 +83,24 @@ const collapsedTooltipClass =
 
 const CHAT_TYPE = "teacher" as const;
 
+type TeacherMode = "learn" | "practice" | "progress";
+
+const todaysClass = {
+  goal: "Understand functions and build a simple project",
+  level: "Beginner",
+  lesson: "Lesson 7 / 40",
+  minutes: "15 minutes",
+  title: "JavaScript Functions",
+};
+
+const lessonSteps = ["Explanation", "Practice", "Quiz", "Mini Project", "Complete"];
+
+const progressTracks = [
+  { label: "HTML", progress: 100 },
+  { label: "CSS", progress: 70 },
+  { label: "JavaScript", progress: 25 },
+];
+
 type SpeechRecognitionResultLike = {
   0?: {
     transcript?: string;
@@ -159,6 +178,7 @@ export default function DsiqMentorPage() {
   const [prompt, setPrompt] = useState("");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
+  const [teacherMode, setTeacherMode] = useState<TeacherMode>("learn");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [teacherChats, setTeacherChats] = useState<PrivateChatSummary[]>([]);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
@@ -200,6 +220,7 @@ export default function DsiqMentorPage() {
   const currentMission = answers?.skills || "HTML Fundamentals";
   const currentLesson = currentMission;
   const roadmapProgress = 25;
+  const studentPath = primaryGoal === "Learn Programming" ? "Software Engineer" : primaryGoal;
   const filteredTeacherChats = teacherChats.filter((chat) => {
     const query = chatSearchQuery.trim().toLowerCase();
     if (!query) {
@@ -368,6 +389,7 @@ export default function DsiqMentorPage() {
   function startNewTeacherChat(mobile = false) {
     setCurrentChatId(null);
     setMentorMessages([]);
+    setTeacherMode("learn");
     setPrompt("");
     setError("");
     setIsSearchPanelOpen(false);
@@ -412,9 +434,63 @@ export default function DsiqMentorPage() {
     void refreshTeacherChats();
   }
 
+  async function startTodaysLesson() {
+    if (isSending) {
+      return;
+    }
+
+    const teacherMessage: GroqChatMessage = {
+      role: "model",
+      text: [
+        "👨‍🏫 DSIQ Teacher:",
+        "",
+        "Welcome to today's lesson.",
+        "",
+        "Yesterday we learned loops.",
+        "Today we learn functions.",
+        "",
+        "Before we start:",
+        "What do you think a function is?",
+      ].join("\n"),
+    };
+
+    setTeacherMode("learn");
+    setMentorMessages([teacherMessage]);
+    setError("");
+
+    try {
+      if (isAuthLoading || !user) {
+        throw new Error("Sign in again to save and continue your AI Teacher chat.");
+      }
+
+      const chatId =
+        currentChatId ||
+        (await createPrivateChat(user.uid, todaysClass.title, CHAT_TYPE));
+      setCurrentChatId(chatId);
+      await savePrivateChatMessage({
+        chatId,
+        chatType: CHAT_TYPE,
+        message: {
+          ...teacherMessage,
+          createdAtMs: Date.now(),
+          id: createClientMessageId(),
+        },
+        uid: user.uid,
+      });
+      void refreshTeacherChats();
+    } catch (lessonError) {
+      setError(
+        getFriendlyFirestoreError(
+          lessonError,
+          "DSIQ could not start today's class right now. Please try again.",
+        ),
+      );
+    }
+  }
+
   async function toggleCurrentTeacherChatBookmark() {
     if (!user || !currentChatId) {
-      setError("Send a message first, then save this AI Teacher chat.");
+      setError("Start a lesson first, then add it to My Notes.");
       return;
     }
 
@@ -533,11 +609,17 @@ export default function DsiqMentorPage() {
         const roadmapContext = dataControlPreferences.aiMemoryEnabled
           ? formatRoadmapContext(activeRoadmap)
           : "AI memory is off. Do not use saved goals, progress, roadmap, or personalization.";
+        const classroomContext =
+          teacherMode === "practice"
+            ? "AI Classroom mode: Practice. Check what is correct, explain what needs improvement, then give one next challenge."
+            : teacherMode === "progress"
+              ? "AI Classroom mode: Progress. Connect the answer to the student's journey and next milestone."
+              : "AI Classroom mode: Learn. Teach proactively step by step, then ask one small check question.";
 
         answer = await askGroq([
           {
             role: "user",
-            text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
+            text: `${mentorContext}\n\n${roadmapContext}\n\n${classroomContext}\n\nStudent question: ${question}`,
           },
         ], {
           personalizationContext: dataControlPreferences.aiMemoryEnabled
@@ -638,6 +720,137 @@ export default function DsiqMentorPage() {
     setError("");
     setIsListening(true);
     recognition.start();
+  }
+
+  function renderLessonSteps() {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {lessonSteps.map((step, index) => (
+          <span
+            key={step}
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+              index === 0
+                ? "bg-[#111111] text-white"
+                : "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)]"
+            }`}
+          >
+            {index === 0 ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+            {step}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  function renderClassroomPanel() {
+    if (teacherMode === "practice") {
+      return (
+        <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[color:var(--color-line)] bg-white p-5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+            🧪 Challenge
+          </p>
+          <h3 className="mt-2 text-lg font-semibold">
+            Create a function that adds two numbers.
+          </h3>
+          <textarea
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="Write your code or answer here..."
+            className="mt-4 min-h-32 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 font-mono text-sm outline-none transition focus:border-[#111111]"
+          />
+          <button
+            type="button"
+            onClick={() => void submitMentorPrompt(prompt)}
+            disabled={!prompt.trim() || isSending}
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Submit Practice
+          </button>
+          <p className="mt-3 text-xs leading-5 text-[color:var(--color-muted)]">
+            DSIQ will check what is correct, what needs improvement, and give your next challenge.
+          </p>
+        </section>
+      );
+    }
+
+    if (teacherMode === "progress") {
+      return (
+        <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[color:var(--color-line)] bg-white p-5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+            Progress Mode
+          </p>
+          <h3 className="mt-2 text-xl font-semibold">{studentPath} Path</h3>
+          <div className="mt-5 space-y-4">
+            {progressTracks.map((track) => (
+              <div key={track.label}>
+                <div className="flex items-center justify-between text-sm font-semibold">
+                  <span>{track.label}</span>
+                  <span>{track.progress}%</span>
+                </div>
+                <div className="mt-2 h-3 overflow-hidden rounded-full bg-[color:var(--color-surface-strong)]">
+                  <div
+                    className="h-full rounded-full bg-[#111111]"
+                    style={{ width: `${track.progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                Current Level
+              </p>
+              <p className="mt-2 text-sm font-semibold">Beginner Developer</p>
+            </div>
+            <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                🔥 Learning streak
+              </p>
+              <p className="mt-2 text-sm font-semibold">7 days</p>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section className="mx-auto w-full max-w-2xl rounded-2xl border border-[color:var(--color-line)] bg-white p-5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+        <p className="text-lg font-semibold">👋 Welcome back, {displayName}</p>
+        <div className="mt-4 rounded-2xl bg-[color:var(--color-surface-strong)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+            Your Path
+          </p>
+          <p className="mt-2 text-base font-semibold">{studentPath}</p>
+        </div>
+        <div className="mt-5 rounded-2xl border border-[color:var(--color-line)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+            🔥 Today's AI Class
+          </p>
+          <h3 className="mt-2 text-xl font-semibold">{todaysClass.title}</h3>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-[color:var(--color-muted)]">
+            <span>{todaysClass.lesson}</span>
+            <span>⏱ {todaysClass.minutes}</span>
+            <span>Level: {todaysClass.level}</span>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              Goal
+            </p>
+            <p className="mt-2 text-sm leading-6">{todaysClass.goal}</p>
+          </div>
+          <div className="mt-4">{renderLessonSteps()}</div>
+          <button
+            type="button"
+            onClick={() => void startTodaysLesson()}
+            disabled={isSending}
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Start Lesson
+          </button>
+        </div>
+      </section>
+    );
   }
 
   function renderProfileAvatar(size: "sm" | "md" = "md") {
@@ -910,7 +1123,7 @@ export default function DsiqMentorPage() {
                                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[color:var(--color-surface-strong)]"
                                 >
                                   <Save className="h-4 w-4" aria-hidden="true" />
-                                  {chat.isBookmarked ? "Remove saved chat" : "Save chat"}
+                                  {chat.isBookmarked ? "Remove from My Notes" : "Add to My Notes"}
                                 </button>
                                 <button
                                   type="button"
@@ -1125,11 +1338,27 @@ export default function DsiqMentorPage() {
                       <Bot className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
-                      <h2 className="text-base font-semibold">AI Teacher</h2>
+                      <h2 className="text-base font-semibold">AI Classroom</h2>
                       <p className="text-xs text-[color:var(--color-muted)]">
-                        Ask, practice, and continue your lesson.
+                        Learn, practice, and track your path.
                       </p>
                     </div>
+                    </div>
+                    <div className="hidden shrink-0 items-center gap-1 rounded-full border border-[color:var(--color-line)] p-1 sm:flex">
+                      {(["learn", "practice", "progress"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setTeacherMode(mode)}
+                          className={`h-8 rounded-full px-3 text-xs font-semibold capitalize transition ${
+                            teacherMode === mode
+                              ? "bg-[#111111] text-white"
+                              : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface-strong)]"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
                     </div>
                     <button
                       type="button"
@@ -1137,12 +1366,30 @@ export default function DsiqMentorPage() {
                       className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[color:var(--color-line)] px-3 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
                     >
                       <Save className="h-4 w-4" aria-hidden="true" />
-                      {isCurrentChatBookmarked ? "Saved" : "Save"}
+                      {isCurrentChatBookmarked ? "My Notes" : "My Notes"}
                     </button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-1 rounded-full border border-[color:var(--color-line)] p-1 sm:hidden">
+                    {(["learn", "practice", "progress"] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setTeacherMode(mode)}
+                        className={`h-8 flex-1 rounded-full px-3 text-xs font-semibold capitalize transition ${
+                          teacherMode === mode
+                            ? "bg-[#111111] text-white"
+                            : "text-[color:var(--color-muted)] hover:bg-[color:var(--color-surface-strong)]"
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div className="teacher-messages flex flex-col gap-4 px-4 py-5 sm:px-5">
+                  {teacherMode !== "learn" ? renderClassroomPanel() : null}
+
                   {mentorMessages.length ? (
                     mentorMessages.map((message, index) => (
                       <div
@@ -1157,14 +1404,7 @@ export default function DsiqMentorPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="my-auto mx-auto max-w-sm text-center">
-                      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--color-surface-strong)]">
-                        <Bot className="h-6 w-6" aria-hidden="true" />
-                      </span>
-                      <p className="mt-4 text-sm font-semibold">
-                        What should we learn next?
-                      </p>
-                    </div>
+                    teacherMode === "learn" ? renderClassroomPanel() : null
                   )}
 
                   {isSending ? (
