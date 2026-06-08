@@ -24,7 +24,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/auth-provider";
-import { updateFirebaseUserLanguage } from "@/lib/firebase-user-records";
+import {
+  updateFirebaseUserLanguage,
+  updateFirebaseUserPersonalization,
+} from "@/lib/firebase-user-records";
 import {
   getAppliedLanguage,
   getLanguageDirection,
@@ -35,7 +38,17 @@ import {
   type LanguageCode,
 } from "@/lib/i18n/languages";
 import {
+  defaultPersonalizationSettings,
+  getEffectivePersonalizationSettings,
+  getPersonalizationLabel,
+  personalizationOptions,
+  saveGuestPersonalizationSettings,
+  toProfilePersonalizationUpdates,
+  type PersonalizationSettings,
+} from "@/lib/personalization";
+import {
   updateLocalUserLanguage,
+  updateLocalUserProfile,
   type StoredUserProfile,
 } from "@/lib/user-profile-store";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -61,6 +74,7 @@ const privatePanels = [
 
 const publicPanels = [
   { id: "general", labelKey: "settings.general", icon: Settings },
+  { id: "personalization", labelKey: "settings.personalization", icon: GraduationCap },
   { id: "data", labelKey: "settings.dataControls", icon: Database },
 ] as const;
 
@@ -137,6 +151,10 @@ export function SettingsHelpPopup() {
   const [appearance, setAppearance] =
     useState<AppearanceValue>(getInitialAppearance);
   const [language, setLanguage] = useState<LanguageCode>(getInitialLanguage);
+  const [personalization, setPersonalization] =
+    useState<PersonalizationSettings>(defaultPersonalizationSettings);
+  const [openPersonalizationField, setOpenPersonalizationField] =
+    useState<keyof PersonalizationSettings | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -191,6 +209,10 @@ export function SettingsHelpPopup() {
   }, [i18n, language]);
 
   useEffect(() => {
+    setPersonalization(getEffectivePersonalizationSettings(profile));
+  }, [profile]);
+
+  useEffect(() => {
     const profileLanguage = profile?.languagePreference || null;
     if (!isLanguageCode(profileLanguage)) {
       return;
@@ -212,26 +234,79 @@ export function SettingsHelpPopup() {
   }
 
   async function selectLanguage(nextLanguage: LanguageCode) {
+    const fixedLanguage = nextLanguage === "auto" ? null : nextLanguage;
+
     setLanguage(nextLanguage);
+    setPersonalization((current) => ({
+      ...current,
+      preferredLanguage: nextLanguage,
+    }));
     applyLanguage(nextLanguage);
     await i18n.changeLanguage(getAppliedLanguage(nextLanguage));
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
     setIsLanguageOpen(false);
 
     if (!user) {
+      saveGuestPersonalizationSettings({ preferredLanguage: nextLanguage });
       return;
     }
 
-    updateLocalUserLanguage(user.uid, nextLanguage);
+    updateLocalUserLanguage(user.uid, fixedLanguage);
+    updateLocalUserProfile(user.uid, {
+      preferredLanguage: fixedLanguage,
+      languagePreference: fixedLanguage,
+    });
 
     if (authMode === "firebase") {
       try {
         await updateFirebaseUserLanguage({
           uid: user.uid,
-          languagePreference: nextLanguage,
+          languagePreference: fixedLanguage,
         });
       } catch (error) {
         console.warn("Language preference sync failed.", error);
+      }
+    }
+  }
+
+  async function savePersonalization(
+    field: keyof PersonalizationSettings,
+    value: PersonalizationSettings[keyof PersonalizationSettings],
+  ) {
+    const nextSettings = {
+      ...personalization,
+      [field]: value,
+    };
+    const updates = toProfilePersonalizationUpdates({ [field]: value });
+
+    setPersonalization(nextSettings);
+    setOpenPersonalizationField(null);
+    saveGuestPersonalizationSettings({ [field]: value });
+    setToastMessage("Personalization saved.");
+    window.setTimeout(() => setToastMessage(""), 1200);
+
+    if (field === "preferredLanguage") {
+      const nextLanguage = value as LanguageCode;
+      setLanguage(nextLanguage);
+      applyLanguage(nextLanguage);
+      await i18n.changeLanguage(getAppliedLanguage(nextLanguage));
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    }
+
+    if (!user) {
+      return;
+    }
+
+    updateLocalUserProfile(user.uid, updates);
+
+    if (authMode === "firebase") {
+      try {
+        await updateFirebaseUserPersonalization({
+          uid: user.uid,
+          updates,
+        });
+      } catch (error) {
+        console.warn("Personalization sync failed.", error);
       }
     }
   }
@@ -425,10 +500,16 @@ export function SettingsHelpPopup() {
                 />
               ) : null}
 
-              {activePanel === "personalization" && isPrivateUser ? (
+              {activePanel === "personalization" ? (
                 <PersonalizationPanel
-                  goals={getGoalSummary(profile, answers?.selectedGoals)}
-                  level={profile?.role || answers?.role || ""}
+                  openField={openPersonalizationField}
+                  personalization={personalization}
+                  onOpenField={(field) =>
+                    setOpenPersonalizationField((current) =>
+                      current === field ? null : field,
+                    )
+                  }
+                  onSave={(field, value) => void savePersonalization(field, value)}
                 />
               ) : null}
 
@@ -630,47 +711,162 @@ function AccountPanel({
 }
 
 function PersonalizationPanel({
-  goals,
-  level,
+  onOpenField,
+  onSave,
+  openField,
+  personalization,
 }: {
-  goals: string;
-  level: string;
+  onOpenField: (field: keyof PersonalizationSettings) => void;
+  onSave: (
+    field: keyof PersonalizationSettings,
+    value: PersonalizationSettings[keyof PersonalizationSettings],
+  ) => void;
+  openField: keyof PersonalizationSettings | null;
+  personalization: PersonalizationSettings;
 }) {
   const { t } = useTranslation();
-  const safeGoals = goals || t("settings.personalization.notSet");
-  const safeLevel = level || t("settings.personalization.notSet");
+  const languageOptions = languages.map((languageOption) => ({
+    value: languageOption.code,
+    label:
+      languageOption.code === "auto"
+        ? t("settings.language.autoDetect")
+        : languageOption.label,
+  }));
 
   return (
     <div>
       <PanelTitle title={t("settings.personalization")} />
       <div className="mt-7 divide-y divide-[color:var(--color-line)]">
-        <InfoRow
+        <PersonalizationDropdownRow
+          description="Main result DSIQ should guide you toward."
+          field="learningGoals"
           icon={<BookOpen />}
           label={t("settings.personalization.learningGoals")}
-          value={safeGoals}
+          openField={openField}
+          options={personalizationOptions.learningGoals}
+          value={personalization.learningGoals[0] || ""}
+          valueLabel={getPersonalizationLabel("learningGoals", personalization.learningGoals)}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("learningGoals", value ? [value] : [])}
         />
-        <InfoRow
+        <PersonalizationDropdownRow
+          description="How your AI Teacher should explain and guide."
+          field="aiTeacherStyle"
           icon={<GraduationCap />}
           label={t("settings.personalization.aiTeacherStyle")}
-          value={t("settings.personalization.aiTeacherStyleValue")}
+          openField={openField}
+          options={personalizationOptions.aiTeacherStyle}
+          value={personalization.aiTeacherStyle}
+          valueLabel={getPersonalizationLabel("aiTeacherStyle", personalization.aiTeacherStyle)}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("aiTeacherStyle", value)}
         />
-        <InfoRow
+        <PersonalizationDropdownRow
+          description="How DSIQ should protect your focus."
+          field="focusPreference"
           icon={<Eye />}
           label={t("settings.personalization.focusPreferences")}
-          value={t("settings.personalization.focusPreferencesValue")}
+          openField={openField}
+          options={personalizationOptions.focusPreference}
+          value={personalization.focusPreference}
+          valueLabel={getPersonalizationLabel("focusPreference", personalization.focusPreference)}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("focusPreference", value)}
         />
-        <InfoRow
+        <PersonalizationDropdownRow
+          description="Your current skill level."
+          field="experienceLevel"
           icon={<GraduationCap />}
           label={t("settings.personalization.experienceLevel")}
-          value={safeLevel}
+          openField={openField}
+          options={personalizationOptions.experienceLevel}
+          value={personalization.experienceLevel}
+          valueLabel={getPersonalizationLabel("experienceLevel", personalization.experienceLevel)}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("experienceLevel", value)}
         />
-        <InfoRow
+        <PersonalizationDropdownRow
+          description="The lesson format that helps you learn fastest."
+          field="preferredLearningStyle"
           icon={<BookOpen />}
           label={t("settings.personalization.learningStyle")}
-          value={t("settings.personalization.learningStyleValue")}
+          openField={openField}
+          options={personalizationOptions.preferredLearningStyle}
+          value={personalization.preferredLearningStyle}
+          valueLabel={getPersonalizationLabel(
+            "preferredLearningStyle",
+            personalization.preferredLearningStyle,
+          )}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("preferredLearningStyle", value)}
+        />
+        <PersonalizationDropdownRow
+          description="Default is Auto Detect. Pick a language only if DSIQ should always use it."
+          field="preferredLanguage"
+          icon={<BookOpen />}
+          label={t("settings.language")}
+          openField={openField}
+          options={languageOptions}
+          scroll
+          value={personalization.preferredLanguage}
+          valueLabel={getPersonalizationLabel(
+            "preferredLanguage",
+            personalization.preferredLanguage,
+          )}
+          onOpenField={onOpenField}
+          onSave={(value) => onSave("preferredLanguage", value)}
         />
       </div>
     </div>
+  );
+}
+
+function PersonalizationDropdownRow({
+  description,
+  field,
+  label,
+  onOpenField,
+  onSave,
+  openField,
+  options,
+  scroll,
+  value,
+  valueLabel,
+}: {
+  description: string;
+  field: keyof PersonalizationSettings;
+  icon: React.ReactElement;
+  label: string;
+  onOpenField: (field: keyof PersonalizationSettings) => void;
+  onSave: (value: string) => void;
+  openField: keyof PersonalizationSettings | null;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  scroll?: boolean;
+  value: string;
+  valueLabel: string;
+}) {
+  const isOpen = openField === field;
+
+  return (
+    <SettingRow description={description} title={label}>
+      <DropdownButton
+        expanded={isOpen}
+        label={valueLabel}
+        onClick={() => onOpenField(field)}
+      />
+      {isOpen ? (
+        <DropdownMenu scroll={scroll}>
+          {options.map((option) => (
+            <DropdownOption
+              key={option.value}
+              checked={value === option.value}
+              label={option.label}
+              onClick={() => onSave(option.value)}
+            />
+          ))}
+        </DropdownMenu>
+      ) : null}
+    </SettingRow>
   );
 }
 

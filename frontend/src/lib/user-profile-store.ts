@@ -20,9 +20,15 @@ export type StoredUserProfile = {
   profileImageUrl?: string;
   age?: string;
   selectedGoals?: string[];
+  learningGoals?: string[];
+  aiTeacherStyle?: string;
+  focusPreference?: string;
+  experienceLevel?: string;
+  preferredLearningStyle?: string;
+  preferredLanguage?: string | null;
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
-  languagePreference?: string;
+  languagePreference?: string | null;
   updatedAt?: string;
 };
 
@@ -130,7 +136,7 @@ export function updateLocalUserProfileImage(uid: string, profileImageUrl: string
   );
 }
 
-export function updateLocalUserLanguage(uid: string, languagePreference: string) {
+export function updateLocalUserLanguage(uid: string, languagePreference: string | null) {
   if (typeof window === "undefined") {
     return;
   }
@@ -142,6 +148,7 @@ export function updateLocalUserLanguage(uid: string, languagePreference: string)
     JSON.stringify({
       ...existing,
       languagePreference,
+      preferredLanguage: languagePreference,
       updatedAt: new Date().toISOString(),
     }),
   );

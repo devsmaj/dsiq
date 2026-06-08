@@ -9,6 +9,7 @@ import {
   LANGUAGE_STORAGE_KEY,
   type LanguageCode,
 } from "@/lib/i18n/languages";
+import { saveGuestPersonalizationSettings } from "@/lib/personalization";
 import { updateLocalUserLanguage } from "@/lib/user-profile-store";
 
 export function getEffectiveAiLanguagePreference(
@@ -31,6 +32,7 @@ export async function saveLanguagePreference(input: {
 }) {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, input.languageCode);
+    saveGuestPersonalizationSettings({ preferredLanguage: input.languageCode });
   }
 
   if (!input.uid) {

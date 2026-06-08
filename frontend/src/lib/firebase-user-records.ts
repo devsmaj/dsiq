@@ -40,13 +40,19 @@ export type FirebaseUserProfile = {
   profileImageUrl?: string;
   age?: string;
   selectedGoals?: string[];
+  learningGoals?: string[];
+  aiTeacherStyle?: string;
+  focusPreference?: string;
+  experienceLevel?: string;
+  preferredLearningStyle?: string;
+  preferredLanguage?: string | null;
   onboardingCompleted?: boolean;
   onboardingAnswers?: OnboardingAnswers;
   displayName?: string | null;
   email?: string | null;
   emailVerified?: boolean;
   photoURL?: string | null;
-  languagePreference?: string;
+  languagePreference?: string | null;
 };
 
 function mergeProviderIds(
@@ -221,7 +227,7 @@ export async function updateFirebaseUserProfileImage(input: {
 }
 
 export async function updateFirebaseUserLanguage(input: {
-  languagePreference: string;
+  languagePreference: string | null;
   uid: string;
 }) {
   if (!db) {
@@ -234,9 +240,32 @@ export async function updateFirebaseUserLanguage(input: {
     userRef,
     {
       languagePreference: input.languagePreference,
+      preferredLanguage: input.languagePreference,
       settings: {
         languagePreference: input.languagePreference,
+        preferredLanguage: input.languagePreference,
       },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+}
+
+export async function updateFirebaseUserPersonalization(input: {
+  uid: string;
+  updates: Partial<StoredUserProfile>;
+}) {
+  if (!db) {
+    return;
+  }
+
+  const userRef = doc(db, "users", input.uid);
+
+  await setDoc(
+    userRef,
+    {
+      ...input.updates,
+      personalization: input.updates,
       updatedAt: serverTimestamp(),
     },
     { merge: true },

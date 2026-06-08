@@ -28,7 +28,10 @@ const RESPONSE_FORMATTING_INSTRUCTION = [
 
 export async function askGroq(
   messages: GroqChatMessage[],
-  options: { preferredLanguage?: string | null } = {},
+  options: {
+    personalizationContext?: string;
+    preferredLanguage?: string | null;
+  } = {},
 ) {
   const latestUserMessage = [...messages]
     .reverse()
@@ -59,8 +62,9 @@ export async function askGroq(
       role: "user" as const,
       text: [
         RESPONSE_FORMATTING_INSTRUCTION,
+        options.personalizationContext,
         getAiReplyLanguageInstruction(languageChoice),
-      ].join("\n"),
+      ].filter(Boolean).join("\n"),
     },
     ...messagesWithFinalLanguageRule,
   ];

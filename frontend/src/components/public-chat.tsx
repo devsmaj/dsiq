@@ -16,6 +16,10 @@ import {
   getEffectiveAiLanguagePreference,
   handleLanguagePreferenceCommand,
 } from "@/lib/language-preference-sync";
+import {
+  buildPersonalizationInstruction,
+  getEffectivePersonalizationSettings,
+} from "@/lib/personalization";
 import { dsiqLogoSrc } from "@/lib/public-asset";
 import { useKeyboardOffset } from "@/lib/use-keyboard-offset";
 import { useUserProfile } from "@/lib/use-user-profile";
@@ -230,6 +234,9 @@ export function PublicChat() {
       const response =
         languagePreferenceChange?.reply ||
         (await askGroq(nextMessages, {
+          personalizationContext: buildPersonalizationInstruction(
+            getEffectivePersonalizationSettings(profile),
+          ),
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceChange?.languageCode ||
               languagePreferenceOverride,

@@ -37,6 +37,10 @@ import {
   handleLanguagePreferenceCommand,
 } from "@/lib/language-preference-sync";
 import {
+  buildPersonalizationInstruction,
+  getEffectivePersonalizationSettings,
+} from "@/lib/personalization";
+import {
   completeCurrentRoadmapMission,
   createRoadmapFromAiResponse,
   formatRoadmapContext,
@@ -528,6 +532,9 @@ export default function DsiqMentorPage() {
             text: `${mentorContext}\n\n${roadmapContext}\n\nStudent question: ${question}`,
           },
         ], {
+          personalizationContext: buildPersonalizationInstruction(
+            getEffectivePersonalizationSettings(profile),
+          ),
           preferredLanguage: getEffectiveAiLanguagePreference(
             languagePreferenceOverride,
             profile?.languagePreference,
