@@ -95,11 +95,11 @@ export function getAiLanguageInstruction(languageCodeInput?: string | null) {
     : getStoredLanguagePreference();
 
   if (languageCode === "auto") {
-    return "Language preference: Auto Detect. Respond in the main language of the user's latest message. If the user mixes languages, use the main language. Only use English if the user uses English or asks for English.";
+    return "Language preference: Auto Detect. Respond in the main language of the user's latest message. If the user mixes languages, use the main meaning or emotional language.";
   }
 
   const selectedLanguageCode = languageCode as LanguageCode;
   const language = getLanguageByCode(selectedLanguageCode);
   const languageName = language?.aiName || languageCode;
-  return `Language preference: ${languageName}. Reply in ${languageName} unless the user's latest message clearly asks for a different language. If the user writes in another language, follow the user's latest message language.`;
+  return `Language preference: ${languageName}. Reply in ${languageName} unless the user clearly asks for a different language.`;
 }

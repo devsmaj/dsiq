@@ -1,7 +1,6 @@
 import {
   getLanguageByCode,
   isLanguageCode,
-  LANGUAGE_STORAGE_KEY,
   languages,
   type LanguageCode,
 } from "@/lib/i18n/languages";
@@ -84,15 +83,6 @@ const latinLanguageSignals: Partial<Record<LanguageCode, string[]>> = {
 
 function normalizeText(text: string) {
   return text.trim().toLowerCase();
-}
-
-function getStoredReplyLanguage() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const value = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  return isLanguageCode(value) && value !== "auto" ? value : null;
 }
 
 function getScriptLanguage(text: string): LanguageCode | null {
@@ -249,8 +239,7 @@ export function chooseAiReplyLanguage(input: {
   ) {
     explicitPreference = requestedPreference;
   }
-  const storedLanguage = getStoredReplyLanguage();
-  const preferredLanguage: LanguageCode | null = explicitPreference || storedLanguage;
+  const preferredLanguage: LanguageCode | null = explicitPreference;
   const replyLanguage: LanguageCode = preferredLanguage || detectedLanguage;
 
   return {
@@ -275,5 +264,15 @@ export function getAiReplyLanguageInstruction(choice: AiLanguageChoice) {
     "Respond only in the user's preferred language. If no preference exists, respond in the detected language of the latest message.",
     "If the user asks to change language, update the language preference and use the new language.",
     "If the user mixes languages and no saved preference exists, use the language carrying the main meaning or emotional part. If unclear, briefly ask which language they prefer.",
+  ].join("\n");
+}
+
+export function getFinalReplyLanguageRule(choice: AiLanguageChoice) {
+  const replyName = getLanguageByCode(choice.replyLanguage)?.aiName || choice.replyLanguage;
+
+  return [
+    `The user's reply language is ${replyName}.`,
+    "You must answer only in this language.",
+    "Do not switch to English unless requested.",
   ].join("\n");
 }

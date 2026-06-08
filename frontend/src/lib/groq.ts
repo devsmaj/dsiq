@@ -1,8 +1,8 @@
 import {
   chooseAiReplyLanguage,
   getAiReplyLanguageInstruction,
+  getFinalReplyLanguageRule,
 } from "@/lib/ai-language";
-import { getAiLanguageInstruction } from "@/lib/i18n/languages";
 
 export type GroqChatMessage = {
   role: "model" | "user";
@@ -19,7 +19,6 @@ const RESPONSE_FORMATTING_INSTRUCTION = [
   "Use numbered lists for steps.",
   "Use bullet points for examples.",
   "Never return long unbroken paragraphs.",
-  "Always respond in the same language as the user's latest message. Do not force English unless the user asks for English.",
   "Never end every response with the same phrase. Do not repeatedly say 'Do you understand?' or 'Should I continue?'. End naturally based on the user's message, lesson stage, and next best action.",
   "Ask a follow-up only when useful, and make it match the user's message and context.",
   "For roadmaps, format with clear steps and keep each step short.",
@@ -43,16 +42,27 @@ export async function askGroq(
   const timeoutId = window.setTimeout(() => {
     controller.abort();
   }, CHAT_TIMEOUT_MS);
+  const finalLanguageRule = getFinalReplyLanguageRule(languageChoice);
+  const latestUserIndex = messages
+    .map((message) => message.role)
+    .lastIndexOf("user");
+  const messagesWithFinalLanguageRule = messages.map((message, index) =>
+    index === latestUserIndex
+      ? {
+          ...message,
+          text: `${message.text}\n\n${finalLanguageRule}`,
+        }
+      : message,
+  );
   const formattedMessages = [
     {
       role: "user" as const,
       text: [
         RESPONSE_FORMATTING_INSTRUCTION,
-        getAiLanguageInstruction(options.preferredLanguage),
         getAiReplyLanguageInstruction(languageChoice),
       ].join("\n"),
     },
-    ...messages,
+    ...messagesWithFinalLanguageRule,
   ];
   const body = {
     message: userMessage,
