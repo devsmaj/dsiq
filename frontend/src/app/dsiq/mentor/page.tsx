@@ -1013,7 +1013,7 @@ export default function DsiqMentorPage() {
     const focusProgress = Math.round(((25 * 60 - focusSecondsRemaining) / (25 * 60)) * 100);
 
     return (
-      <section className="relative h-[calc(100vh-178px)] min-h-[620px] overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
+      <section className="relative h-[calc(100vh-178px)] min-h-[620px] w-full max-w-none overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
         <div className="grid h-full min-h-0 lg:grid-cols-[230px_minmax(0,1fr)]">
           <aside className="min-h-0 overflow-y-auto border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4 lg:border-b-0 lg:border-r">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
@@ -1059,9 +1059,9 @@ export default function DsiqMentorPage() {
                 </button>
               </div>
 
-              <div className="relative overflow-hidden rounded-lg bg-[#111111] text-white shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
-                <div className="grid aspect-[16/7.6] min-h-[350px] lg:grid-cols-[minmax(0,1.12fr)_minmax(280px,0.88fr)]">
-                  <div className="flex min-h-0 flex-col border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
+              <div className="live-lesson-screen relative w-full overflow-hidden rounded-lg bg-[#111111] text-white shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+                <div className="grid aspect-[16/7.2] min-h-[360px] bg-[radial-gradient(circle_at_20%_0%,rgba(139,92,246,0.16),transparent_30%),#111111] lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+                  <div className="flex min-h-0 flex-col border-b border-white/10 p-5 lg:border-b-0">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
@@ -1076,7 +1076,7 @@ export default function DsiqMentorPage() {
                       </span>
                     </div>
 
-                    <div className="mt-5 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-white/[0.06] p-5">
+                    <div className="mt-5 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-white/[0.055] p-5 ring-1 ring-white/10">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
                         Teacher Stage
                       </p>
@@ -1100,14 +1100,14 @@ export default function DsiqMentorPage() {
                     ) : null}
                   </div>
 
-                  <div className="flex min-h-0 flex-col p-5">
+                  <div className="flex min-h-0 flex-col border-t border-white/10 bg-white/[0.03] p-5 lg:border-l lg:border-t-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
-                      Visual Slide / Whiteboard
+                      Lesson Whiteboard
                     </p>
                     <p className="mt-3 text-sm font-semibold text-white/90">
                       Code examples, diagrams, and lesson notes
                     </p>
-                    <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white/10 p-4 text-xs leading-6 text-white/90">
+                    <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-black/30 p-4 text-xs leading-6 text-white/90 ring-1 ring-white/10">
 {`function greet(name) {
   return "Hello " + name;
 }`}
@@ -1217,7 +1217,7 @@ export default function DsiqMentorPage() {
                     {mentorMessages.map((message, index) => (
                       <p
                         key={`${message.role}-${index}`}
-                        className="max-w-4xl whitespace-pre-wrap rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm leading-7"
+                        className="w-full whitespace-pre-wrap rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm leading-7"
                       >
                         <span className="font-semibold">
                           {message.role === "model" ? "AI Teacher" : "You"}:
