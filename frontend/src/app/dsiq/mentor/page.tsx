@@ -193,6 +193,7 @@ export default function DsiqMentorPage() {
   const [liveLessonTab, setLiveLessonTab] = useState<LiveLessonTab>("transcript");
   const [isLessonVoiceEnabled, setIsLessonVoiceEnabled] = useState(false);
   const [isLessonPaused, setIsLessonPaused] = useState(false);
+  const [isLessonAskDrawerOpen, setIsLessonAskDrawerOpen] = useState(false);
   const [isFocusTimerExpanded, setIsFocusTimerExpanded] = useState(false);
   const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
   const [focusSecondsRemaining, setFocusSecondsRemaining] = useState(25 * 60);
@@ -1046,13 +1047,28 @@ export default function DsiqMentorPage() {
 
           <div className="flex min-h-0 min-w-0 flex-col bg-white">
             <section className="min-h-0 border-b border-[color:var(--color-line)] bg-white p-4 xl:p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  ← Previous Lesson
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white transition hover:bg-black"
+                >
+                  Next Lesson →
+                </button>
+              </div>
+
               <div className="relative overflow-hidden rounded-lg bg-[#111111] text-white shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
-                <div className="grid aspect-[16/8.2] min-h-[330px] lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+                <div className="grid aspect-[16/7.6] min-h-[350px] lg:grid-cols-[minmax(0,1.12fr)_minmax(280px,0.88fr)]">
                   <div className="flex min-h-0 flex-col border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
-                          DSIQ AI Live Classroom
+                          AI LIVE CLASSROOM
                         </p>
                         <h3 className="mt-2 text-xl font-semibold">
                           {todaysClass.title}
@@ -1065,11 +1081,19 @@ export default function DsiqMentorPage() {
 
                     <div className="mt-5 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-white/[0.06] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
-                        AI Teacher
+                        Teacher Stage
+                      </p>
+                      <p className="mt-3 text-sm font-semibold text-white">
+                        👨‍🏫 DSIQ Teacher
                       </p>
                       <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/90">
                         {latestTeacherMessage}
                       </p>
+                      <div className="mt-5 border-t border-white/10 pt-4">
+                        <p className="text-xs leading-5 text-white/50">
+                          Future avatar area. DSIQ will teach here with voice, slides, and live guidance.
+                        </p>
+                      </div>
                     </div>
 
                     {isLessonPaused ? (
@@ -1081,7 +1105,10 @@ export default function DsiqMentorPage() {
 
                   <div className="flex min-h-0 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
-                      Visual slide / whiteboard
+                      Visual Slide / Whiteboard
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-white/90">
+                      Code examples, diagrams, and lesson notes
                     </p>
                     <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white/10 p-4 text-xs leading-6 text-white/90">
 {`function greet(name) {
@@ -1143,11 +1170,20 @@ export default function DsiqMentorPage() {
                 </div>
               </div>
 
-              <div className="mt-3">
-                <h3 className="text-xl font-semibold">{todaysClass.title}</h3>
-                <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+              <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold">{todaysClass.title}</h3>
+                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">
                   {todaysClass.goal}
-                </p>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLessonAskDrawerOpen(true)}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold shadow-[0_8px_22px_rgba(0,0,0,0.06)] transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  💬 Ask Teacher
+                </button>
               </div>
             </section>
 
@@ -1264,7 +1300,74 @@ export default function DsiqMentorPage() {
           </div>
         </div>
 
-        <div className="absolute bottom-4 right-4 z-20">
+        {isLessonAskDrawerOpen ? (
+          <div className="absolute bottom-20 right-4 z-20 flex max-h-[430px] w-[min(360px,calc(100%-2rem))] flex-col rounded-3xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                  Ask Teacher
+                </p>
+                <p className="mt-1 text-sm font-semibold">Lesson questions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLessonAskDrawerOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+                aria-label="Close Ask Teacher"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto">
+              {mentorMessages.slice(-5).map((message, index) => (
+                <div
+                  key={`${message.role}-drawer-${index}`}
+                  className={`rounded-2xl px-3 py-2 text-xs leading-5 ${
+                    message.role === "user"
+                      ? "ml-auto bg-[#111111] text-white"
+                      : "mr-auto bg-[color:var(--color-surface-strong)]"
+                  }`}
+                >
+                  {message.text.length > 180
+                    ? `${message.text.slice(0, 180)}...`
+                    : message.text}
+                </div>
+              ))}
+            </div>
+            <form
+              className="mt-3 flex gap-2 border-t border-[color:var(--color-line)] pt-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitMentorPrompt(prompt);
+              }}
+            >
+              <input
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                placeholder="Ask during the lesson..."
+                className="h-10 min-w-0 flex-1 rounded-full border border-[color:var(--color-line)] px-3 text-sm outline-none transition focus:border-[#111111]"
+              />
+              <button
+                type="submit"
+                disabled={!prompt.trim() || isSending || isLessonPaused}
+                className="inline-flex h-10 items-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        ) : null}
+
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+          {!isLessonAskDrawerOpen ? (
+            <button
+              type="button"
+              onClick={() => setIsLessonAskDrawerOpen(true)}
+              className="inline-flex h-12 items-center rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm font-semibold shadow-[0_18px_44px_rgba(0,0,0,0.12)] transition hover:bg-[color:var(--color-surface-strong)]"
+            >
+              💬 Ask Teacher
+            </button>
+          ) : null}
           {isFocusTimerExpanded ? (
             <div className="w-[260px] rounded-3xl border border-white/15 bg-[#111111]/95 p-4 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] backdrop-blur">
               <div className="flex items-center justify-between">
@@ -1802,22 +1905,6 @@ export default function DsiqMentorPage() {
             ) : null}
 
             <div className="ai-teacher-shell">
-              <section className="ai-teacher-summary flex flex-col gap-1 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
-                <div className="flex items-center gap-3">
-                  {renderProfileAvatar("sm")}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">Good to see you, {displayName}.</p>
-                    <p className="mt-1 text-xs text-[color:var(--color-muted)]">
-                      Current goal: {primaryGoal}
-                    </p>
-                    <p className="mt-1 text-xs text-[color:var(--color-muted)]">
-                      Progress: {roadmapProgress}%
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-
               <article className="ai-teacher-card rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
                 <div className="teacher-header border-b border-[color:var(--color-line)] px-5 py-4">
                   <div className="flex items-center justify-between gap-3">
