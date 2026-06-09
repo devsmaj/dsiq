@@ -17,9 +17,7 @@ import {
 } from "lucide-react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 
-import { ChatComposer } from "@/components/chat-composer";
 import { PrivateRoute } from "@/components/private-route";
 import { getFriendlyFirestoreError } from "@/lib/firestore-errors";
 import {
@@ -175,7 +173,6 @@ function getChatHref(chat: PrivateChatSummary) {
 
 export default function DsiqMentorPage() {
   useKeyboardOffset();
-  const { t } = useTranslation();
 
   const { answers, isAuthLoading, profile, user } = useUserProfile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -1275,27 +1272,6 @@ export default function DsiqMentorPage() {
                 ) : null}
               </div>
 
-              <form
-                className="flex flex-col gap-2 border-t border-[color:var(--color-line)] pt-3 sm:flex-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void submitMentorPrompt(prompt);
-                }}
-              >
-                <input
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder={getLiveLessonPlaceholder()}
-                  className="h-11 min-w-0 flex-1 rounded-full border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
-                />
-                <button
-                  type="submit"
-                  disabled={!prompt.trim() || isSending || isLessonPaused}
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Send
-                </button>
-              </form>
             </section>
           </div>
         </div>
@@ -1317,6 +1293,24 @@ export default function DsiqMentorPage() {
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
+            </div>
+            <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                {[
+                  "Explain again",
+                  "Give easier example",
+                  "Check my answer",
+                  "Translate this",
+                  "Continue lesson",
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setPrompt(suggestion)}
+                    className="rounded-full bg-[color:var(--color-surface-strong)] px-3 py-2 text-left font-semibold transition hover:bg-[color:var(--color-line)]"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
             </div>
             <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto">
               {mentorMessages.slice(-5).map((message, index) => (
@@ -1344,7 +1338,7 @@ export default function DsiqMentorPage() {
               <input
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                placeholder="Ask during the lesson..."
+                placeholder="Ask your AI Teacher..."
                 className="h-10 min-w-0 flex-1 rounded-full border border-[color:var(--color-line)] px-3 text-sm outline-none transition focus:border-[#111111]"
               />
               <button
@@ -2013,25 +2007,93 @@ export default function DsiqMentorPage() {
                       <div ref={latestMessageRef} />
                     </div>
 
-                    <div className="teacher-input-area min-w-0 w-full">
-                      <ChatComposer
-                        docked
-                        value={prompt}
-                        onChange={setPrompt}
-                        onSubmit={(value, attachments) =>
-                          void submitMentorPrompt(
-                            attachments.length
-                              ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
-                              : value,
-                          )
-                        }
-                        onVoiceInput={handleVoiceInput}
-                        onExpandedChange={setIsComposerExpanded}
-                        isListening={isListening}
-                        isSending={isSending}
-                        placeholder={t("chat.askDsiq")}
-                      />
-                    </div>
+                    {teacherMode !== "practice" ? (
+                      <div className="fixed bottom-5 right-5 z-30 flex items-end gap-3 sm:right-8">
+                        {isLessonAskDrawerOpen ? (
+                          <div className="flex max-h-[430px] w-[min(360px,calc(100vw-2.5rem))] flex-col rounded-3xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                                  DSIQ Teacher Chat
+                                </p>
+                                <p className="mt-1 text-sm font-semibold">Ask during the lesson</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setIsLessonAskDrawerOpen(false)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)] transition hover:text-[color:var(--color-text)]"
+                                aria-label="Close Ask Teacher"
+                              >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+                            <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                              {[
+                                "Explain again",
+                                "Give easier example",
+                                "Check my answer",
+                                "Translate this",
+                                "Continue lesson",
+                              ].map((suggestion) => (
+                                <button
+                                  key={suggestion}
+                                  type="button"
+                                  onClick={() => setPrompt(suggestion)}
+                                  className="rounded-full bg-[color:var(--color-surface-strong)] px-3 py-2 text-left font-semibold transition hover:bg-[color:var(--color-line)]"
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-4 min-h-24 flex-1 space-y-2 overflow-y-auto">
+                              {mentorMessages.slice(-5).map((message, index) => (
+                                <div
+                                  key={`${message.role}-classroom-drawer-${index}`}
+                                  className={`rounded-2xl px-3 py-2 text-xs leading-5 ${
+                                    message.role === "user"
+                                      ? "ml-auto bg-[#111111] text-white"
+                                      : "mr-auto bg-[color:var(--color-surface-strong)]"
+                                  }`}
+                                >
+                                  {message.text.length > 180
+                                    ? `${message.text.slice(0, 180)}...`
+                                    : message.text}
+                                </div>
+                              ))}
+                            </div>
+                            <form
+                              className="mt-3 flex gap-2 border-t border-[color:var(--color-line)] pt-3"
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                void submitMentorPrompt(prompt);
+                              }}
+                            >
+                              <input
+                                value={prompt}
+                                onChange={(event) => setPrompt(event.target.value)}
+                                placeholder="Ask your AI Teacher..."
+                                className="h-10 min-w-0 flex-1 rounded-full border border-[color:var(--color-line)] px-3 text-sm outline-none transition focus:border-[#111111]"
+                              />
+                              <button
+                                type="submit"
+                                disabled={!prompt.trim() || isSending}
+                                className="inline-flex h-10 items-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Send
+                              </button>
+                            </form>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsLessonAskDrawerOpen(true)}
+                            className="inline-flex h-12 items-center rounded-2xl border border-[color:var(--color-line)] bg-white px-4 text-sm font-semibold shadow-[0_18px_44px_rgba(0,0,0,0.14)] transition hover:bg-[color:var(--color-surface-strong)]"
+                          >
+                            💬 Ask Teacher
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
                   </>
                 )}
               </article>
