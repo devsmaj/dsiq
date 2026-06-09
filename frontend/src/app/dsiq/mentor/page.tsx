@@ -1016,7 +1016,7 @@ export default function DsiqMentorPage() {
 
     return (
       <section className="relative h-[calc(100vh-178px)] min-h-[620px] overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
-        <div className="grid h-full min-h-0 lg:grid-cols-[210px_minmax(0,1fr)_292px]">
+        <div className="grid h-full min-h-0 lg:grid-cols-[230px_minmax(0,1fr)]">
           <aside className="min-h-0 overflow-y-auto border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4 lg:border-b-0 lg:border-r">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               📚 Course Path
@@ -1044,130 +1044,138 @@ export default function DsiqMentorPage() {
             </div>
           </aside>
 
-          <div className="flex min-h-0 min-w-0 flex-col bg-[color:var(--color-background)]">
-            <section className="flex min-h-0 flex-1 flex-col border-b border-[color:var(--color-line)] bg-[color:var(--color-background)] p-4 xl:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    DSIQ AI Live Classroom
-                  </p>
-                  <h3 className="mt-2 text-xl font-semibold">
-                    Topic: {todaysClass.title}
-                  </h3>
-                  <p className="mt-1 hidden text-sm text-[color:var(--color-muted)] sm:block">
-                    AI teacher stage, visual slides, code examples, and lesson progress.
-                  </p>
-                </div>
-              </div>
+          <div className="flex min-h-0 min-w-0 flex-col bg-white">
+            <section className="min-h-0 border-b border-[color:var(--color-line)] bg-white p-4 xl:p-5">
+              <div className="relative overflow-hidden rounded-lg bg-[#111111] text-white shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+                <div className="grid aspect-[16/8.2] min-h-[330px] lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+                  <div className="flex min-h-0 flex-col border-b border-white/10 p-5 lg:border-b-0 lg:border-r">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+                          DSIQ AI Live Classroom
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold">
+                          {todaysClass.title}
+                        </h3>
+                      </div>
+                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
+                        {todaysClass.lesson}
+                      </span>
+                    </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsLessonVoiceEnabled((current) => !current)}
-                  className={`inline-flex h-10 items-center rounded-full border px-4 text-xs font-semibold transition ${
-                    isLessonVoiceEnabled
-                      ? "border-[#111111] bg-[#111111] text-white"
-                      : "border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] hover:bg-[color:var(--color-surface-strong)]"
-                  }`}
-                >
-                  🎙 Voice {isLessonVoiceEnabled ? "ON" : "OFF"}
-                </button>
-                <button
-                  type="button"
-                  onClick={pauseLiveLesson}
-                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  ⏸ Pause
-                </button>
-                <button
-                  type="button"
-                  onClick={continueLiveLesson}
-                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  ▶ Continue
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void explainAgain()}
-                  disabled={isSending}
-                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  🔁 Explain Again
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void startQuiz()}
-                  disabled={isSending}
-                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  🧠 Quiz
-                </button>
-                <button
-                  type="button"
-                  onClick={openLiveNotes}
-                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
-                >
-                  📝 Notes
-                </button>
-              </div>
+                    <div className="mt-5 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-white/[0.06] p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+                        AI Teacher
+                      </p>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/90">
+                        {latestTeacherMessage}
+                      </p>
+                    </div>
 
-              {isLessonPaused ? (
-                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-                  Lesson paused. Press Continue when you are ready.
-                </div>
-              ) : null}
+                    {isLessonPaused ? (
+                      <div className="mt-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100">
+                        Lesson paused. Press play when you are ready.
+                      </div>
+                    ) : null}
+                  </div>
 
-              <div className="mt-4 grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="min-h-0 overflow-y-auto rounded-2xl border border-[color:var(--color-line)] bg-white p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    AI Teacher Stage
-                  </p>
-                  <p className="text-sm font-semibold">DSIQ Teacher</p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[color:var(--color-text)]">
-                    {latestTeacherMessage}
-                  </p>
-                </div>
-                <div className="flex min-h-0 flex-col rounded-2xl border border-[color:var(--color-line)] bg-[#111111] p-4 text-white">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
-                    Visual Slide / Whiteboard
-                  </p>
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white/10 p-3 text-xs leading-6">
+                  <div className="flex min-h-0 flex-col p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
+                      Visual slide / whiteboard
+                    </p>
+                    <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-2xl bg-white/10 p-4 text-xs leading-6 text-white/90">
 {`function greet(name) {
   return "Hello " + name;
 }`}
-                  </pre>
-                  <p className="mt-3 text-xs leading-5 text-white/70">
-                    A function is a reusable block of code. Today you will write one, test it, and use it in a mini project.
-                  </p>
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
-                      <span>Lesson progress</span>
-                      <span>35%</span>
-                    </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full w-[35%] rounded-full bg-white" />
+                    </pre>
+                    <p className="mt-4 text-sm leading-6 text-white/70">
+                      A function is a reusable block of code. Today you will write one, test it, and use it in a mini project.
+                    </p>
+                    <div className="mt-auto pt-5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                        <span>Lesson progress</span>
+                        <span>35%</span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                        <div className="h-full w-[35%] rounded-full bg-white" />
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <div className="flex h-12 items-center gap-3 border-t border-white/10 bg-black/30 px-4 text-white/75">
+                  <button
+                    type="button"
+                    onClick={isLessonPaused ? continueLiveLesson : pauseLiveLesson}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-semibold text-[#111111]"
+                    aria-label={isLessonPaused ? "Continue lesson" : "Pause lesson"}
+                  >
+                    {isLessonPaused ? "▶" : "⏸"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsLessonVoiceEnabled((current) => !current)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-sm"
+                    aria-label="Toggle lesson voice"
+                  >
+                    🎙
+                  </button>
+                  <span className="text-xs font-semibold">6:42 / 15:00</span>
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
+                    <div className="h-full w-[44%] rounded-full bg-white" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void explainAgain()}
+                    disabled={isSending}
+                    className="hidden h-8 rounded-full bg-white/10 px-3 text-xs font-semibold transition hover:bg-white/15 disabled:opacity-50 sm:inline-flex sm:items-center"
+                  >
+                    Replay
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void startQuiz()}
+                    disabled={isSending}
+                    className="hidden h-8 rounded-full bg-white/10 px-3 text-xs font-semibold transition hover:bg-white/15 disabled:opacity-50 sm:inline-flex sm:items-center"
+                  >
+                    Quiz
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <h3 className="text-xl font-semibold">{todaysClass.title}</h3>
+                <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                  {todaysClass.goal}
+                </p>
               </div>
             </section>
 
-            <section className="flex h-[238px] min-h-0 flex-col bg-white p-4">
-              <div className="flex flex-wrap gap-2 border-b border-[color:var(--color-line)] pb-3">
-                {(["transcript", "notes", "chat", "code"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setLiveLessonTab(tab)}
-                    className={`rounded-full px-4 py-2 text-xs font-semibold capitalize transition ${
-                      liveLessonTab === tab
-                        ? "bg-[#111111] text-white"
-                        : "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)] hover:text-[color:var(--color-text)]"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+            <section className="flex min-h-0 flex-1 flex-col bg-white px-4 pb-4 xl:px-5">
+              <div className="flex flex-wrap gap-5 border-b border-[color:var(--color-line)]">
+                {(["transcript", "notes", "code", "chat"] as const).map((tab) => {
+                  const tabLabel =
+                    tab === "code"
+                      ? "Downloads"
+                      : tab === "chat"
+                        ? "Discuss"
+                        : tab;
+
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setLiveLessonTab(tab)}
+                      className={`border-b-2 px-1 py-3 text-xs font-semibold capitalize transition ${
+                        liveLessonTab === tab
+                          ? "border-[#111111] text-[#111111]"
+                          : "border-transparent text-[color:var(--color-muted)] hover:text-[color:var(--color-text)]"
+                      }`}
+                    >
+                      {tabLabel}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto py-3">
@@ -1176,7 +1184,7 @@ export default function DsiqMentorPage() {
                     {mentorMessages.map((message, index) => (
                       <p
                         key={`${message.role}-${index}`}
-                        className="whitespace-pre-wrap rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm leading-7"
+                        className="max-w-4xl whitespace-pre-wrap rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm leading-7"
                       >
                         <span className="font-semibold">
                           {message.role === "model" ? "AI Teacher" : "You"}:
@@ -1214,11 +1222,20 @@ export default function DsiqMentorPage() {
                 ) : null}
 
                 {liveLessonTab === "code" ? (
-                  <textarea
-                    value={liveLessonCode}
-                    onChange={(event) => setLiveLessonCode(event.target.value)}
-                    className="h-full min-h-28 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[#111111] px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-[#111111]"
-                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+                      <p className="text-sm font-semibold">Starter code</p>
+                      <pre className="mt-3 overflow-x-auto rounded-xl bg-[#111111] p-3 font-mono text-xs leading-6 text-white">
+                        {liveLessonCode}
+                      </pre>
+                    </div>
+                    <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+                      <p className="text-sm font-semibold">Lesson resources</p>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--color-muted)]">
+                        Notes, examples, and practice files will appear here as the AI classroom grows.
+                      </p>
+                    </div>
+                  </div>
                 ) : null}
               </div>
 
@@ -1245,36 +1262,6 @@ export default function DsiqMentorPage() {
               </form>
             </section>
           </div>
-
-          <aside className="flex min-h-0 flex-col border-t border-[color:var(--color-line)] bg-white p-4 lg:border-l lg:border-t-0">
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                💬 Ask Teacher
-              </p>
-              <p className="mt-2 text-sm leading-6">
-                Ask questions anytime. DSIQ replies like a teacher and keeps you inside the lesson.
-              </p>
-              <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-                {mentorMessages.map((message, index) => (
-                  <div
-                    key={`${message.role}-side-${index}`}
-                    className={`rounded-2xl px-3 py-2 text-xs leading-5 ${
-                      message.role === "user"
-                        ? "bg-[#111111] text-white"
-                        : "bg-white text-[color:var(--color-text)]"
-                    }`}
-                  >
-                    <span className="font-semibold">
-                      {message.role === "model" ? "Teacher" : "You"}:
-                    </span>{" "}
-                    {message.text.length > 140
-                      ? `${message.text.slice(0, 140)}...`
-                      : message.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </aside>
         </div>
 
         <div className="absolute bottom-4 right-4 z-20">
