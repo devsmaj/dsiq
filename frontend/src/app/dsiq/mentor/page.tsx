@@ -1012,11 +1012,12 @@ export default function DsiqMentorPage() {
       [...mentorMessages].reverse().find((message) => message.role === "model")?.text ||
       "Welcome to your live AI lesson.";
     const totalFocusMinutes = Math.floor(focusTotalSeconds / 60);
+    const focusProgress = Math.round(((25 * 60 - focusSecondsRemaining) / (25 * 60)) * 100);
 
     return (
-      <section className="overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
-        <div className="grid min-h-[640px] lg:grid-cols-[220px_minmax(0,1fr)_300px]">
-          <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4 lg:border-b-0 lg:border-r">
+      <section className="relative h-[calc(100vh-178px)] min-h-[620px] overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
+        <div className="grid h-full min-h-0 lg:grid-cols-[210px_minmax(0,1fr)_292px]">
+          <aside className="min-h-0 overflow-y-auto border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4 lg:border-b-0 lg:border-r">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
               📚 Course Path
             </p>
@@ -1043,8 +1044,8 @@ export default function DsiqMentorPage() {
             </div>
           </aside>
 
-          <div className="flex min-w-0 flex-col bg-[color:var(--color-background)]">
-            <section className="min-h-[300px] border-b border-[color:var(--color-line)] bg-[color:var(--color-background)] p-5">
+          <div className="flex min-h-0 min-w-0 flex-col bg-[color:var(--color-background)]">
+            <section className="flex min-h-0 flex-1 flex-col border-b border-[color:var(--color-line)] bg-[color:var(--color-background)] p-4 xl:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
@@ -1053,13 +1054,13 @@ export default function DsiqMentorPage() {
                   <h3 className="mt-2 text-xl font-semibold">
                     Topic: {todaysClass.title}
                   </h3>
-                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                  <p className="mt-1 hidden text-sm text-[color:var(--color-muted)] sm:block">
                     AI teacher stage, visual slides, code examples, and lesson progress.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setIsLessonVoiceEnabled((current) => !current)}
@@ -1111,13 +1112,13 @@ export default function DsiqMentorPage() {
               </div>
 
               {isLessonPaused ? (
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
                   Lesson paused. Press Continue when you are ready.
                 </div>
               ) : null}
 
-              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="rounded-2xl border border-[color:var(--color-line)] bg-white p-5">
+              <div className="mt-4 grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="min-h-0 overflow-y-auto rounded-2xl border border-[color:var(--color-line)] bg-white p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                     AI Teacher Stage
                   </p>
@@ -1126,7 +1127,7 @@ export default function DsiqMentorPage() {
                     {latestTeacherMessage}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[color:var(--color-line)] bg-[#111111] p-4 text-white">
+                <div className="flex min-h-0 flex-col rounded-2xl border border-[color:var(--color-line)] bg-[#111111] p-4 text-white">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
                     Visual Slide / Whiteboard
                   </p>
@@ -1151,7 +1152,7 @@ export default function DsiqMentorPage() {
               </div>
             </section>
 
-            <section className="flex min-h-[280px] flex-col bg-white p-4">
+            <section className="flex h-[238px] min-h-0 flex-col bg-white p-4">
               <div className="flex flex-wrap gap-2 border-b border-[color:var(--color-line)] pb-3">
                 {(["transcript", "notes", "chat", "code"] as const).map((tab) => (
                   <button
@@ -1169,7 +1170,7 @@ export default function DsiqMentorPage() {
                 ))}
               </div>
 
-              <div className="min-h-40 flex-1 overflow-y-auto py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto py-3">
                 {liveLessonTab === "transcript" ? (
                   <div className="space-y-3">
                     {mentorMessages.map((message, index) => (
@@ -1191,7 +1192,7 @@ export default function DsiqMentorPage() {
                     value={liveLessonNotes}
                     onChange={(event) => setLiveLessonNotes(event.target.value)}
                     placeholder="Write your lesson notes here..."
-                    className="min-h-40 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm outline-none transition focus:border-[#111111]"
+                    className="h-full min-h-28 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm outline-none transition focus:border-[#111111]"
                   />
                 ) : null}
 
@@ -1216,7 +1217,7 @@ export default function DsiqMentorPage() {
                   <textarea
                     value={liveLessonCode}
                     onChange={(event) => setLiveLessonCode(event.target.value)}
-                    className="min-h-40 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[#111111] px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-[#111111]"
+                    className="h-full min-h-28 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[#111111] px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-[#111111]"
                   />
                 ) : null}
               </div>
@@ -1245,16 +1246,16 @@ export default function DsiqMentorPage() {
             </section>
           </div>
 
-          <aside className="border-t border-[color:var(--color-line)] bg-white p-4 lg:border-l lg:border-t-0">
-            <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+          <aside className="flex min-h-0 flex-col border-t border-[color:var(--color-line)] bg-white p-4 lg:border-l lg:border-t-0">
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
                 💬 Ask Teacher
               </p>
               <p className="mt-2 text-sm leading-6">
                 Ask questions anytime. DSIQ replies like a teacher and keeps you inside the lesson.
               </p>
-              <div className="mt-4 space-y-2">
-                {mentorMessages.slice(-3).map((message, index) => (
+              <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                {mentorMessages.map((message, index) => (
                   <div
                     key={`${message.role}-side-${index}`}
                     className={`rounded-2xl px-3 py-2 text-xs leading-5 ${
@@ -1273,72 +1274,81 @@ export default function DsiqMentorPage() {
                 ))}
               </div>
             </div>
-
-            <div className="mt-4 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
-              <button
-                type="button"
-                onClick={() => setIsFocusTimerExpanded((current) => !current)}
-                className="flex w-full items-center justify-between text-left"
-              >
-                <span>
-                  <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
-                    Focus Time
-                  </span>
-                  <span className="mt-1 block text-3xl font-semibold">
-                    {formatFocusTime(focusSecondsRemaining)}
-                  </span>
-                </span>
-                <span className="rounded-full bg-[color:var(--color-surface-strong)] px-3 py-1 text-xs font-semibold">
-                  {isFocusTimerExpanded ? "Hide" : "Open"}
-                </span>
-              </button>
-
-              {isFocusTimerExpanded ? (
-                <div className="mt-4 space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsFocusTimerRunning(true)}
-                      className="inline-flex h-9 items-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white"
-                    >
-                      Start
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsFocusTimerRunning(false)}
-                      className="inline-flex h-9 items-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold"
-                    >
-                      Pause
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsFocusTimerRunning(false);
-                        setFocusSecondsRemaining(25 * 60);
-                      }}
-                      className="inline-flex h-9 items-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold"
-                    >
-                      Reset
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3">
-                      <p className="text-xs font-semibold text-[color:var(--color-muted)]">
-                        Sessions
-                      </p>
-                      <p className="mt-1 font-semibold">{focusSessions}</p>
-                    </div>
-                    <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3">
-                      <p className="text-xs font-semibold text-[color:var(--color-muted)]">
-                        Total Time
-                      </p>
-                      <p className="mt-1 font-semibold">{totalFocusMinutes}m</p>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
           </aside>
+        </div>
+
+        <div className="absolute bottom-4 right-4 z-20">
+          {isFocusTimerExpanded ? (
+            <div className="w-[260px] rounded-3xl border border-white/15 bg-[#111111]/95 p-4 text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)] backdrop-blur">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+                  Focus Time
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsFocusTimerExpanded(false)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white transition hover:bg-white/20"
+                  aria-label="Minimize focus timer"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="mt-3 text-4xl font-semibold">
+                {formatFocusTime(focusSecondsRemaining)}
+              </p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-[#8b5cf6] transition-all"
+                  style={{ width: `${focusProgress}%` }}
+                />
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsFocusTimerRunning(true)}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-white px-3 text-xs font-semibold text-[#111111]"
+                >
+                  Start
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFocusTimerRunning(false)}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white"
+                >
+                  Pause
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFocusTimerRunning(false);
+                    setFocusSecondsRemaining(25 * 60);
+                  }}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white"
+                >
+                  Reset
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-white/10 p-3">
+                  <p className="text-xs text-white/60">Sessions</p>
+                  <p className="mt-1 font-semibold">{focusSessions}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-3">
+                  <p className="text-xs text-white/60">Total Time</p>
+                  <p className="mt-1 font-semibold">{totalFocusMinutes}m</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsFocusTimerExpanded(true)}
+              className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-[#111111]/95 text-2xl text-white shadow-[0_18px_44px_rgba(0,0,0,0.26)] backdrop-blur transition hover:scale-105"
+              aria-label="Open focus timer"
+            >
+              ⏱
+            </button>
+          )}
         </div>
       </section>
     );
