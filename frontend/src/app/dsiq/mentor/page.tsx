@@ -84,6 +84,7 @@ const collapsedTooltipClass =
 const CHAT_TYPE = "teacher" as const;
 
 type TeacherMode = "learn" | "practice" | "progress";
+type LiveLessonTab = "transcript" | "notes" | "chat" | "code";
 
 const todaysClass = {
   goal: "Understand functions and build a simple project",
@@ -94,6 +95,15 @@ const todaysClass = {
 };
 
 const lessonSteps = ["Explanation", "Practice", "Quiz", "Mini Project", "Complete"];
+
+const liveLessonOutline = [
+  { label: "Introduction", status: "done" },
+  { label: "Variables", status: "done" },
+  { label: "JavaScript Functions", status: "active" },
+  { label: "Practice", status: "locked" },
+  { label: "Quiz", status: "locked" },
+  { label: "Mini Project", status: "locked" },
+] as const;
 
 const progressTracks = [
   { label: "HTML", progress: 100 },
@@ -179,6 +189,19 @@ export default function DsiqMentorPage() {
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [mentorMessages, setMentorMessages] = useState<GroqChatMessage[]>([]);
   const [teacherMode, setTeacherMode] = useState<TeacherMode>("learn");
+  const [isLiveLessonOpen, setIsLiveLessonOpen] = useState(false);
+  const [liveLessonTab, setLiveLessonTab] = useState<LiveLessonTab>("transcript");
+  const [isLessonVoiceEnabled, setIsLessonVoiceEnabled] = useState(false);
+  const [isLessonPaused, setIsLessonPaused] = useState(false);
+  const [isFocusTimerExpanded, setIsFocusTimerExpanded] = useState(false);
+  const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
+  const [focusSecondsRemaining, setFocusSecondsRemaining] = useState(25 * 60);
+  const [focusSessions, setFocusSessions] = useState(0);
+  const [focusTotalSeconds, setFocusTotalSeconds] = useState(0);
+  const [liveLessonNotes, setLiveLessonNotes] = useState("");
+  const [liveLessonCode, setLiveLessonCode] = useState(
+    "function add(a, b) {\n  return a + b;\n}",
+  );
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [teacherChats, setTeacherChats] = useState<PrivateChatSummary[]>([]);
   const [isChatsLoading, setIsChatsLoading] = useState(false);
@@ -329,6 +352,60 @@ export default function DsiqMentorPage() {
   }, [mentorMessages, isSending, error]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !user) {
+      return;
+    }
+
+    const notes = window.localStorage.getItem(`dsiq.live-lesson-notes.${user.uid}`);
+    const code = window.localStorage.getItem(`dsiq.live-lesson-code.${user.uid}`);
+
+    if (notes) {
+      setLiveLessonNotes(notes);
+    }
+
+    if (code) {
+      setLiveLessonCode(code);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) {
+      return;
+    }
+
+    window.localStorage.setItem(`dsiq.live-lesson-notes.${user.uid}`, liveLessonNotes);
+  }, [liveLessonNotes, user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) {
+      return;
+    }
+
+    window.localStorage.setItem(`dsiq.live-lesson-code.${user.uid}`, liveLessonCode);
+  }, [liveLessonCode, user]);
+
+  useEffect(() => {
+    if (!isFocusTimerRunning) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setFocusSecondsRemaining((current) => {
+        if (current <= 1) {
+          setIsFocusTimerRunning(false);
+          setFocusSessions((sessions) => sessions + 1);
+          return 25 * 60;
+        }
+
+        setFocusTotalSeconds((total) => total + 1);
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [isFocusTimerRunning]);
+
+  useEffect(() => {
     async function loadTeacherChats() {
       if (isAuthLoading) {
         return;
@@ -390,6 +467,8 @@ export default function DsiqMentorPage() {
     setCurrentChatId(null);
     setMentorMessages([]);
     setTeacherMode("learn");
+    setIsLiveLessonOpen(false);
+    setLiveLessonTab("transcript");
     setPrompt("");
     setError("");
     setIsSearchPanelOpen(false);
@@ -408,6 +487,7 @@ export default function DsiqMentorPage() {
       setError("");
       setIsSearchPanelOpen(false);
       setCurrentChatId(chatId);
+      setIsLiveLessonOpen(false);
       const messages = await loadPrivateChatMessages(user.uid, chatId);
       setMentorMessages(messages.map(({ role, text }) => ({ role, text })));
       if (mobile) {
@@ -434,6 +514,71 @@ export default function DsiqMentorPage() {
     void refreshTeacherChats();
   }
 
+  function speakLessonText(text: string) {
+    if (
+      !isLessonVoiceEnabled ||
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[^\p{L}\p{N}\s.,?!:;-]/gu, ""));
+    utterance.lang = navigator.language || "en-US";
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function formatFocusTime(seconds: number) {
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const remainingSeconds = (seconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${remainingSeconds}`;
+  }
+
+  function getLiveLessonPlaceholder() {
+    if (teacherMode === "practice") {
+      return "Submit your answer...";
+    }
+
+    if (teacherMode === "progress") {
+      return "Ask about your progress...";
+    }
+
+    return "Ask your AI Teacher...";
+  }
+
+  function pauseLiveLesson() {
+    setIsLessonPaused(true);
+    setIsFocusTimerRunning(false);
+    window.speechSynthesis?.cancel();
+  }
+
+  function continueLiveLesson() {
+    setIsLessonPaused(false);
+    speakLessonText(
+      "Let's continue. We are learning JavaScript functions step by step.",
+    );
+  }
+
+  function explainAgain() {
+    void submitMentorPrompt(
+      "Explain JavaScript functions again with a simpler example, then ask me one check question.",
+    );
+  }
+
+  function startQuiz() {
+    setTeacherMode("practice");
+    setLiveLessonTab("chat");
+    void submitMentorPrompt(
+      "Start a short quiz about JavaScript functions. Ask one question at a time and wait for my answer.",
+    );
+  }
+
+  function openLiveNotes() {
+    setLiveLessonTab("notes");
+  }
+
   async function startTodaysLesson() {
     if (isSending) {
       return;
@@ -444,19 +589,27 @@ export default function DsiqMentorPage() {
       text: [
         "👨‍🏫 DSIQ Teacher:",
         "",
-        "Welcome to today's lesson.",
+        `Welcome ${displayName}. Today we are learning JavaScript functions.`,
         "",
-        "Yesterday we learned loops.",
-        "Today we learn functions.",
+        "Lesson plan:",
+        "1. What is a function?",
+        "2. Function syntax",
+        "3. Example",
+        "4. Practice",
+        "5. Quiz",
+        "6. Mini project",
         "",
-        "Before we start:",
+        "Before we continue:",
         "What do you think a function is?",
       ].join("\n"),
     };
 
     setTeacherMode("learn");
+    setIsLiveLessonOpen(true);
+    setLiveLessonTab("transcript");
     setMentorMessages([teacherMessage]);
     setError("");
+    speakLessonText(teacherMessage.text);
 
     try {
       if (isAuthLoading || !user) {
@@ -641,6 +794,7 @@ export default function DsiqMentorPage() {
           text: answer,
         },
       ]);
+      speakLessonText(answer);
       await savePrivateChatMessage({
         chatId,
         chatType: CHAT_TYPE,
@@ -846,8 +1000,345 @@ export default function DsiqMentorPage() {
             disabled={isSending}
             className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Start Lesson
+            Start Live Lesson
           </button>
+        </div>
+      </section>
+    );
+  }
+
+  function renderLiveLessonPanel() {
+    const latestTeacherMessage =
+      [...mentorMessages].reverse().find((message) => message.role === "model")?.text ||
+      "Welcome to your live AI lesson.";
+    const totalFocusMinutes = Math.floor(focusTotalSeconds / 60);
+
+    return (
+      <section className="overflow-hidden rounded-2xl border border-[color:var(--color-line)] bg-white shadow-[0_16px_44px_rgba(0,0,0,0.06)]">
+        <div className="grid min-h-[640px] lg:grid-cols-[220px_minmax(0,1fr)_300px]">
+          <aside className="border-b border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4 lg:border-b-0 lg:border-r">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+              📚 Course Path
+            </p>
+            <div className="mt-4 space-y-3">
+              {liveLessonOutline.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 text-sm font-semibold"
+                >
+                  <span className="w-5 text-center">
+                    {item.status === "done" ? "✓" : item.status === "active" ? "▶" : "○"}
+                  </span>
+                  <span
+                    className={
+                      item.status === "active"
+                        ? "text-[color:var(--color-text)]"
+                        : "text-[color:var(--color-muted)]"
+                    }
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </aside>
+
+          <div className="flex min-w-0 flex-col bg-[color:var(--color-background)]">
+            <section className="min-h-[300px] border-b border-[color:var(--color-line)] bg-[color:var(--color-background)] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                    DSIQ AI Live Classroom
+                  </p>
+                  <h3 className="mt-2 text-xl font-semibold">
+                    Topic: {todaysClass.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">
+                    AI teacher stage, visual slides, code examples, and lesson progress.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLessonVoiceEnabled((current) => !current)}
+                  className={`inline-flex h-10 items-center rounded-full border px-4 text-xs font-semibold transition ${
+                    isLessonVoiceEnabled
+                      ? "border-[#111111] bg-[#111111] text-white"
+                      : "border-[color:var(--color-line)] bg-white text-[color:var(--color-text)] hover:bg-[color:var(--color-surface-strong)]"
+                  }`}
+                >
+                  🎙 Voice {isLessonVoiceEnabled ? "ON" : "OFF"}
+                </button>
+                <button
+                  type="button"
+                  onClick={pauseLiveLesson}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  ⏸ Pause
+                </button>
+                <button
+                  type="button"
+                  onClick={continueLiveLesson}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  ▶ Continue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void explainAgain()}
+                  disabled={isSending}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  🔁 Explain Again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void startQuiz()}
+                  disabled={isSending}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  🧠 Quiz
+                </button>
+                <button
+                  type="button"
+                  onClick={openLiveNotes}
+                  className="inline-flex h-10 items-center rounded-full border border-[color:var(--color-line)] bg-white px-4 text-xs font-semibold transition hover:bg-[color:var(--color-surface-strong)]"
+                >
+                  📝 Notes
+                </button>
+              </div>
+
+              {isLessonPaused ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  Lesson paused. Press Continue when you are ready.
+                </div>
+              ) : null}
+
+              <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="rounded-2xl border border-[color:var(--color-line)] bg-white p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                    AI Teacher Stage
+                  </p>
+                  <p className="text-sm font-semibold">DSIQ Teacher</p>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[color:var(--color-text)]">
+                    {latestTeacherMessage}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[color:var(--color-line)] bg-[#111111] p-4 text-white">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+                    Visual Slide / Whiteboard
+                  </p>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-white/10 p-3 text-xs leading-6">
+{`function greet(name) {
+  return "Hello " + name;
+}`}
+                  </pre>
+                  <p className="mt-3 text-xs leading-5 text-white/70">
+                    A function is a reusable block of code. Today you will write one, test it, and use it in a mini project.
+                  </p>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">
+                      <span>Lesson progress</span>
+                      <span>35%</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                      <div className="h-full w-[35%] rounded-full bg-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="flex min-h-[280px] flex-col bg-white p-4">
+              <div className="flex flex-wrap gap-2 border-b border-[color:var(--color-line)] pb-3">
+                {(["transcript", "notes", "chat", "code"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setLiveLessonTab(tab)}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold capitalize transition ${
+                      liveLessonTab === tab
+                        ? "bg-[#111111] text-white"
+                        : "bg-[color:var(--color-surface-strong)] text-[color:var(--color-muted)] hover:text-[color:var(--color-text)]"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="min-h-40 flex-1 overflow-y-auto py-4">
+                {liveLessonTab === "transcript" ? (
+                  <div className="space-y-3">
+                    {mentorMessages.map((message, index) => (
+                      <p
+                        key={`${message.role}-${index}`}
+                        className="whitespace-pre-wrap rounded-2xl bg-[color:var(--color-surface-strong)] px-4 py-3 text-sm leading-7"
+                      >
+                        <span className="font-semibold">
+                          {message.role === "model" ? "AI Teacher" : "You"}:
+                        </span>{" "}
+                        {message.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+
+                {liveLessonTab === "notes" ? (
+                  <textarea
+                    value={liveLessonNotes}
+                    onChange={(event) => setLiveLessonNotes(event.target.value)}
+                    placeholder="Write your lesson notes here..."
+                    className="min-h-40 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface)] px-4 py-3 text-sm outline-none transition focus:border-[#111111]"
+                  />
+                ) : null}
+
+                {liveLessonTab === "chat" ? (
+                  <div className="space-y-3">
+                    {mentorMessages.map((message, index) => (
+                      <div
+                        key={`${message.role}-live-${index}`}
+                        className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-7 ${
+                          message.role === "user"
+                            ? "ml-auto bg-[#111111] text-white"
+                            : "mr-auto bg-[color:var(--color-surface-strong)]"
+                        }`}
+                      >
+                        {message.text}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {liveLessonTab === "code" ? (
+                  <textarea
+                    value={liveLessonCode}
+                    onChange={(event) => setLiveLessonCode(event.target.value)}
+                    className="min-h-40 w-full resize-none rounded-2xl border border-[color:var(--color-line)] bg-[#111111] px-4 py-3 font-mono text-sm text-white outline-none transition focus:border-[#111111]"
+                  />
+                ) : null}
+              </div>
+
+              <form
+                className="flex flex-col gap-2 border-t border-[color:var(--color-line)] pt-3 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void submitMentorPrompt(prompt);
+                }}
+              >
+                <input
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder={getLiveLessonPlaceholder()}
+                  className="h-11 min-w-0 flex-1 rounded-full border border-[color:var(--color-line)] bg-white px-4 text-sm outline-none transition focus:border-[#111111]"
+                />
+                <button
+                  type="submit"
+                  disabled={!prompt.trim() || isSending || isLessonPaused}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </form>
+            </section>
+          </div>
+
+          <aside className="border-t border-[color:var(--color-line)] bg-white p-4 lg:border-l lg:border-t-0">
+            <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                💬 Ask Teacher
+              </p>
+              <p className="mt-2 text-sm leading-6">
+                Ask questions anytime. DSIQ replies like a teacher and keeps you inside the lesson.
+              </p>
+              <div className="mt-4 space-y-2">
+                {mentorMessages.slice(-3).map((message, index) => (
+                  <div
+                    key={`${message.role}-side-${index}`}
+                    className={`rounded-2xl px-3 py-2 text-xs leading-5 ${
+                      message.role === "user"
+                        ? "bg-[#111111] text-white"
+                        : "bg-white text-[color:var(--color-text)]"
+                    }`}
+                  >
+                    <span className="font-semibold">
+                      {message.role === "model" ? "Teacher" : "You"}:
+                    </span>{" "}
+                    {message.text.length > 140
+                      ? `${message.text.slice(0, 140)}...`
+                      : message.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-[color:var(--color-line)] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.03)]">
+              <button
+                type="button"
+                onClick={() => setIsFocusTimerExpanded((current) => !current)}
+                className="flex w-full items-center justify-between text-left"
+              >
+                <span>
+                  <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted)]">
+                    Focus Time
+                  </span>
+                  <span className="mt-1 block text-3xl font-semibold">
+                    {formatFocusTime(focusSecondsRemaining)}
+                  </span>
+                </span>
+                <span className="rounded-full bg-[color:var(--color-surface-strong)] px-3 py-1 text-xs font-semibold">
+                  {isFocusTimerExpanded ? "Hide" : "Open"}
+                </span>
+              </button>
+
+              {isFocusTimerExpanded ? (
+                <div className="mt-4 space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsFocusTimerRunning(true)}
+                      className="inline-flex h-9 items-center rounded-full bg-[#111111] px-4 text-xs font-semibold text-white"
+                    >
+                      Start
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsFocusTimerRunning(false)}
+                      className="inline-flex h-9 items-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold"
+                    >
+                      Pause
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsFocusTimerRunning(false);
+                        setFocusSecondsRemaining(25 * 60);
+                      }}
+                      className="inline-flex h-9 items-center rounded-full border border-[color:var(--color-line)] px-4 text-xs font-semibold"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3">
+                      <p className="text-xs font-semibold text-[color:var(--color-muted)]">
+                        Sessions
+                      </p>
+                      <p className="mt-1 font-semibold">{focusSessions}</p>
+                    </div>
+                    <div className="rounded-2xl bg-[color:var(--color-surface-strong)] p-3">
+                      <p className="text-xs font-semibold text-[color:var(--color-muted)]">
+                        Total Time
+                      </p>
+                      <p className="mt-1 font-semibold">{totalFocusMinutes}m</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </aside>
         </div>
       </section>
     );
@@ -1387,64 +1878,78 @@ export default function DsiqMentorPage() {
                   </div>
                 </div>
 
-                <div className="teacher-messages flex flex-col gap-4 px-4 py-5 sm:px-5">
-                  {teacherMode !== "learn" ? renderClassroomPanel() : null}
+                {isLiveLessonOpen ? (
+                  <div className="px-4 py-5 sm:px-5">
+                    {renderLiveLessonPanel()}
+                    {error ? (
+                      <p className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                        {error}
+                      </p>
+                    ) : null}
+                    <div ref={latestMessageRef} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="teacher-messages flex flex-col gap-4 px-4 py-5 sm:px-5">
+                      {teacherMode !== "learn" ? renderClassroomPanel() : null}
 
-                  {mentorMessages.length ? (
-                    mentorMessages.map((message, index) => (
-                      <div
-                        key={`${message.role}-${index}`}
-                        className={`max-w-[86%] break-words rounded-2xl px-4 py-3 text-sm leading-7 ${
-                          message.role === "user"
-                            ? "ml-auto bg-[#111111] text-white"
-                            : "ai-message mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
-                        }`}
-                      >
-                        {message.text}
-                      </div>
-                    ))
-                  ) : (
-                    teacherMode === "learn" ? renderClassroomPanel() : null
-                  )}
+                      {mentorMessages.length ? (
+                        mentorMessages.map((message, index) => (
+                          <div
+                            key={`${message.role}-${index}`}
+                            className={`max-w-[86%] break-words rounded-2xl px-4 py-3 text-sm leading-7 ${
+                              message.role === "user"
+                                ? "ml-auto bg-[#111111] text-white"
+                                : "ai-message mr-auto border border-[color:var(--color-line)] bg-[color:var(--color-surface-strong)] text-[color:var(--color-text)]"
+                            }`}
+                          >
+                            {message.text}
+                          </div>
+                        ))
+                      ) : (
+                        teacherMode === "learn" ? renderClassroomPanel() : null
+                      )}
 
-                  {isSending ? (
-                    <div className="mr-auto inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface-strong)] px-4 py-3 text-[color:var(--color-muted)]">
-                      <span className="typing-dot" />
-                      <span className="typing-dot [animation-delay:120ms]" />
-                      <span className="typing-dot [animation-delay:240ms]" />
-                      <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
-                        Teacher thinking
-                      </span>
+                      {isSending ? (
+                        <div className="mr-auto inline-flex items-center gap-2 rounded-full bg-[color:var(--color-surface-strong)] px-4 py-3 text-[color:var(--color-muted)]">
+                          <span className="typing-dot" />
+                          <span className="typing-dot [animation-delay:120ms]" />
+                          <span className="typing-dot [animation-delay:240ms]" />
+                          <span className="ml-2 text-xs font-semibold uppercase tracking-[0.18em]">
+                            Teacher thinking
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {error ? (
+                        <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                          {error}
+                        </p>
+                      ) : null}
+                      <div ref={latestMessageRef} />
                     </div>
-                  ) : null}
 
-                  {error ? (
-                    <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
-                      {error}
-                    </p>
-                  ) : null}
-                  <div ref={latestMessageRef} />
-                </div>
-
-                <div className="teacher-input-area min-w-0 w-full">
-                  <ChatComposer
-                    docked
-                    value={prompt}
-                    onChange={setPrompt}
-                    onSubmit={(value, attachments) =>
-                      void submitMentorPrompt(
-                        attachments.length
-                          ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
-                          : value,
-                      )
-                    }
-                    onVoiceInput={handleVoiceInput}
-                    onExpandedChange={setIsComposerExpanded}
-                    isListening={isListening}
-                    isSending={isSending}
-                    placeholder={t("chat.askDsiq")}
-                  />
-                </div>
+                    <div className="teacher-input-area min-w-0 w-full">
+                      <ChatComposer
+                        docked
+                        value={prompt}
+                        onChange={setPrompt}
+                        onSubmit={(value, attachments) =>
+                          void submitMentorPrompt(
+                            attachments.length
+                              ? `${value.trim() || "Please review these images."}\n\nAttached images: ${attachments.length}`
+                              : value,
+                          )
+                        }
+                        onVoiceInput={handleVoiceInput}
+                        onExpandedChange={setIsComposerExpanded}
+                        isListening={isListening}
+                        isSending={isSending}
+                        placeholder={t("chat.askDsiq")}
+                      />
+                    </div>
+                  </>
+                )}
               </article>
             </div>
           </section>
